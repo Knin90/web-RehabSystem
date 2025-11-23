@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar Sesión - Sistema de Rehabilitación</title>
+
+  <!-- Bootstrap 5 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Font Awesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Estilos personalizados -->
+  <style>
+    :root {
+      --azul-medico: #2c5aa0;
+      --azul-acento: #1a73e8;
+      --gradiente-hero: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --fondo-sections: #f8f9fa;
+      --texto-principal: #212529;
+      --border-radius: 12px;
+      --sombra-suave: 0 8px 30px rgba(0, 0, 0, 0.08);
+      --transicion: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: var(--fondo-sections);
+      color: var(--texto-principal);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .login-container {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .login-left {
+      flex: 1;
+      background: var(--gradiente-hero);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-left::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+      background-size: cover;
+    }
+
+    .login-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .login-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.9;
+    }
+
+    .login-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .login-subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    .login-right {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .login-card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--sombra-suave);
+      padding: 3rem;
+      width: 100%;
+      max-width: 420px;
+      transition: var(--transicion);
+    }
+
+    .login-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .logo-medical {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-medical i {
+      font-size: 2.5rem;
+      color: var(--azul-medico);
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-medical h2 {
+      color: var(--azul-medico);
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-group-text {
+      background: white;
+      border-right: none;
+      color: var(--azul-medico);
+    }
+
+    .form-control {
+      border-left: none;
+      padding-left: 0;
+      height: 50px;
+      transition: var(--transicion);
+    }
+
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #ced4da;
+    }
+
+    .form-control:focus+.input-group-text {
+      border-color: var(--azul-acento);
+    }
+
+    .btn-medical-primary {
+      background: var(--azul-medico);
+      border: none;
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: var(--transicion);
+      width: 100%;
+      height: 50px;
+    }
+
+    .btn-medical-primary:hover {
+      background: var(--azul-acento);
+      transform: translateY(-2px);
+    }
+
+    .back-to-home {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .back-to-home a {
+      color: var(--azul-medico);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transicion);
+    }
+
+    .back-to-home a:hover {
+      color: var(--azul-acento);
+    }
+
+    .alert {
+      border-radius: 8px;
+      border: none;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .alert-error,
+    .alert-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .alert-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .demo-accounts {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: var(--fondo-sections);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .demo-accounts h6 {
+      color: var(--azul-medico);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .demo-account {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .demo-account:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .login-container {
+        flex-direction: column;
+      }
+
+      .login-left {
+        padding: 3rem 2rem;
+        min-height: 40vh;
+      }
+
+      .login-title {
+        font-size: 2rem;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .login-card {
+        padding: 2rem;
+      }
+
+      .login-title {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <!-- Sección izquierda - Informativa -->
+    <div class="login-left">
+      <div class="login-content">
+        <div class="login-icon">
+          <i class="fas fa-heartbeat"></i>
+        </div>
+        <h1 class="login-title">Sistema de Rehabilitación</h1>
+        <p class="login-subtitle">
+          Acceda a nuestra plataforma médica especializada en rehabilitación
+          con seguimiento por visión artificial y planes personalizados.
+        </p>
+      </div>
+    </div>
+
+    <!-- Sección derecha - Formulario -->
+    <div class="login-right">
+      <div class="login-card">
+        <!-- Logo -->
+        <div class="logo-medical">
+          <i class="fas fa-stethoscope"></i>
+          <h2>Iniciar Sesión</h2>
+        </div>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show"
+          role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Formulario de Login -->
+        <form method="POST" action="{{ url_for('login') }}">
+          {{ form.hidden_tag() }}
+          {% if modulo_seleccionado %}
+          <input type="hidden" name="modulo" value="{{ modulo_seleccionado }}" />
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Acceso como:</strong> {{ modulo_seleccionado.title() }}
+          </div>
+          {% endif %}
+
+          <div class="form-group">
+            <label for="username" class="form-label">Usuario</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="fas fa-user"></i>
+              </span>
+              <input type="text" class="form-control" id="username" name="username" placeholder="Ingrese su usuario"
+                required autofocus />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="password" class="form-label">Contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="fas fa-lock"></i>
+              </span>
+              <input type="password" class="form-control" id="password" name="password"
+                placeholder="Ingrese su contraseña" required />
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-medical-primary mt-3">
+            <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+          </button>
+        </form>
+
+        <!-- Enlace para volver al inicio -->
+        <div class="back-to-home">
+          <a href="{{ url_for('index') }}">
+            <i class="fas fa-arrow-left me-1"></i>Volver a la página principal
+          </a>
+        </div>
+
+        <!-- Cuentas de demostración -->
+        <div class="demo-accounts">
+          <h6>
+            <i class="fas fa-info-circle me-2"></i>Cuentas de Demostración
+          </h6>
+          <div class="demo-account">
+            <span><strong>Admin:</strong> admin / admin123</span>
+            <span class="badge bg-primary">Administrador</span>
+          </div>
+          <div class="demo-account">
+            <span><strong>Terapeuta:</strong> terapeuta / tera123</span>
+            <span class="badge bg-success">Terapeuta</span>
+          </div>
+          <div class="demo-account">
+            <span><strong>Paciente:</strong> paciente / paci123</span>
+            <span class="badge bg-info">Paciente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script para mejorar UX -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Auto-dismiss alerts after 5 seconds
+      const alerts = document.querySelectorAll(".alert");
+      alerts.forEach((alert) => {
+        setTimeout(() => {
+          const bsAlert = new bootstrap.Alert(alert);
+          bsAlert.close();
+        }, 5000);
+      });
+
+      // Form validation enhancement
+      const form = document.querySelector("form");
+      form.addEventListener("submit", function (e) {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!username || !password) {
+          e.preventDefault();
+          alert("Por favor, complete todos los campos.");
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

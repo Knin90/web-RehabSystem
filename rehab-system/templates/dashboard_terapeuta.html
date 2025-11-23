@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Terapeuta - Sistema de Rehabilitación</title>
+    
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --azul-medico: #2c5aa0;
+            --azul-acento: #1a73e8;
+            --verde-terapeuta: #10b981;
+            --naranja-alerta: #fd7e14;
+            --fondo-sections: #f8f9fa;
+            --texto-principal: #212529;
+            --border-radius: 12px;
+            --sombra-suave: 0 4px 20px rgba(0,0,0,0.08);
+            --transicion: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: var(--texto-principal);
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: var(--sombra-suave);
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        .sidebar-header {
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 1.5rem;
+        }
+        
+        .logo-medical {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--azul-medico);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+        
+        .nav-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 2rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .nav-link-custom {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 2rem;
+            color: var(--texto-principal);
+            text-decoration: none;
+            transition: var(--transicion);
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-link-custom:hover, .nav-link-custom.active {
+            background: rgba(44, 90, 160, 0.05);
+            color: var(--azul-medico);
+            border-left-color: var(--azul-medico);
+        }
+        
+        .nav-link-custom i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+        
+        .user-details h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: var(--texto-principal);
+        }
+        
+        .user-details p {
+            color: #6c757d;
+            margin: 0;
+        }
+        
+        .user-tag {
+            background: var(--verde-terapeuta);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        /* Hero Banner Terapeuta */
+        .hero-banner-terapeuta {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-banner-terapeuta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+            background-size: cover;
+        }
+        
+        .hero-content-terapeuta {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .hero-text h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .hero-text p {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .btn-hero-terapeuta {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: var(--transicion);
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-hero-terapeuta:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Features Grid Terapeuta */
+        .features-grid-terapeuta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feature-card-terapeuta {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--sombra-suave);
+            transition: var(--transicion);
+            border-left: 4px solid var(--verde-terapeuta);
+        }
+        
+        .feature-card-terapeuta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .feature-icon-terapeuta {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: var(--verde-terapeuta);
+            font-size: 1.25rem;
+        }
+        
+        .feature-title-terapeuta {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--texto-principal);
+        }
+        
+        .feature-description-terapeuta {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        /* Main Grid Layout */
+        .dashboard-grid-terapeuta {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        
+        .card-custom {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--sombra-suave);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header-custom {
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.25rem 1.5rem;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--texto-principal);
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        
+        .btn-view-all {
+            color: var(--azul-medico);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .btn-view-all:hover {
+            color: var(--azul-acento);
+        }
+        
+        /* Citas Section Terapeuta */
+        .citas-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cita-stat-card {
+            background: var(--fondo-sections);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--verde-terapeuta);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .citas-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .cita-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: var(--transicion);
+        }
+        
+        .cita-item:hover {
+            border-color: var(--verde-terapeuta);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+        }
+        
+        .cita-info h6 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--texto-principal);
+        }
+        
+        .cita-info p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .cita-sala {
+            background: var(--verde-terapeuta);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        /* Mensajes Section */
+        .mensajes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .mensaje-card {
+            border-left: 4px solid var(--naranja-alerta);
+            background: #fff9f0;
+            border-radius: 8px;
+            padding: 1.25rem;
+            transition: var(--transicion);
+        }
+        
+        .mensaje-card.urgente {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .mensaje-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mensaje-remitente {
+            font-weight: 600;
+            color: var(--texto-principal);
+        }
+        
+        .mensaje-tiempo {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+        
+        .mensaje-contenido {
+            color: var(--texto-principal);
+            margin: 0;
+        }
+        
+        /* Progreso Section */
+        .progress-container {
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .progress-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(#10b981 0% 68%, #e9ecef 68% 100%);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .progress-circle::before {
+            content: '';
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        .progress-text {
+            position: relative;
+            z-index: 2;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--texto-principal);
+        }
+        
+        .btn-generar-reporte {
+            background: var(--verde-terapeuta);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: var(--transicion);
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        .btn-generar-reporte:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid-terapeuta {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            .features-grid-terapeuta {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .citas-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-content-terapeuta {
+                flex-direction: column;
+                text-align: center;
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .features-grid-terapeuta {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-medical">
+                    <i class="fas fa-stethoscope"></i>
+                    <span>RehabSystem</span>
+                </div>
+            </div>
+            
+            <!-- Navegación Principal -->
+            <div class="nav-section">
+                <div class="nav-title">Panel de control</div>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-file-medical"></i>
+                    <span>Historiales clínicos</span>
+                </a>
+                <a href="#" class="nav-link-custom active">
+                    <i class="fas fa-user-injured"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-dumbbell"></i>
+                    <span>Historial de rutinas</span>
+                </a>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-cog"></i>
+                    <span>Ajustes</span>
+                </a>
+            </div>
+            
+            <!-- Cuenta -->
+            <div class="nav-section">
+                <div class="nav-title">Cuenta</div>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Mi cuenta</span>
+                </a>
+                <a href="/logout" class="nav-link-custom">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar sesión</span>
+                </a>
+            </div>
+            
+            <!-- Ayuda -->
+            <div class="nav-section">
+                <div class="nav-title">Soporte</div>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Ayuda y Soporte</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header-bar">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        RL
+                    </div>
+                    <div class="user-details">
+                        <h1>Terapeuta Rafael Lu</h1>
+                        <p>lu_raf@rehabsystem.com</p>
+                    </div>
+                    <div class="user-tag">
+                        TERAPEUTA
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hero Banner -->
+            <div class="hero-banner-terapeuta">
+                <div class="hero-content-terapeuta">
+                    <div class="hero-text">
+                        <h2>Rafael Lu @lu_raf</h2>
+                        <p>Terapeuta especializado en rehabilitación física</p>
+                        <button class="btn-hero-terapeuta">
+                            <i class="fas fa-play-circle"></i>Comenzar
+                        </button>
+                    </div>
+                    <div>
+                        <small>Más Información</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Grid -->
+            <div class="features-grid-terapeuta">
+                <div class="feature-card-terapeuta">
+                    <div class="feature-icon-terapeuta">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <div class="feature-title-terapeuta">Historial clínico</div>
+                    <p class="feature-description-terapeuta">Accede y gestiona historiales médicos completos</p>
+                </div>
+                
+                <div class="feature-card-terapeuta">
+                    <div class="feature-icon-terapeuta">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="feature-title-terapeuta">Nuevo paciente</div>
+                    <p class="feature-description-terapeuta">Registrar nuevo paciente en el sistema</p>
+                </div>
+                
+                <div class="feature-card-terapeuta">
+                    <div class="feature-icon-terapeuta">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                    <div class="feature-title-terapeuta">Crear Rutinas</div>
+                    <p class="feature-description-terapeuta">Diseñar planes de ejercicios personalizados</p>
+                </div>
+                
+                <div class="feature-card-terapeuta">
+                    <div class="feature-icon-terapeuta">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="feature-title-terapeuta">Rutinas asignadas</div>
+                    <p class="feature-description-terapeuta">Ver y gestionar rutinas asignadas</p>
+                </div>
+                
+                <div class="feature-card-terapeuta">
+                    <div class="feature-icon-terapeuta">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="feature-title-terapeuta">Catálogo de ejercicios</div>
+                    <p class="feature-description-terapeuta">Biblioteca completa de ejercicios</p>
+                </div>
+            </div>
+            
+            <!-- Main Dashboard Grid -->
+            <div class="dashboard-grid-terapeuta">
+                <!-- Left Column -->
+                <div class="left-column">
+                    <!-- Horario de Citas -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom d-flex justify-content-between align-items-center">
+                            <h5 class="card-title">Horario de citas agendadas</h5>
+                            <a href="#" class="btn-view-all">Ver Horario Completo</a>
+                        </div>
+                        <div class="card-body">
+                            <!-- Stats de Citas -->
+                            <div class="citas-stats">
+                                <div class="cita-stat-card">
+                                    <div class="stat-number">5</div>
+                                    <div class="stat-label">Pacientes</div>
+                                    <small>12 de octubre</small>
+                                </div>
+                                <div class="cita-stat-card">
+                                    <div class="stat-number">8</div>
+                                    <div class="stat-label">Pacientes</div>
+                                    <small>13 de octubre</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de Citas -->
+                            <div class="citas-list">
+                                <div class="cita-item">
+                                    <div class="cita-info">
+                                        <h6>Carlos Rodríguez</h6>
+                                        <p>Viernes - 9:00 AM</p>
+                                    </div>
+                                    <div class="cita-sala">Sala 2</div>
+                                </div>
+                                <div class="cita-item">
+                                    <div class="cita-info">
+                                        <h6>María González</h6>
+                                        <p>Viernes - 11:00 AM</p>
+                                    </div>
+                                    <div class="cita-sala">Sala 1</div>
+                                </div>
+                                <div class="cita-item">
+                                    <div class="cita-info">
+                                        <h6>Ana Martínez</h6>
+                                        <p>Sábado - 10:00 AM</p>
+                                    </div>
+                                    <div class="cita-sala">Sala 3</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progreso y Reportes -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title">Progreso</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-container">
+                                <h6 class="mb-3">Desempeño y progreso</h6>
+                                <div class="progress-circle">
+                                    <div class="progress-text">68%</div>
+                                </div>
+                                <button class="btn-generar-reporte">
+                                    <i class="fas fa-chart-bar me-2"></i>Generar Reportes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="right-column">
+                    <!-- Mensajes -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title">Mensajes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mensajes-list">
+                                <div class="mensaje-card urgente">
+                                    <div class="mensaje-header">
+                                        <div class="mensaje-remitente">Dr. Ansel Sanjar</div>
+                                        <div class="mensaje-tiempo">Hace 1 minuto</div>
+                                    </div>
+                                    <p class="mensaje-contenido">Paciente con rotura de ligamento sala 3</p>
+                                </div>
+                                <div class="mensaje-card">
+                                    <div class="mensaje-header">
+                                        <div class="mensaje-remitente">Dra. Laura Méndez</div>
+                                        <div class="mensaje-tiempo">Hace 15 minutos</div>
+                                    </div>
+                                    <p class="mensaje-contenido">Reunión de equipo a las 3 PM</p>
+                                </div>
+                                <div class="mensaje-card">
+                                    <div class="mensaje-header">
+                                        <div class="mensaje-remitente">Sistema</div>
+                                        <div class="mensaje-tiempo">Hace 2 horas</div>
+                                    </div>
+                                    <p class="mensaje-contenido">Evaluaciones pendientes: 3 pacientes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Evaluaciones Realizadas -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title">Evaluaciones realizadas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div>
+                                    <h6 class="mb-1">Andrea Luna</h6>
+                                    <small class="text-muted">Progreso: 75%</small>
+                                </div>
+                                <span class="badge bg-success">75%</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div>
+                                    <h6 class="mb-1">Juan Pérez</h6>
+                                    <small class="text-muted">Progreso: 45%</small>
+                                </div>
+                                <span class="badge bg-warning">45%</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div>
+                                    <h6 class="mb-1">María García</h6>
+                                    <small class="text-muted">Progreso: 90%</small>
+                                </div>
+                                <span class="badge bg-success">90%</span>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="#" class="btn-view-all">Ver todas las evaluaciones</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts Simples sin Errores -->
+    <script>
+        // Función simple para el botón comenzar
+        document.querySelector('.btn-hero-terapeuta').addEventListener('click', function() {
+            alert('Iniciando sesión de trabajo...');
+        });
+
+        // Función simple para generar reportes
+        document.querySelector('.btn-generar-reporte').addEventListener('click', function() {
+            alert('Generando reportes de progreso...');
+        });
+
+        // Efectos hover simples para las tarjetas
+        document.querySelectorAll('.feature-card-terapeuta').forEach(function(card) {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

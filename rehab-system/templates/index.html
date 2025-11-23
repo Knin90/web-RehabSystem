@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RehabSystem - Sistema Avanzado de Rehabilitación</title>
+
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- CSS Personalizado -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/landing.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+      <div class="container">
+        <a class="navbar-brand medical-brand" href="#">
+          <i class="fas fa-heartbeat me-2"></i>RehabSystem
+        </a>
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link active" href="#">Inicio</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#servicios">Servicios</a>
+            </li>
+            <li class="nav-item">
+    <section class="hero-section">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-6">
+            <div class="hero-content">
+              <h1 class="hero-title">
+                Sistema Avanzado de Rehabilitación con Visión Artificial
+              </h1>
+              <p class="hero-subtitle">
+                Tecnología de vanguardia para monitorear y optimizar tu proceso
+                de rehabilitación. Ejercicios personalizados, seguimiento en
+                tiempo real y resultados medibles.
+              </p>
+              <div class="hero-actions">
+                <a
+                  href="{{ url_for('login') }}"
+                  class="btn btn-medical-outline btn-large"
+                >
+                  <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                </a>
+                <a href="#servicios" class="btn btn-medical-primary btn-large">
+                  <i class="fas fa-info-circle me-2"></i>Conocer Más
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="hero-image">
+              <img
+                src="{{ url_for('static', filename='images/banner-principal.png') }}"
+                alt="Sistema de Rehabilitación con Visión Artificial"
+                class="hero-banner-img"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>¿Por Qué Elegir RehabSystem?</h2>
+          <p class="section-subtitle">
+            Tecnología innovadora al servicio de tu recuperación
+          </p>
+        </div>
+
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-robot"></i>
+              </div>
+              <h3>Visión Artificial</h3>
+              <p>
+                Monitoreo preciso de tus movimientos usando inteligencia
+                artificial para garantizar la correcta ejecución de cada
+                ejercicio.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <h3>Seguimiento en Tiempo Real</h3>
+              <p>
+                Obtén métricas instantáneas de tu progreso con reportes
+                detallados y análisis de mejora continua.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-user-md"></i>
+              </div>
+              <h3>Acompañamiento Profesional</h3>
+              <p>
+                Tus terapeutas monitorean tu evolución y ajustan tu tratamiento
+                según tus avances y necesidades específicas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="servicios" class="services-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Nuestros Servicios</h2>
+          <p class="section-subtitle">
+            Soluciones completas para tu rehabilitación
+          </p>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="service-card">
+              <div class="service-icon">
+                <i class="fas fa-dumbbell"></i>
+              </div>
+              <div class="service-content">
+                <h4>Terapia Personalizada</h4>
+                <p>
+                  Programas de ejercicios adaptados a tu condición específica y
+                  objetivos de recuperación.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4">
+            <div class="service-card">
+              <div class="service-icon">
+                <i class="fas fa-video"></i>
+              </div>
+              <div class="service-content">
+                <h4>Sesiones Remotas</h4>
+                <p>
+                  Realiza tus terapias desde casa con supervisión profesional en
+                  tiempo real mediante videollamadas.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4">
+            <div class="service-card">
+              <div class="service-icon">
+                <i class="fas fa-file-medical"></i>
+              </div>
+              <div class="service-content">
+                <h4>Reportes de Progreso</h4>
+                <p>
+                  Documentación detallada de tu evolución con métricas objetivas
+                  y comparativas sesión a sesión.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4">
+            <div class="service-card">
+              <div class="service-icon">
+                <i class="fas fa-mobile-alt"></i>
+              </div>
+              <div class="service-content">
+                <h4>App Móvil</h4>
+                <p>
+                  Accede a tus rutinas, historial y comunicación con terapeutas
+                  desde cualquier dispositivo móvil.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rutinas Section -->
+    <section id="rutinas" class="routines-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Rutinas Especializadas</h2>
+          <p class="section-subtitle">
+            Programas diseñados para condiciones específicas
+          </p>
+        </div>
+
+        <div class="row">
+          <div class="col-md-3 mb-4">
+            <div class="routine-card">
+              <div class="routine-icon" style="background: #4caf50">
+                <i class="fas fa-running"></i>
+              </div>
+              <h4>Rehabilitación Deportiva</h4>
+              <p>
+                Recuperación de lesiones deportivas con enfoque en retorno
+                seguro a la actividad física.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-3 mb-4">
+            <div class="routine-card">
+              <div class="routine-icon" style="background: #ff9800">
+                <i class="fas fa-wheelchair"></i>
+              </div>
+              <h4>Movilidad Reducida</h4>
+              <p>
+                Ejercicios para mejorar movilidad articular y fuerza muscular en
+                casos de limitación motora.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-3 mb-4">
+            <div class="routine-card">
+              <div class="routine-icon" style="background: #9c27b0">
+                <i class="fas fa-bone"></i>
+              </div>
+              <h4>Post-Operatorio</h4>
+              <p>
+                Programas de recuperación después de cirugías ortopédicas y
+                procedimientos médicos.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-3 mb-4">
+            <div class="routine-card">
+              <div class="routine-icon" style="background: #f44336">
+                <i class="fas fa-hand-paper"></i>
+              </div>
+              <h4>Terapia de Mano</h4>
+              <p>
+                Ejercicios especializados para recuperación de lesiones en manos
+                y miembros superiores.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contacto" class="contact-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Contáctanos</h2>
+          <p class="section-subtitle">
+            Estamos aquí para ayudarte en tu proceso de recuperación
+          </p>
+        </div>
+
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="contact-info">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div>
+                      <h5>Ubicación</h5>
+                      <p>Ciudad de Panamá, Panamá</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <i class="fas fa-phone"></i>
+                    </div>
+                    <div>
+                      <h5>Teléfono</h5>
+                      <p>+507 123-4567</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <i class="fas fa-envelope"></i>
+                    </div>
+                    <div>
+                      <h5>Email</h5>
+                      <p>info@rehabsystem.com</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                      <h5>Horario</h5>
+                      <p>Lun-Vie: 8:00 AM - 6:00 PM</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="medical-footer">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-4 mb-4">
+            <div class="footer-brand">
+              <i class="fas fa-heartbeat me-2"></i>RehabSystem
+            </div>
+            <p>
+              Sistema avanzado de rehabilitación con visión artificial para una
+              recuperación más eficiente y monitoreada.
+            </p>
+          </div>
+          <div class="col-lg-2 col-md-6 mb-4">
+            <div class="footer-links">
+              <h5>Enlaces</h5>
+              <a href="#">Inicio</a>
+              <a href="#servicios">Servicios</a>
+              <a href="#rutinas">Rutinas</a>
+              <a href="#contacto">Contacto</a>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6 mb-4">
+            <div class="footer-links">
+              <h5>Servicios</h5>
+              <a href="#">Terapia Personalizada</a>
+              <a href="#">Sesiones Remotas</a>
+              <a href="#">Reportes de Progreso</a>
+              <a href="#">App Móvil</a>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6 mb-4">
+            <div class="footer-links">
+              <h5>Legal</h5>
+              <a href="#">Términos y Condiciones</a>
+              <a href="#">Política de Privacidad</a>
+              <a href="#">Aviso Legal</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2024 RehabSystem. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript Personalizado -->
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+  </body>
+</html>

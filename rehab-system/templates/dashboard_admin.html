@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador - Sistema de Rehabilitación</title>
+    
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --azul-medico: #2c5aa0;
+            --azul-acento: #1a73e8;
+            --verde-admin: #059669;
+            --naranja-admin: #fd7e14;
+            --purpura-admin: #8b5cf6;
+            --fondo-sections: #f8f9fa;
+            --texto-principal: #212529;
+            --border-radius: 12px;
+            --sombra-suave: 0 4px 20px rgba(0,0,0,0.08);
+            --transicion: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: var(--texto-principal);
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: var(--sombra-suave);
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        .sidebar-header {
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 1.5rem;
+        }
+        
+        .logo-medical {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--azul-medico);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+        
+        .nav-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 2rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .nav-link-custom {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 2rem;
+            color: var(--texto-principal);
+            text-decoration: none;
+            transition: var(--transicion);
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-link-custom:hover, .nav-link-custom.active {
+            background: rgba(44, 90, 160, 0.05);
+            color: var(--azul-medico);
+            border-left-color: var(--azul-medico);
+        }
+        
+        .nav-link-custom i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .admin-welcome h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--texto-principal);
+            margin-bottom: 0.5rem;
+        }
+        
+        .admin-welcome p {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        .admin-tag {
+            background: var(--naranja-admin);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        /* Hero Section Admin */
+        .hero-admin {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            color: white;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-admin::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+            background-size: cover;
+        }
+        
+        .hero-content-admin {
+            position: relative;
+            z-index: 2;
+            max-width: 70%;
+        }
+        
+        .hero-title-admin {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .hero-subtitle-admin {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        /* Main Grid Layout */
+        .dashboard-grid-admin {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card-custom {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--sombra-suave);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header-custom {
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.5rem;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--texto-principal);
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Panel de Control */
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: var(--transicion);
+            cursor: pointer;
+        }
+        
+        .control-item:hover {
+            border-color: var(--azul-medico);
+            background: rgba(44, 90, 160, 0.05);
+        }
+        
+        .control-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .icon-config { background: var(--azul-medico); }
+        .icon-export { background: var(--verde-admin); }
+        .icon-patients { background: var(--purpura-admin); }
+        .icon-therapists { background: var(--naranja-admin); }
+        .icon-va { background: #dc2626; }
+        
+        .control-text {
+            font-weight: 500;
+            color: var(--texto-principal);
+        }
+        
+        /* Usuarios y Perfiles */
+        .users-section {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .user-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: var(--transicion);
+        }
+        
+        .user-card:hover {
+            border-color: var(--azul-medico);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.1);
+        }
+        
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .user-title {
+            font-weight: 600;
+            color: var(--texto-principal);
+            font-size: 1.1rem;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-action {
+            background: var(--azul-medico);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: var(--transicion);
+        }
+        
+        .btn-action:hover {
+            background: var(--azul-acento);
+            transform: translateY(-1px);
+        }
+        
+        .user-features {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: var(--transicion);
+        }
+        
+        .feature-item:hover {
+            background: var(--fondo-sections);
+        }
+        
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background: var(--fondo-sections);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--azul-medico);
+        }
+        
+        .feature-text {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+        
+        .feature-arrow {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+        
+        /* Progreso del Sistema */
+        .progress-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-card {
+            text-align: center;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: var(--transicion);
+        }
+        
+        .progress-card:hover {
+            border-color: var(--azul-medico);
+            transform: translateY(-2px);
+        }
+        
+        .progress-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--azul-medico);
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        
+        .progress-subtitle {
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+        
+        /* Estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid-admin {
+                grid-template-columns: 1fr;
+            }
+            
+            .progress-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            .control-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .progress-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-content-admin {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-medical">
+                    <i class="fas fa-stethoscope"></i>
+                    <span>RehabSystem</span>
+                </div>
+            </div>
+            
+            <!-- Navegación Principal -->
+            <div class="nav-section">
+                <div class="nav-title">Panel de control</div>
+                <a href="#" class="nav-link-custom active">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-cog"></i>
+                    <span>Configuración</span>
+                </a>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-download"></i>
+                    <span>Exportar Datos</span>
+                </a>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-user-injured"></i>
+                    <span>Pacientes</span>
+                </a>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-user-md"></i>
+                    <span>Terapeutas</span>
+                </a>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-robot"></i>
+                    <span>Parámetros V.A</span>
+                </a>
+            </div>
+            
+            <!-- Cuenta -->
+            <div class="nav-section">
+                <div class="nav-title">Cuenta</div>
+                <a href="#" class="nav-link-custom">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Mi cuenta</span>
+                </a>
+                <a href="/logout" class="nav-link-custom">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header-bar">
+                <div class="admin-welcome">
+                    <h1>Panel de administrador</h1>
+                    <p>Explora todo lo que puedes hacer como administrador</p>
+                </div>
+                <div class="admin-tag">
+                    ADMINISTRADOR
+                </div>
+            </div>
+            
+            <!-- Hero Section -->
+            <div class="hero-admin">
+                <div class="hero-content-admin">
+                    <h2 class="hero-title-admin">Sistema de Gestión Integral</h2>
+                    <p class="hero-subtitle-admin">
+                        Control completo sobre usuarios, perfiles, estadísticas y configuración 
+                        del sistema de rehabilitación con visión artificial.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Main Dashboard Grid -->
+            <div class="dashboard-grid-admin">
+                <!-- Left Column -->
+                <div class="left-column">
+                    <!-- Panel de Control -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title">Panel de control</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="control-grid">
+                                <div class="control-item">
+                                    <div class="control-icon icon-config">
+                                        <i class="fas fa-cog"></i>
+                                    </div>
+                                    <span class="control-text">Configuración</span>
+                                </div>
+                                <div class="control-item">
+                                    <div class="control-icon icon-export">
+                                        <i class="fas fa-download"></i>
+                                    </div>
+                                    <span class="control-text">Exportar Datos</span>
+                                </div>
+                                <div class="control-item">
+                                    <div class="control-icon icon-patients">
+                                        <i class="fas fa-user-injured"></i>
+                                    </div>
+                                    <span class="control-text">Pacientes</span>
+                                </div>
+                                <div class="control-item">
+                                    <div class="control-icon icon-therapists">
+                                        <i class="fas fa-user-md"></i>
+                                    </div>
+                                    <span class="control-text">Terapeutas</span>
+                                </div>
+                                <div class="control-item">
+                                    <div class="control-icon icon-va">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <span class="control-text">Parámetros V.A</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Usuarios y Perfiles -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title">Usuarios y Perfiles</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="users-section">
+                                <!-- Tarjeta de Usuarios -->
+                                <div class="user-card">
+                                    <div class="user-header">
+                                        <div class="user-title">Usuarios</div>
+                                        <div class="user-actions">
+                                            <button class="btn-action">Gestionar</button>
+                                        </div>
+                                    </div>
+                                    <div class="user-features">
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-user-plus"></i>
+                                            </div>
+                                            <span class="feature-text">Registrar Usuarios</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </div>
+                                            <span class="feature-text">Reportes Globales</span>
+                                            <span class="feature-arrow">→</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-user-tag"></i>
+                                            </div>
+                                            <span class="feature-text">Asignar roles</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tarjeta de Perfiles -->
+                                <div class="user-card">
+                                    <div class="user-header">
+                                        <div class="user-title">Perfiles</div>
+                                        <div class="user-actions">
+                                            <button class="btn-action">Editar</button>
+                                        </div>
+                                    </div>
+                                    <div class="user-features">
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-edit"></i>
+                                            </div>
+                                            <span class="feature-text">Editar Perfiles</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-shield-alt"></i>
+                                            </div>
+                                            <span class="feature-text">Retención del Poder Executivo</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-user-cog"></i>
+                                            </div>
+                                            <span class="feature-text">Asignar roles</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <div class="feature-icon">
+                                                <i class="fas fa-user-cog"></i>
+                                            </div>
+                                            <span class="feature-text">Asignar roles</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="right-column">
+                    <!-- Progreso del Sistema -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title">Progreso del sistema</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-grid">
+                                <div class="progress-card">
+                                    <div class="progress-number">20</div>
+                                    <div class="progress-label">Enrolled</div>
+                                    <div class="progress-subtitle">#</div>
+                                </div>
+                                <div class="progress-card">
+                                    <div class="progress-number">85%</div>
+                                    <div class="progress-label">Porcentaje</div>
+                                    <div class="progress-subtitle">Completado</div>
+                                </div>
+                                <div class="progress-card">
+                                    <div class="progress-number">132</div>
+                                    <div class="progress-label">Pacientes</div>
+                                    <div class="progress-subtitle">Activos</div>
+                                </div>
+                                <div class="progress-card">
+                                    <div class="progress-number">24</div>
+                                    <div class="progress-label">Terapeutas</div>
+                                    <div class="progress-subtitle">Registrados</div>
+                                </div>
+                            </div>
+                            <div class="progress-card">
+                                <div class="progress-number">12</div>
+                                <div class="progress-label">Usuarios sin registro</div>
+                                <div class="progress-subtitle">Pendientes</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas del Centro -->
+                    <div class="card card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title">Estadísticas del centro</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-number">156</div>
+                                    <div class="stat-label">Usuarios Totales</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">45</div>
+                                    <div class="stat-label">Citas Hoy</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">92%</div>
+                                    <div class="stat-label">Satisfacción</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts Simples -->
+    <script>
+        // Efectos interactivos para las tarjetas de control
+        document.querySelectorAll('.control-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                const text = this.querySelector('.control-text').textContent;
+                alert(`Navegando a: ${text}`);
+            });
+        });
+
+        // Efectos para las tarjetas de usuario
+        document.querySelectorAll('.user-card').forEach(function(card) {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Botones de acción
+        document.querySelectorAll('.btn-action').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.textContent;
+                alert(`Ejecutando acción: ${action}`);
+            });
+        });
+    </script>
+</body>
+</html>
