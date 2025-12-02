@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: rehab-system
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rehab-db
+          property: connectionString
+
+databases:
+  - name: rehab-db
+    databaseName: rehab_system
+    user: rehab_user
