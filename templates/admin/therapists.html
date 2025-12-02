@@ -1,0 +1,53 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Terapeutas - RehabSystem{% endblock %}
+{% block page_title %}Administración de Terapeutas{% endblock %}
+{% block page_description %}Visualiza y administra todos los terapeutas del sistema.{% endblock %}
+
+{% block content %}
+
+<div class="card-custom p-4">
+
+    <h4>Resumen General</h4>
+    <p class="text-muted mb-4">Estado actual del personal de terapia.</p>
+
+    <div class="progress-grid mb-4">
+        <div class="progress-card">
+            <div class="progress-number">24</div>
+            <div class="progress-label">Activos</div>
+        </div>
+        <div class="progress-card">
+            <div class="progress-number">5</div>
+            <div class="progress-label">Nuevos este mes</div>
+        </div>
+    </div>
+
+    <h4 class="mt-4">Acciones</h4>
+
+    <div class="control-grid">
+
+        <div class="control-item">
+            <div class="control-icon icon-therapists"><i class="fas fa-user-md"></i></div>
+            <span class="control-text">Registrar terapeuta</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-export"><i class="fas fa-file-export"></i></div>
+            <span class="control-text">Exportar listado</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-config"><i class="fas fa-calendar-check"></i></div>
+            <span class="control-text">Asignar horarios</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-va"><i class="fas fa-chart-line"></i></div>
+            <span class="control-text">Ver rendimiento</span>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

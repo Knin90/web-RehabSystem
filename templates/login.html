@@ -228,33 +228,6 @@
       color: #0c5460;
     }
 
-    .demo-accounts {
-      margin-top: 2rem;
-      padding: 1.5rem;
-      background: var(--fondo-sections);
-      border-radius: 8px;
-      font-size: 0.9rem;
-    }
-
-    .demo-accounts h6 {
-      color: var(--azul-medico);
-      margin-bottom: 1rem;
-      font-weight: 600;
-    }
-
-    .demo-account {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #dee2e6;
-    }
-
-    .demo-account:last-child {
-      margin-bottom: 0;
-      border-bottom: none;
-    }
-
     /* Responsive */
     @media (max-width: 992px) {
       .login-container {
@@ -364,25 +337,6 @@
           <a href="{{ url_for('index') }}">
             <i class="fas fa-arrow-left me-1"></i>Volver a la página principal
           </a>
-        </div>
-
-        <!-- Cuentas de demostración -->
-        <div class="demo-accounts">
-          <h6>
-            <i class="fas fa-info-circle me-2"></i>Cuentas de Demostración
-          </h6>
-          <div class="demo-account">
-            <span><strong>Admin:</strong> admin / admin123</span>
-            <span class="badge bg-primary">Administrador</span>
-          </div>
-          <div class="demo-account">
-            <span><strong>Terapeuta:</strong> terapeuta / tera123</span>
-            <span class="badge bg-success">Terapeuta</span>
-          </div>
-          <div class="demo-account">
-            <span><strong>Paciente:</strong> paciente / paci123</span>
-            <span class="badge bg-info">Paciente</span>
-          </div>
         </div>
       </div>
     </div>

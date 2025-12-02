@@ -1,0 +1,63 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Usuarios - RehabSystem{% endblock %}
+{% block page_title %}Gestión de Usuarios{% endblock %}
+{% block page_description %}Administración general de todos los usuarios registrados en el sistema.{% endblock %}
+
+{% block content %}
+
+<div class="card-custom p-4">
+    <h4 class="mb-3">Resumen General</h4>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="progress-card">
+                <div class="progress-number">156</div>
+                <div class="progress-label">Usuarios Totales</div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="progress-card">
+                <div class="progress-number">24</div>
+                <div class="progress-label">Terapeutas</div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="progress-card">
+                <div class="progress-number">132</div>
+                <div class="progress-label">Pacientes</div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h4 class="mt-4 mb-3">Acciones Rápidas</h4>
+
+    <div class="control-grid">
+        <div class="control-item">
+            <div class="control-icon icon-config"><i class="fas fa-user-plus"></i></div>
+            <span class="control-text">Registrar nuevo usuario</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-export"><i class="fas fa-download"></i></div>
+            <span class="control-text">Exportar listado</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-patients"><i class="fas fa-id-card"></i></div>
+            <span class="control-text">Asignar roles</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-therapists"><i class="fas fa-user-shield"></i></div>
+            <span class="control-text">Configurar permisos</span>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

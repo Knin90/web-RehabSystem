@@ -1,0 +1,308 @@
+/* -----------------------------------------------------------
+   🎨 VARIABLES GLOBALES
+----------------------------------------------------------- */
+:root {
+    --azul-medico: #2c5aa0;
+    --azul-acento: #1a73e8;
+    --azul-oscuro: #1e3a8a;
+
+    --purpura-admin: #764ba2;
+    --verde-admin: #38b000;
+    --naranja-admin: #f97316;
+
+    --fondo-sections: #f8f9fa;
+    --fondo-base: #f5f7fb;
+
+    --texto-principal: #212529;
+    --texto-secundario: #6c757d;
+
+    --border-radius: 12px;
+    --transicion: all 0.3s ease;
+    --sombra-suave: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+/* -----------------------------------------------------------
+   🔤 RESETEO GENERAL
+----------------------------------------------------------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
+}
+
+body {
+    background: var(--fondo-base);
+    color: var(--texto-principal);
+}
+
+/* -----------------------------------------------------------
+   🧭 SIDEBAR GENERAL (PACIENTE / ADMIN / TERAPEUTA)
+----------------------------------------------------------- */
+.sidebar {
+    width: 280px;
+    background: #ffffff;
+    box-shadow: var(--sombra-suave);
+    padding: 2rem 0;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 0 2rem 2rem;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 1.5rem;
+}
+
+.logo-medical {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--azul-medico);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.nav-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--texto-secundario);
+    padding: 0 2rem;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+}
+
+.nav-link-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 2rem;
+    color: var(--texto-principal);
+    text-decoration: none;
+    transition: var(--transicion);
+    border-left: 3px solid transparent;
+}
+
+.nav-link-custom:hover,
+.nav-link-custom.active {
+    background: rgba(44, 90, 160, 0.08);
+    color: var(--azul-medico);
+    border-left-color: var(--azul-medico);
+}
+
+.nav-link-custom i {
+    width: 20px;
+    text-align: center;
+}
+
+/* -----------------------------------------------------------
+   🖥️ CONTENIDO PRINCIPAL
+----------------------------------------------------------- */
+.main-content {
+    margin-left: 280px;
+    padding: 2rem;
+}
+
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Avatar */
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+/* -----------------------------------------------------------
+   🎯 SECCIÓN HERO (ADMIN / PACIENTE / TERAPEUTA)
+----------------------------------------------------------- */
+.hero-admin,
+.hero-banner {
+    background: linear-gradient(135deg, var(--azul-oscuro) 0%, #3730a3 100%);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-admin::before,
+.hero-banner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 220px;
+    height: 100%;
+    background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M0,0 L100,0 L100,100 Z' fill='rgba(255,255,255,0.1)'/></svg>");
+    background-size: cover;
+    opacity: .4;
+}
+
+.hero-content-admin,
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-title-admin,
+.hero-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* -----------------------------------------------------------
+   📌 TARJETAS & PANELES
+----------------------------------------------------------- */
+.card-custom {
+    background: white;
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--sombra-suave);
+    margin-bottom: 1.5rem;
+}
+
+.card-header-custom {
+    background: transparent;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card-title {
+    font-weight: 700;
+    color: var(--texto-principal);
+}
+
+/* -----------------------------------------------------------
+   🧩 GRID DEL ADMIN
+----------------------------------------------------------- */
+.dashboard-grid-admin {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 1rem;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transicion);
+}
+
+.control-item:hover {
+    background: rgba(44, 90, 160, 0.05);
+    border-color: var(--azul-medico);
+}
+
+/* Iconos */
+.control-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon-config     { background: var(--azul-medico); }
+.icon-export     { background: var(--verde-admin); }
+.icon-patients   { background: var(--purpura-admin); }
+.icon-therapists { background: var(--naranja-admin); }
+.icon-va         { background: #dc2626; }
+
+/* -----------------------------------------------------------
+   📊 Tarjetas de Progreso
+----------------------------------------------------------- */
+.progress-grid {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 1rem;
+}
+
+.progress-card {
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+
+.progress-card:hover {
+    border-color: var(--azul-medico);
+    transform: translateY(-2px);
+}
+
+.progress-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--azul-medico);
+}
+
+/* -----------------------------------------------------------
+   📈 TARJETAS DE ESTADÍSTICAS
+----------------------------------------------------------- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 1rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* -----------------------------------------------------------
+   📱 RESPONSIVE
+----------------------------------------------------------- */
+@media (max-width: 1200px) {
+    .dashboard-grid-admin { grid-template-columns: 1fr; }
+    .progress-grid { grid-template-columns: repeat(2,1fr); }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+@media (max-width: 768px) {
+    .sidebar { width: 250px; }
+    .main-content { margin-left: 250px; }
+    .progress-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 576px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; }
+}

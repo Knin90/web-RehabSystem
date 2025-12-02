@@ -1,0 +1,232 @@
+{% extends "therapist/base_terapeuta.html" %}
+
+{% block title %}Rutinas - RehabSystem{% endblock %}
+{% block page_title %}Rutinas de rehabilitación{% endblock %}
+{% block page_description %}Catálogo de rutinas disponibles para tus pacientes{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Rutinas configuradas</h5>
+        <button class="btn btn-sm btn-primary" id="btnNewRoutine">
+            <i class="fas fa-plus me-2"></i>Nueva rutina
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-walking"></i></div>
+                    <h3>Lumbar básica</h3>
+                    <p class="small mb-2">Ejercicios suaves de flexión y extensión.</p>
+                    <span class="badge bg-primary">15 min</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-running"></i></div>
+                    <h3>Rodilla controlada</h3>
+                    <p class="small mb-2">Fortalecimiento progresivo del cuádriceps.</p>
+                    <span class="badge bg-warning text-dark">20 min</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-child"></i></div>
+                    <h3>Movilidad general</h3>
+                    <p class="small mb-2">Trabajo global de movilidad y equilibrio.</p>
+                    <span class="badge bg-success">25 min</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="routineModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient text-white">
+                <h5 class="modal-title"><i class="fas fa-magic me-2"></i>Creador de Rutinas Inteligente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-4 border-end bg-light">
+                        <div class="p-3">
+                            <h6><i class="fas fa-dumbbell me-2"></i>Biblioteca</h6>
+                            <input type="text" class="form-control mb-3" id="searchEx" placeholder="Buscar...">
+                            <div class="btn-group w-100 mb-3">
+                                <button class="btn btn-sm btn-outline-primary active" data-filter="all">Todos</button>
+                                <button class="btn btn-sm btn-outline-primary" data-filter="upper">Superior</button>
+                                <button class="btn btn-sm btn-outline-primary" data-filter="lower">Inferior</button>
+                            </div>
+                            <div id="exList" style="max-height:400px;overflow-y:auto"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="p-3">
+                            <h6>Constructor <span class="badge bg-primary" id="count">0</span></h6>
+                            <input type="text" class="form-control mb-3" id="routineName" placeholder="Nombre de la rutina">
+                            <div id="dropZone" style="min-height:300px;border:2px dashed #ddd;border-radius:8px;padding:20px">
+                                <p class="text-center text-muted" id="placeholder">Arrastra o agrega ejercicios</p>
+                                <div id="selected"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 bg-light">
+                        <div class="p-3">
+                            <h6><i class="fas fa-chart-bar me-2"></i>Stats</h6>
+                            <div class="mb-2"><small>Duración:</small> <strong id="dur">0 min</strong></div>
+                            <div class="mb-2"><small>Calorías:</small> <strong id="cal">0 kcal</strong></div>
+                            <div class="mb-3"><small>Intensidad:</small> <strong id="int">Baja</strong></div>
+                            <div class="alert alert-info" id="tips">Agrega ejercicios...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-success" id="btnSave">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feature-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:20px;text-align:center;transition:all .3s;height:100%}
+.feature-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-5px)}
+.feature-icon{width:60px;height:60px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;color:#fff;font-size:24px}
+.feature-card h3{font-size:18px;font-weight:600;margin-bottom:10px}
+.bg-gradient{background:linear-gradient(135deg,#667eea,#764ba2)}
+.ex-item{background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer}
+.ex-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.sel-ex{background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+</style>
+
+<script>
+const exercises = [
+    {id:1,name:'Flexiones de rodilla',cat:'lower',dur:5,cal:25,reps:'3x15'},
+    {id:2,name:'Elevaciones de pierna',cat:'lower',dur:5,cal:30,reps:'3x12'},
+    {id:3,name:'Estiramientos lumbares',cat:'lower',dur:3,cal:15,reps:'4x30s'},
+    {id:4,name:'Rotación de hombros',cat:'upper',dur:4,cal:20,reps:'3x10'},
+    {id:5,name:'Flexiones de brazo',cat:'upper',dur:6,cal:40,reps:'3x8'},
+    {id:6,name:'Plancha abdominal',cat:'core',dur:3,cal:25,reps:'3x30s'},
+    {id:7,name:'Sentadillas asistidas',cat:'lower',dur:7,cal:50,reps:'3x12'},
+    {id:8,name:'Puente de glúteos',cat:'lower',dur:5,cal:35,reps:'3x15'}
+];
+let selected = [];
+let modal;
+
+function loadEx(filter) {
+    const list = document.getElementById('exList');
+    const search = document.getElementById('searchEx').value.toLowerCase();
+    let filtered = filter === 'all' ? exercises : exercises.filter(e => e.cat === filter);
+    if(search) filtered = filtered.filter(e => e.name.toLowerCase().includes(search));
+    
+    list.innerHTML = filtered.map(e => `
+        <div class="ex-item" onclick="addEx(${e.id})">
+            <strong>${e.name}</strong>
+            <div><small>${e.reps} • ${e.dur}min • ${e.cal}kcal</small></div>
+        </div>
+    `).join('');
+}
+
+function addEx(id) {
+    const ex = exercises.find(e => e.id === id);
+    if(!ex || selected.find(e => e.id === id)) return;
+    selected.push(ex);
+    updateUI();
+}
+
+function removeEx(id) {
+    selected = selected.filter(e => e.id !== id);
+    updateUI();
+}
+
+function updateUI() {
+    const container = document.getElementById('selected');
+    const placeholder = document.getElementById('placeholder');
+    
+    if(selected.length === 0) {
+        placeholder.style.display = 'block';
+        container.innerHTML = '';
+    } else {
+        placeholder.style.display = 'none';
+        container.innerHTML = selected.map((e,i) => `
+            <div class="sel-ex">
+                <div><strong>${i+1}. ${e.name}</strong><br><small>${e.reps}</small></div>
+                <button class="btn btn-sm btn-danger" onclick="removeEx(${e.id})"><i class="fas fa-trash"></i></button>
+            </div>
+        `).join('');
+    }
+    
+    const totalDur = selected.reduce((s,e) => s + e.dur, 0);
+    const totalCal = selected.reduce((s,e) => s + e.cal, 0);
+    
+    document.getElementById('count').textContent = selected.length;
+    document.getElementById('dur').textContent = totalDur + ' min';
+    document.getElementById('cal').textContent = totalCal + ' kcal';
+    document.getElementById('int').textContent = totalCal > 150 ? 'Alta' : totalCal > 80 ? 'Media' : 'Baja';
+    
+    let tip = selected.length === 0 ? 'Agrega ejercicios...' : 
+              totalDur < 15 ? '💡 Agrega más ejercicios (20-30 min ideal)' :
+              selected.length < 4 ? '📊 Rutina efectiva: 5-7 ejercicios' :
+              '✅ ¡Rutina bien balanceada!';
+    document.getElementById('tips').textContent = tip;
+}
+
+document.getElementById('btnSave').addEventListener('click', () => {
+    const name = document.getElementById('routineName').value.trim();
+    if(!name) return alert('Ingresa un nombre');
+    if(selected.length === 0) return alert('Agrega ejercicios');
+    
+    alert('✅ Rutina "' + name + '" creada con ' + selected.length + ' ejercicios!');
+    modal.hide();
+    setTimeout(() => location.reload(), 1000);
+});
+
+document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        loadEx(e.target.dataset.filter);
+    });
+});
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('btnNewRoutine').addEventListener('click', () => {
+        modal = new bootstrap.Modal(document.getElementById('routineModal'));
+        modal.show();
+        loadEx('all');
+        selected = [];
+        updateUI();
+    });
+
+    document.getElementById('btnSave').addEventListener('click', () => {
+        const name = document.getElementById('routineName').value.trim();
+        if(!name) return alert('Ingresa un nombre');
+        if(selected.length === 0) return alert('Agrega ejercicios');
+        
+        alert('✅ Rutina "' + name + '" creada con ' + selected.length + ' ejercicios!');
+        modal.hide();
+        setTimeout(() => location.reload(), 1000);
+    });
+
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            loadEx(e.target.dataset.filter);
+        });
+    });
+
+    document.getElementById('searchEx').addEventListener('input', () => {
+        const active = document.querySelector('[data-filter].active');
+        loadEx(active ? active.dataset.filter : 'all');
+    });
+});
+</script>
+
+{% endblock %}

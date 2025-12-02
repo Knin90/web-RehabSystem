@@ -1,0 +1,40 @@
+{% extends "therapist/base_terapeuta.html" %}
+
+{% block title %}Monitorear Sesión - RehabSystem{% endblock %}
+{% block page_title %}Monitoreo en tiempo real{% endblock %}
+{% block page_description %}Pantalla pensada para ver la sesión del paciente y sus métricas resumidas.{% endblock %}
+
+{% block content %}
+<div class="card card-custom mb-4">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Sesión en curso</h5>
+        <span class="badge bg-success">Conectado</span>
+    </div>
+    <div class="card-body row g-4">
+        <div class="col-lg-8">
+            <div class="ratio ratio-16x9 border rounded bg-dark position-relative">
+                <!-- Aquí podrías incrustar más adelante el streaming del paciente -->
+                <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
+                    <i class="fas fa-video fa-2x mb-2"></i>
+                    <p>Vista de cámara del paciente (placeholder)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <h6>Métricas básicas</h6>
+            <ul class="list-unstyled small mb-3">
+                <li><strong>Rutina:</strong> Lumbar básica</li>
+                <li><strong>Tiempo transcurrido:</strong> 08:23 min</li>
+                <li><strong>Repeticiones detectadas:</strong> 26</li>
+                <li><strong>Calidad de movimiento:</strong> 89%</li>
+            </ul>
+
+            <h6>Notas rápidas</h6>
+            <textarea class="form-control mb-2" rows="4"
+                      placeholder="Ejemplo: buena técnica, ajustar rango en la fase final."></textarea>
+
+            <button class="btn btn-primary btn-sm">Guardar nota</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

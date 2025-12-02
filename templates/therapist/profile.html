@@ -1,0 +1,42 @@
+{% extends "therapist/base_terapeuta.html" %}
+
+{% block title %}Perfil Terapeuta - RehabSystem{% endblock %}
+{% block page_title %}Perfil profesional{% endblock %}
+{% block page_description %}Datos asociados a tu cuenta de terapeuta.{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header-custom">
+        <h5 class="card-title mb-0">Información básica</h5>
+    </div>
+    <div class="card-body">
+        <form class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nombre completo</label>
+                <input type="text" class="form-control" value="Dra. Ana Pérez">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Especialidad</label>
+                <input type="text" class="form-control" value="Rehabilitación Física">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control" value="+507 6000-0000">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Correo</label>
+                <input type="email" class="form-control" value="terapeuta@rehabsystem.com">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Número de licencia</label>
+                <input type="text" class="form-control" value="LIC-12345">
+            </div>
+
+            <div class="col-12 text-end mt-3">
+                <button type="button" class="btn btn-secondary me-2">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

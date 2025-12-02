@@ -1,0 +1,47 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Historial de Terapias - RehabSystem{% endblock %}
+{% block page_title %}Historial de terapias{% endblock %}
+{% block page_description %}Consulta el registro de tus sesiones y avances.{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header-custom">
+        <h5 class="card-title mb-0">Sesiones realizadas</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Rutina</th>
+                        <th>Terapeuta</th>
+                        <th>Duración</th>
+                        <th>Repeticiones</th>
+                        <th>Comentario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>28/11/2025</td>
+                        <td>Lumbar básica</td>
+                        <td>Dra. Ana Pérez</td>
+                        <td>15 min</td>
+                        <td>45</td>
+                        <td>Buena tolerancia, continuar igual.</td>
+                    </tr>
+                    <tr>
+                        <td>30/11/2025</td>
+                        <td>Movilidad general</td>
+                        <td>Dra. Ana Pérez</td>
+                        <td>20 min</td>
+                        <td>60</td>
+                        <td>Mejor control postural.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
