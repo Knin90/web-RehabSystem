@@ -1,0 +1,272 @@
+﻿{% extends "admin/base_admin.html" %}
+
+{% block title %}Configuración - RehabSystem{% endblock %}
+{% block page_title %}Configuración del Sistema{% endblock %}
+{% block page_description %}Ajustes generales del sistema y sus módulos.{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <!-- Configuración de Sesiones -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-clock me-2"></i>Sesiones de Terapia</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="setting_type" value="session_duration">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Duración predeterminada (minutos)</label>
+                        <input type="number" class="form-control" name="session_duration" value="{{ settings.session_duration }}" min="15" max="120">
+                        <small class="text-muted">Tiempo estándar para cada sesión de rehabilitación</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Sesiones por semana (recomendadas)</label>
+                        <input type="number" class="form-control" name="sessions_per_week" value="{{ settings.sessions_per_week }}" min="1" max="7">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tiempo de descanso entre ejercicios (seg)</label>
+                        <input type="number" class="form-control" name="rest_time" value="{{ settings.rest_time }}" min="10" max="120">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="setting_type" value="notifications">
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="emailNotif" name="email_notifications" {% if settings.email_notifications == 'on' %}checked{% endif %}>
+                        <label class="form-check-label" for="emailNotif">
+                            Notificaciones por email
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="appointmentReminder" name="appointment_reminder" {% if settings.appointment_reminder == 'on' %}checked{% endif %}>
+                        <label class="form-check-label" for="appointmentReminder">
+                            Recordatorios de citas (24h antes)
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="progressReport" name="progress_report" {% if settings.progress_report == 'on' %}checked{% endif %}>
+                        <label class="form-check-label" for="progressReport">
+                            Reportes de progreso semanales
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="inactiveAlert" name="inactive_alert" {% if settings.inactive_alert == 'on' %}checked{% endif %}>
+                        <label class="form-check-label" for="inactiveAlert">
+                            Alertas de pacientes inactivos (7 días)
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seguridad -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-shield-alt me-2"></i>Seguridad</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="setting_type" value="security">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tiempo de sesión (minutos)</label>
+                        <input type="number" class="form-control" name="session_timeout" value="60" min="15" max="480">
+                        <small class="text-muted">Tiempo antes de cerrar sesión automáticamente</small>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="twoFactor" name="two_factor">
+                        <label class="form-check-label" for="twoFactor">
+                            Autenticación de dos factores
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="passwordExpiry" name="password_expiry">
+                        <label class="form-check-label" for="passwordExpiry">
+                            Expiración de contraseñas (90 días)
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Intentos de login permitidos</label>
+                        <input type="number" class="form-control" name="max_login_attempts" value="5" min="3" max="10">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Respaldos y Mantenimiento -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-database me-2"></i>Respaldos y Mantenimiento</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="setting_type" value="backup">
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoBackup" name="auto_backup" checked>
+                        <label class="form-check-label" for="autoBackup">
+                            Respaldo automático diario
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Hora de respaldo</label>
+                        <input type="time" class="form-control" name="backup_time" value="02:00">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Retención de respaldos (días)</label>
+                        <input type="number" class="form-control" name="backup_retention" value="30" min="7" max="365">
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoCleanup" name="auto_cleanup">
+                        <label class="form-check-label" for="autoCleanup">
+                            Limpieza automática de logs antiguos
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visión Artificial -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-video me-2"></i>Visión Artificial</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="setting_type" value="ai_vision">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Precisión de detección (%)</label>
+                        <input type="range" class="form-range" name="detection_accuracy" min="50" max="100" value="85" id="accuracyRange">
+                        <small class="text-muted">Valor actual: <span id="accuracyValue">85</span>%</small>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="realTimeAnalysis" name="realtime_analysis" checked>
+                        <label class="form-check-label" for="realTimeAnalysis">
+                            Análisis en tiempo real
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="postureCorrection" name="posture_correction" checked>
+                        <label class="form-check-label" for="postureCorrection">
+                            Corrección de postura automática
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">FPS de captura</label>
+                        <select class="form-select" name="capture_fps">
+                            <option value="15">15 FPS (Bajo)</option>
+                            <option value="30" selected>30 FPS (Medio)</option>
+                            <option value="60">60 FPS (Alto)</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interfaz y Apariencia -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-palette me-2"></i>Interfaz y Apariencia</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="setting_type" value="appearance">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tema del sistema</label>
+                        <select class="form-select" name="theme">
+                            <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>Claro</option>
+                            <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>Oscuro</option>
+                            <option value="auto" {% if settings.theme == 'auto' %}selected{% endif %}>Automático</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Idioma</label>
+                        <select class="form-select" name="language">
+                            <option value="es" {% if settings.language == 'es' %}selected{% endif %}>Español</option>
+                            <option value="en" {% if settings.language == 'en' %}selected{% endif %}>English</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="compactMode" name="compact_mode" {% if settings.compact_mode == 'on' %}checked{% endif %}>
+                        <label class="form-check-label" for="compactMode">
+                            Modo compacto
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Actualizar valor del slider de precisión
+document.getElementById('accuracyRange').addEventListener('input', function() {
+    document.getElementById('accuracyValue').textContent = this.value;
+});
+</script>
+
+{% endblock %}

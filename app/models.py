@@ -57,3 +57,26 @@ class Appointment(db.Model):
     date = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default='scheduled')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SystemSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.String(500))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    @staticmethod
+    def get_setting(key, default=None):
+        setting = SystemSettings.query.filter_by(key=key).first()
+        return setting.value if setting else default
+    
+    @staticmethod
+    def set_setting(key, value):
+        setting = SystemSettings.query.filter_by(key=key).first()
+        if setting:
+            setting.value = value
+            setting.updated_at = datetime.utcnow()
+        else:
+            setting = SystemSettings(key=key, value=value)
+            db.session.add(setting)
+        db.session.commit()
+        return setting

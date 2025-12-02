@@ -1,0 +1,62 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Pacientes - RehabSystem{% endblock %}
+{% block page_title %}Administración de Pacientes{% endblock %}
+{% block page_description %}Registro general de todos los pacientes del sistema.{% endblock %}
+
+{% block content %}
+
+<div class="card-custom p-4">
+
+    <h4>Resumen de Pacientes</h4>
+
+    <div class="progress-grid my-4">
+        <div class="progress-card">
+            <div class="progress-number">132</div>
+            <div class="progress-label">Activos</div>
+        </div>
+        <div class="progress-card">
+            <div class="progress-number">48</div>
+            <div class="progress-label">En terapia</div>
+        </div>
+        <div class="progress-card">
+            <div class="progress-number">12</div>
+            <div class="progress-label">Pendientes</div>
+        </div>
+        <div class="progress-card">
+            <div class="progress-number">7</div>
+            <div class="progress-label">Inactivos</div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h4>Acciones Rápidas</h4>
+
+    <div class="control-grid">
+
+        <div class="control-item">
+            <div class="control-icon icon-patients"><i class="fas fa-user-injured"></i></div>
+            <span class="control-text">Registrar Paciente</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-config"><i class="fas fa-folder-open"></i></div>
+            <span class="control-text">Ver Expedientes</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-export"><i class="fas fa-file-export"></i></div>
+            <span class="control-text">Exportar Listado</span>
+        </div>
+
+        <div class="control-item">
+            <div class="control-icon icon-va"><i class="fas fa-heartbeat"></i></div>
+            <span class="control-text">Estado de Terapias</span>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

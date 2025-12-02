@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RehabSystem - Sistema Avanzado de Rehabilitación</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- ======================= CSS EMBEBIDO SOLO PARA ESTA PÁGINA ======================= -->
+    <style>
+        :root {
+            --medical-blue: #2c5aa0;
+            --medical-blue-dark: #1a4f8a;
+            --medical-accent: #1a73e8;
+            --bg-soft: #f4f7fb;
+            --text-dark: #1f2937;
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background: var(--bg-soft);
+            color: var(--text-dark);
+            margin: 0;
+            padding-top: 70px;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .medical-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: var(--medical-blue);
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: #374151 !important;
+            transition: .2s;
+        }
+
+        .nav-link:hover {
+            color: var(--medical-blue) !important;
+        }
+
+        /* HERO */
+        .hero-section {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1a73e8 100%);
+            color: white;
+            padding: 120px 0;
+        }
+
+        .hero-title {
+            font-size: 2.7rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            margin-bottom: 25px;
+        }
+
+        .btn-medical-primary {
+            background: white;
+            color: var(--medical-blue);
+            padding: 0.9rem 2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: .3s;
+        }
+
+        .btn-medical-primary:hover {
+            background: #dbe9ff;
+        }
+
+        .btn-medical-outline {
+            border: 2px solid white;
+            color: white;
+            padding: 0.9rem 2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: .3s;
+        }
+
+        .btn-medical-outline:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .hero-banner-img {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        /* FEATURES */
+        .features-section {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .section-header h2 {
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: var(--medical-blue);
+        }
+
+        .section-subtitle {
+            font-size: 1rem;
+            opacity: 0.75;
+        }
+
+        .feature-card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            transition: .3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--medical-blue);
+            margin-bottom: 15px;
+        }
+
+        /* SERVICES */
+        .services-section {
+            padding: 80px 0;
+            background: var(--bg-soft);
+        }
+
+        .service-card {
+            display: flex;
+            gap: 15px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        }
+
+        .service-icon {
+            font-size: 2rem;
+            color: var(--medical-accent);
+        }
+
+        /* CONTACT */
+        .contact-section {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .contact-item {
+            display: flex;
+            gap: 15px;
+            background: #f8faff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .contact-icon {
+            font-size: 1.8rem;
+            color: var(--medical-blue);
+        }
+
+        /* FOOTER */
+        .medical-footer {
+            background: #1a4f8a;
+            color: white;
+            padding: 50px 0;
+        }
+
+        .footer-brand {
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+        }
+
+        .footer-links a {
+            display: block;
+            color: #e5e7eb;
+            margin-bottom: 7px;
+            text-decoration: none;
+            transition: .2s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            margin-top: 25px;
+            opacity: 0.85;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<!-- ======================= NAVBAR ======================= -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top">
+  <div class="container">
+    <a class="navbar-brand medical-brand" href="#">
+      <i class="fas fa-heartbeat me-2"></i>RehabSystem
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+
+        <li class="nav-item">
+          <a class="nav-link active" href="#">Inicio</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="#servicios">Servicios</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('login') }}">Iniciar Sesión</a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<!-- ======================= HERO SECTION ======================= -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center">
+
+      <div class="col-lg-6">
+        <div class="hero-content">
+          <h1 class="hero-title">
+            Sistema Avanzado de Rehabilitación con Visión Artificial
+          </h1>
+          <p class="hero-subtitle">
+            Tecnología de vanguardia para monitorear y optimizar tu proceso de rehabilitación.
+          </p>
+
+          <div class="hero-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-medical-outline btn-large">
+              <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+            </a>
+
+            <a href="#servicios" class="btn btn-medical-primary btn-large">
+              <i class="fas fa-info-circle me-2"></i>Conocer Más
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-lg-6 text-center">
+        <img src="{{ url_for('static', filename='images/banner-principal.png') }}"
+             alt="Sistema de Rehabilitación"
+             class="hero-banner-img" />
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ======================= FEATURES ======================= -->
+<section class="features-section">
+  <div class="container">
+    <div class="section-header text-center">
+      <h2>¿Por Qué Elegir RehabSystem?</h2>
+      <p class="section-subtitle">Tecnología innovadora al servicio de tu recuperación</p>
+    </div>
+
+    <div class="row mt-4">
+
+      <div class="col-md-4 mb-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-robot"></i></div>
+          <h3>Visión Artificial</h3>
+          <p>Monitoreo preciso mediante IA que analiza tus movimientos en tiempo real.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+          <h3>Seguimiento en Tiempo Real</h3>
+          <p>Obtén métricas detalladas de tu progreso sesión tras sesión.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-user-md"></i></div>
+          <h3>Acompañamiento Profesional</h3>
+          <p>Tu terapeuta monitorea y ajusta tu tratamiento de acuerdo con tus avances.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ======================= SERVICES ======================= -->
+<section id="servicios" class="services-section">
+  <div class="container">
+
+    <div class="section-header text-center">
+      <h2>Nuestros Servicios</h2>
+      <p class="section-subtitle">Soluciones completas para tu rehabilitación</p>
+    </div>
+
+    <div class="row mt-4">
+
+      <div class="col-lg-6 mb-4">
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-dumbbell"></i></div>
+          <div>
+            <h4>Terapia Personalizada</h4>
+            <p>Programas adaptados a tu condición y nivel de recuperación.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mb-4">
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-video"></i></div>
+          <div>
+            <h4>Sesiones Remotas</h4>
+            <p>Realiza tus terapias desde casa con supervisión profesional en vivo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mb-4">
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-file-medical"></i></div>
+          <div>
+            <h4>Reportes de Progreso</h4>
+            <p>Accede a reportes detallados de tu evolución.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mb-4">
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-mobile-alt"></i></div>
+          <div>
+            <h4>App Móvil</h4>
+            <p>Consulta rutinas, historial y más desde tu dispositivo.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+
+<!-- ======================= CONTACTO ======================= -->
+<section id="contacto" class="contact-section">
+  <div class="container">
+
+    <div class="section-header text-center">
+      <h2>Contáctanos</h2>
+      <p class="section-subtitle">Estamos aquí para ayudarte</p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="contact-info mt-4">
+          <div class="row">
+
+            <div class="col-md-6">
+              <div class="contact-item">
+                <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div><h5>Ubicación</h5><p>Ciudad de Panamá</p></div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="contact-item">
+                <div class="contact-icon"><i class="fas fa-phone"></i></div>
+                <div><h5>Teléfono</h5><p>+507 123-4567</p></div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="contact-item">
+                <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+                <div><h5>Email</h5><p>info@rehabsystem.com</p></div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="contact-item">
+                <div class="contact-icon"><i class="fas fa-clock"></i></div>
+                <div><h5>Horario</h5><p>Lun-Vie: 8:00 AM - 6:00 PM</p></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+
+<!-- ======================= FOOTER ======================= -->
+<footer class="medical-footer">
+  <div class="container">
+
+    <div class="row">
+
+      <div class="col-lg-4 mb-4">
+        <div class="footer-brand">
+          <i class="fas fa-heartbeat me-2"></i>RehabSystem
+        </div>
+        <p>Sistema avanzado de rehabilitación con visión artificial.</p>
+      </div>
+
+      <div class="col-lg-2 col-md-6 mb-4">
+        <div class="footer-links">
+          <h5>Enlaces</h5>
+          <a href="#">Inicio</a>
+          <a href="#servicios">Servicios</a>
+          <a href="#contacto">Contacto</a>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 mb-4">
+        <div class="footer-links">
+          <h5>Servicios</h5>
+          <a href="#">Terapias</a>
+          <a href="#">Sesiones Virtuales</a>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 mb-4">
+        <div class="footer-links">
+          <h5>Legal</h5>
+          <a href="#">Términos</a>
+          <a href="#">Privacidad</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2024 RehabSystem. Todos los derechos reservados.</p>
+    </div>
+
+  </div>
+</footer>
+
+
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

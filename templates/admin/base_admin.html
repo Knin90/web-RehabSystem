@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel Admin - RehabSystem{% endblock %}</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS global -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+</head>
+
+<body data-theme="{{ system_theme|default('light') }}" data-compact="{{ system_compact|default('false') }}" lang="{{ system_language|default('es') }}">
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-medical">
+            <i class="fas fa-hospital-user"></i>
+            <span>RehabSystem</span>
+        </div>
+    </div>
+
+    <div class="nav-title">Administración</div>
+
+    <!-- LINKS -->
+    <a href="{{ url_for('admin_dashboard') }}"
+       class="nav-link-custom {% if active_page=='dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i> Panel General
+    </a>
+
+    <a href="{{ url_for('admin_users') }}"
+       class="nav-link-custom {% if active_page=='users' %}active{% endif %}">
+        <i class="fas fa-users"></i> Usuarios
+    </a>
+
+    <a href="{{ url_for('admin_therapists') }}"
+       class="nav-link-custom {% if active_page=='therapists' %}active{% endif %}">
+        <i class="fas fa-user-md"></i> Terapeutas
+    </a>
+
+    <a href="{{ url_for('admin_patients') }}"
+       class="nav-link-custom {% if active_page=='patients' %}active{% endif %}">
+        <i class="fas fa-procedures"></i> Pacientes
+    </a>
+
+    <a href="{{ url_for('admin_settings') }}"
+       class="nav-link-custom {% if active_page=='settings' %}active{% endif %}">
+        <i class="fas fa-cog"></i> Configuración
+    </a>
+    
+    <a href="{{ url_for('admin_export_data') }}"
+       class="nav-link-custom {% if active_page=='export' %}active{% endif %}">
+        <i class="fas fa-download"></i> Exportar Datos
+    </a>
+
+    <div style="margin-top: 2rem; padding: 0 1.5rem;">
+        <a href="{{ url_for('logout') }}" class="btn btn-danger w-100">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </a>
+    </div>
+</div>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="main-content">
+
+    <header class="header-bar">
+        <div>
+            <h2 class="page-title">{% block page_title %}{% endblock %}</h2>
+            <p class="page-description">{% block page_description %}{% endblock %}</p>
+        </div>
+
+        <div class="user-avatar">
+            {{ current_user.username[0:2] | upper }}
+        </div>
+    </header>
+
+    <div class="content-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+
+</div>
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/theme-manager.js') }}"></script>
+
+<script>
+// Pasar configuraciones del servidor al JavaScript
+{% if system_theme %}
+localStorage.setItem('setting_theme', '{{ system_theme }}');
+{% endif %}
+{% if system_language %}
+localStorage.setItem('setting_language', '{{ system_language }}');
+{% endif %}
+{% if system_compact %}
+localStorage.setItem('setting_compact_mode', '{{ system_compact }}');
+{% endif %}
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

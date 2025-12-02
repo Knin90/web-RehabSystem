@@ -1,0 +1,52 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Configuración Paciente - RehabSystem{% endblock %}
+{% block page_title %}Configuración de la cuenta{% endblock %}
+{% block page_description %}Preferencias personales de notificación y privacidad.{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header-custom">
+        <h5 class="card-title mb-0">Preferencias</h5>
+    </div>
+    <div class="card-body">
+        <form class="row g-3">
+            <div class="col-md-6">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="notifEmail" checked>
+                    <label class="form-check-label" for="notifEmail">
+                        Recibir recordatorios por correo electrónico
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="notifPush">
+                    <label class="form-check-label" for="notifPush">
+                        Recibir notificaciones push (si están disponibles)
+                    </label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <hr>
+                <h6 class="mb-3">Privacidad</h6>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Compartir datos de progreso con el terapeuta</label>
+                <select class="form-select">
+                    <option>Siempre</option>
+                    <option>Solo durante el tratamiento activo</option>
+                    <option>Nunca</option>
+                </select>
+            </div>
+
+            <div class="col-12 text-end mt-3">
+                <button type="button" class="btn btn-secondary me-2">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar preferencias</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

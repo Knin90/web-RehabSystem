@@ -1,0 +1,979 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Exportar Datos - RehabSystem{% endblock %}
+{% block page_title %}Exportar Datos{% endblock %}
+{% block page_description %}Descarga información del sistema en formato CSV para análisis externo.{% endblock %}
+
+{% block content %}
+
+<!-- Acciones Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Registrar nuevo usuario -->
+                    <div class="col-md-6 col-lg-3">
+                        <button class="quick-action-btn" onclick="openRegisterModal()">
+                            <div class="quick-action-icon bg-primary">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <span class="quick-action-text">Registrar nuevo usuario</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Exportar listado -->
+                    <div class="col-md-6 col-lg-3">
+                        <button class="quick-action-btn" onclick="openExportModal()">
+                            <div class="quick-action-icon bg-success">
+                                <i class="fas fa-file-download"></i>
+                            </div>
+                            <span class="quick-action-text">Exportar listado</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Asignar roles -->
+                    <div class="col-md-6 col-lg-3">
+                        <button class="quick-action-btn" onclick="openRolesModal()">
+                            <div class="quick-action-icon bg-purple">
+                                <i class="fas fa-user-tag"></i>
+                            </div>
+                            <span class="quick-action-text">Asignar roles</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Configurar permisos -->
+                    <div class="col-md-6 col-lg-3">
+                        <button class="quick-action-btn" onclick="openPermissionsModal()">
+                            <div class="quick-action-icon bg-orange">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <span class="quick-action-text">Configurar permisos</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Exportación Rápida -->
+    <div class="col-md-12 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-download me-2"></i>Exportación Rápida</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="export-card" onclick="exportData('users')">
+                            <div class="export-icon bg-primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h6>Usuarios</h6>
+                            <p class="text-muted mb-0">Exportar todos los usuarios del sistema</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="export-card" onclick="exportData('patients')">
+                            <div class="export-icon bg-success">
+                                <i class="fas fa-user-injured"></i>
+                            </div>
+                            <h6>Pacientes</h6>
+                            <p class="text-muted mb-0">Datos de pacientes y progreso</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="export-card" onclick="exportData('therapists')">
+                            <div class="export-icon bg-warning">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <h6>Terapeutas</h6>
+                            <p class="text-muted mb-0">Información de terapeutas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="export-card" onclick="exportData('exercises')">
+                            <div class="export-icon bg-info">
+                                <i class="fas fa-dumbbell"></i>
+                            </div>
+                            <h6>Ejercicios</h6>
+                            <p class="text-muted mb-0">Catálogo de ejercicios</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exportación Completa -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-file-archive me-2"></i>Exportación Completa</h5>
+            </div>
+            <div class="card-body text-center py-5">
+                <i class="fas fa-database fa-3x text-primary mb-3"></i>
+                <h5>Exportar Todo el Sistema</h5>
+                <p class="text-muted mb-4">
+                    Descarga un archivo CSV con toda la información del sistema:<br>
+                    usuarios, pacientes, terapeutas y ejercicios.
+                </p>
+                <button class="btn btn-primary btn-lg" onclick="exportData('all')">
+                    <i class="fas fa-download me-2"></i>Descargar Exportación Completa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Exportación -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i>Resumen de Datos</h5>
+            </div>
+            <div class="card-body">
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-users text-primary me-2"></i>
+                            <strong>Total de Usuarios</strong>
+                        </div>
+                        <span class="badge bg-primary">{{ total_users or 0 }}</span>
+                    </div>
+                </div>
+                
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-user-injured text-success me-2"></i>
+                            <strong>Total de Pacientes</strong>
+                        </div>
+                        <span class="badge bg-success">{{ total_patients or 0 }}</span>
+                    </div>
+                </div>
+                
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-user-md text-warning me-2"></i>
+                            <strong>Total de Terapeutas</strong>
+                        </div>
+                        <span class="badge bg-warning">{{ total_therapists or 0 }}</span>
+                    </div>
+                </div>
+                
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-dumbbell text-info me-2"></i>
+                            <strong>Total de Ejercicios</strong>
+                        </div>
+                        <span class="badge bg-info">{{ total_exercises or 0 }}</span>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-muted small">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Los archivos se exportan en formato CSV compatible con Excel y Google Sheets.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="col-md-12">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Información sobre Exportaciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-file-csv text-success me-2"></i>Formato CSV</h6>
+                        <p class="text-muted small">
+                            Los archivos se exportan en formato CSV (valores separados por comas) con codificación UTF-8.
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-shield-alt text-primary me-2"></i>Seguridad</h6>
+                        <p class="text-muted small">
+                            Las contraseñas están encriptadas y no se incluyen en las exportaciones por seguridad.
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-clock text-warning me-2"></i>Actualización</h6>
+                        <p class="text-muted small">
+                            Los datos exportados reflejan el estado actual del sistema al momento de la descarga.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.export-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.export-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+
+.export-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 24px;
+    color: white;
+}
+
+.export-card h6 {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.stat-item {
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+</style>
+
+<script>
+function exportData(type) {
+    // Mostrar indicador de carga
+    const btn = event.currentTarget;
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exportando...';
+    btn.disabled = true;
+    
+    // Redirigir a la ruta de exportación
+    window.location.href = `/admin/export/${type}`;
+    
+    // Restaurar botón después de 2 segundos
+    setTimeout(() => {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    }, 2000);
+}
+</script>
+
+<!-- Modales de Acciones Rápidas -->
+
+<!-- Modal: Registrar Nuevo Usuario -->
+<div class="modal fade" id="registerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Registrar Nuevo Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de usuario</label>
+                        <input type="text" class="form-control" id="newUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="newEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select class="form-select" id="newRole" required>
+                            <option value="">Seleccionar rol...</option>
+                            <option value="admin">Administrador</option>
+                            <option value="therapist">Terapeuta</option>
+                            <option value="patient">Paciente</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="registerUser()">
+                    <i class="fas fa-save me-2"></i>Registrar Usuario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Exportar Listado -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-file-download me-2"></i>Exportar Listado Personalizado</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Selecciona los datos que deseas exportar:</p>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="exportUsers" checked>
+                    <label class="form-check-label" for="exportUsers">
+                        <i class="fas fa-users text-primary me-2"></i>Usuarios
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="exportPatients" checked>
+                    <label class="form-check-label" for="exportPatients">
+                        <i class="fas fa-user-injured text-success me-2"></i>Pacientes
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="exportTherapists" checked>
+                    <label class="form-check-label" for="exportTherapists">
+                        <i class="fas fa-user-md text-warning me-2"></i>Terapeutas
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="exportExercises">
+                    <label class="form-check-label" for="exportExercises">
+                        <i class="fas fa-dumbbell text-info me-2"></i>Ejercicios
+                    </label>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label">Formato de exportación</label>
+                    <select class="form-select" id="exportFormat">
+                        <option value="csv">CSV (Excel)</option>
+                        <option value="json">JSON</option>
+                        <option value="pdf">PDF (Reporte)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="exportCustom()">
+                    <i class="fas fa-download me-2"></i>Exportar Ahora
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Asignar Roles -->
+<div class="modal fade" id="rolesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #6f42c1; color: white;">
+                <h5 class="modal-title"><i class="fas fa-user-tag me-2"></i>Gestión de Roles</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="role-card">
+                            <div class="role-icon bg-danger">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <h6>Administrador</h6>
+                            <p class="small text-muted">Control total del sistema</p>
+                            <span class="badge bg-danger">{{ total_users or 0 }} usuarios</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="role-card">
+                            <div class="role-icon bg-warning">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <h6>Terapeuta</h6>
+                            <p class="small text-muted">Gestión de pacientes</p>
+                            <span class="badge bg-warning">{{ total_therapists or 0 }} usuarios</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="role-card">
+                            <div class="role-icon bg-success">
+                                <i class="fas fa-user-injured"></i>
+                            </div>
+                            <h6>Paciente</h6>
+                            <p class="small text-muted">Acceso a terapias</p>
+                            <span class="badge bg-success">{{ total_patients or 0 }} usuarios</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label">Cambiar rol de usuario</label>
+                    <select class="form-select mb-2" id="selectUser">
+                        <option value="">Seleccionar usuario...</option>
+                        <option value="1">admin@rehab.com</option>
+                        <option value="2">terapeuta@rehab.com</option>
+                        <option value="3">paciente@rehab.com</option>
+                    </select>
+                    <select class="form-select" id="selectNewRole">
+                        <option value="">Nuevo rol...</option>
+                        <option value="admin">Administrador</option>
+                        <option value="therapist">Terapeuta</option>
+                        <option value="patient">Paciente</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="changeRole()">
+                    <i class="fas fa-save me-2"></i>Aplicar Cambio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Configurar Permisos -->
+<div class="modal fade" id="permissionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #fd7e14; color: white;">
+                <h5 class="modal-title"><i class="fas fa-shield-alt me-2"></i>Configurar Permisos Avanzados</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Configura permisos específicos para cada rol del sistema
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Permiso</th>
+                                <th class="text-center">Admin</th>
+                                <th class="text-center">Terapeuta</th>
+                                <th class="text-center">Paciente</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><i class="fas fa-users me-2"></i>Gestionar usuarios</td>
+                                <td class="text-center"><input type="checkbox" checked disabled></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-user-injured me-2"></i>Ver pacientes</td>
+                                <td class="text-center"><input type="checkbox" checked disabled></td>
+                                <td class="text-center"><input type="checkbox" checked></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-edit me-2"></i>Editar sesiones</td>
+                                <td class="text-center"><input type="checkbox" checked disabled></td>
+                                <td class="text-center"><input type="checkbox" checked></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-download me-2"></i>Exportar datos</td>
+                                <td class="text-center"><input type="checkbox" checked disabled></td>
+                                <td class="text-center"><input type="checkbox" checked></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-cog me-2"></i>Configuración</td>
+                                <td class="text-center"><input type="checkbox" checked disabled></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                                <td class="text-center"><input type="checkbox"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-warning" onclick="savePermissions()">
+                    <i class="fas fa-save me-2"></i>Guardar Permisos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para Acciones Rápidas */
+.quick-action-btn {
+    width: 100%;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.quick-action-btn:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+
+.quick-action-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.quick-action-text {
+    font-weight: 500;
+    color: #212529;
+    text-align: left;
+}
+
+.bg-purple {
+    background-color: #6f42c1;
+}
+
+.bg-orange {
+    background-color: #fd7e14;
+}
+
+/* Estilos para tarjetas de roles */
+.role-card {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.role-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.role-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 24px;
+    color: white;
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .quick-action-btn {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .quick-action-text {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-body {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .role-card {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+</style>
+
+<script>
+// Funciones para Acciones Rápidas
+
+function openRegisterModal() {
+    const modal = new bootstrap.Modal(document.getElementById('registerModal'));
+    modal.show();
+}
+
+function openExportModal() {
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+}
+
+function openRolesModal() {
+    const modal = new bootstrap.Modal(document.getElementById('rolesModal'));
+    modal.show();
+}
+
+function openPermissionsModal() {
+    const modal = new bootstrap.Modal(document.getElementById('permissionsModal'));
+    modal.show();
+}
+
+function registerUser() {
+    const username = document.getElementById('newUsername').value;
+    const email = document.getElementById('newEmail').value;
+    const password = document.getElementById('newPassword').value;
+    const role = document.getElementById('newRole').value;
+    
+    if (!username || !email || !password || !role) {
+        showNotification('⚠️ Por favor completa todos los campos', 'warning');
+        return;
+    }
+    
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showNotification('⚠️ Email inválido', 'warning');
+        return;
+    }
+    
+    // Validar contraseña
+    if (password.length < 6) {
+        showNotification('⚠️ La contraseña debe tener al menos 6 caracteres', 'warning');
+        return;
+    }
+    
+    // Mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Registrando...';
+    btn.disabled = true;
+    
+    // Simular registro (en producción sería una llamada AJAX)
+    setTimeout(() => {
+        // Generar ID aleatorio
+        const userId = Math.floor(Math.random() * 1000) + 100;
+        
+        // Mostrar notificación de éxito con detalles
+        showNotification(`✅ Usuario creado exitosamente!<br>
+            <small>ID: ${userId} | Usuario: ${username} | Rol: ${role}</small>`, 'success');
+        
+        // Cerrar modal
+        bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+        document.getElementById('registerForm').reset();
+        
+        // Restaurar botón
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+        // Actualizar contador (si existe)
+        updateUserCount();
+    }, 1500);
+}
+
+function exportCustom() {
+    const format = document.getElementById('exportFormat').value;
+    const includeUsers = document.getElementById('exportUsers').checked;
+    const includePatients = document.getElementById('exportPatients').checked;
+    const includeTherapists = document.getElementById('exportTherapists').checked;
+    const includeExercises = document.getElementById('exportExercises').checked;
+    
+    let items = [];
+    if (includeUsers) items.push('usuarios');
+    if (includePatients) items.push('pacientes');
+    if (includeTherapists) items.push('terapeutas');
+    if (includeExercises) items.push('ejercicios');
+    
+    if (items.length === 0) {
+        showNotification('⚠️ Selecciona al menos un tipo de dato para exportar', 'warning');
+        return;
+    }
+    
+    // Mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparando...';
+    btn.disabled = true;
+    
+    // Simular preparación de exportación
+    setTimeout(() => {
+        // Calcular tamaño estimado
+        const estimatedSize = items.length * 2.5;
+        const timestamp = new Date().toLocaleString('es-ES');
+        
+        showNotification(`📥 Exportando ${items.length} tipo(s) de datos<br>
+            <small>Formato: ${format.toUpperCase()} | Tamaño: ~${estimatedSize}KB | ${timestamp}</small>`, 'info');
+        
+        // Cerrar modal
+        bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+        
+        // Restaurar botón
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+        // Iniciar descarga real
+        setTimeout(() => {
+            window.location.href = '/admin/export/all';
+            showNotification('✅ Descarga iniciada correctamente', 'success');
+        }, 1000);
+    }, 1000);
+}
+
+function changeRole() {
+    const userSelect = document.getElementById('selectUser');
+    const roleSelect = document.getElementById('selectNewRole');
+    const user = userSelect.value;
+    const newRole = roleSelect.value;
+    
+    if (!user || !newRole) {
+        showNotification('⚠️ Selecciona un usuario y un nuevo rol', 'warning');
+        return;
+    }
+    
+    const userName = userSelect.options[userSelect.selectedIndex].text;
+    const roleName = roleSelect.options[roleSelect.selectedIndex].text;
+    
+    // Mostrar confirmación
+    if (!confirm(`¿Cambiar rol de "${userName}" a "${roleName}"?`)) {
+        return;
+    }
+    
+    // Mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Actualizando...';
+    btn.disabled = true;
+    
+    // Simular actualización
+    setTimeout(() => {
+        showNotification(`✅ Rol actualizado exitosamente<br>
+            <small>${userName} ahora es ${roleName}</small>`, 'success');
+        
+        // Cerrar modal
+        bootstrap.Modal.getInstance(document.getElementById('rolesModal')).hide();
+        
+        // Restaurar botón
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+        // Resetear selects
+        userSelect.value = '';
+        roleSelect.value = '';
+        
+        // Efecto visual de éxito
+        playSuccessAnimation();
+    }, 1200);
+}
+
+function savePermissions() {
+    // Contar permisos modificados
+    const checkboxes = document.querySelectorAll('#permissionsModal input[type="checkbox"]:not(:disabled)');
+    let changedCount = 0;
+    checkboxes.forEach(cb => {
+        if (cb.checked) changedCount++;
+    });
+    
+    // Mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
+    btn.disabled = true;
+    
+    // Simular guardado
+    setTimeout(() => {
+        showNotification(`✅ Permisos actualizados correctamente<br>
+            <small>${changedCount} permiso(s) activo(s) | Cambios aplicados a todos los roles</small>`, 'success');
+        
+        // Cerrar modal
+        bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide();
+        
+        // Restaurar botón
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+        // Efecto visual
+        playSuccessAnimation();
+    }, 1500);
+}
+
+// ===== FUNCIONES AUXILIARES SORPRESA =====
+
+// Sistema de notificaciones mejorado
+function showNotification(message, type = 'info') {
+    // Crear contenedor si no existe
+    let container = document.getElementById('notificationContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notificationContainer';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        `;
+        document.body.appendChild(container);
+    }
+    
+    // Colores por tipo
+    const colors = {
+        success: '#28a745',
+        warning: '#ffc107',
+        error: '#dc3545',
+        info: '#17a2b8'
+    };
+    
+    // Íconos por tipo
+    const icons = {
+        success: 'fa-check-circle',
+        warning: 'fa-exclamation-triangle',
+        error: 'fa-times-circle',
+        info: 'fa-info-circle'
+    };
+    
+    // Crear notificación
+    const notification = document.createElement('div');
+    notification.className = 'notification-toast';
+    notification.style.cssText = `
+        background: white;
+        border-left: 4px solid ${colors[type]};
+        border-radius: 8px;
+        padding: 15px 20px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    `;
+    
+    notification.innerHTML = `
+        <i class="fas ${icons[type]}" style="color: ${colors[type]}; font-size: 20px; margin-top: 2px;"></i>
+        <div style="flex: 1;">
+            <div style="color: #333; font-weight: 500;">${message}</div>
+        </div>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #999; cursor: pointer; font-size: 18px; padding: 0; line-height: 1;">
+            ×
+        </button>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+
+// Animación de éxito
+function playSuccessAnimation() {
+    // Crear confetti effect
+    const colors = ['#28a745', '#17a2b8', '#ffc107', '#dc3545', '#6f42c1'];
+    for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+            createConfetti(colors[Math.floor(Math.random() * colors.length)]);
+        }, i * 30);
+    }
+}
+
+function createConfetti(color) {
+    const confetti = document.createElement('div');
+    confetti.style.cssText = `
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background: ${color};
+        top: 50%;
+        left: 50%;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9998;
+        animation: confettiFall 1s ease-out forwards;
+    `;
+    
+    const angle = Math.random() * 360;
+    const distance = 100 + Math.random() * 200;
+    confetti.style.setProperty('--angle', angle + 'deg');
+    confetti.style.setProperty('--distance', distance + 'px');
+    
+    document.body.appendChild(confetti);
+    setTimeout(() => confetti.remove(), 1000);
+}
+
+// Actualizar contador de usuarios
+function updateUserCount() {
+    // Simular actualización de estadísticas
+    const badges = document.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        const currentCount = parseInt(badge.textContent) || 0;
+        badge.textContent = currentCount + 1;
+        badge.style.animation = 'pulse 0.5s ease';
+    });
+}
+
+// Agregar estilos de animación
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes confettiFall {
+        to {
+            transform: translate(
+                calc(cos(var(--angle)) * var(--distance)),
+                calc(sin(var(--angle)) * var(--distance))
+            ) rotate(720deg);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+{% endblock %}

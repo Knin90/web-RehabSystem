@@ -1,0 +1,42 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Perfil Paciente - RehabSystem{% endblock %}
+{% block page_title %}Perfil del paciente{% endblock %}
+{% block page_description %}Datos básicos asociados a tu cuenta.{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header-custom">
+        <h5 class="card-title mb-0">Información personal</h5>
+    </div>
+    <div class="card-body">
+        <form class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nombre completo</label>
+                <input type="text" class="form-control" value="{{ datos.nombre_completo }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Diagnóstico principal</label>
+                <input type="text" class="form-control" value="{{ datos.diagnostico }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Edad</label>
+                <input type="number" class="form-control" value="28">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control" value="+507 6000-0000">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Correo electrónico</label>
+                <input type="email" class="form-control" value="paciente@ejemplo.com">
+            </div>
+
+            <div class="col-12 text-end mt-3">
+                <button type="button" class="btn btn-secondary me-2">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

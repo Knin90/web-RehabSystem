@@ -1,0 +1,101 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Dashboard Paciente - RehabSystem{% endblock %}
+{% block page_title %}Bienvenido, {{ datos.nombre_completo }}{% endblock %}
+{% block page_description %}Resumen de tu progreso y próximas sesiones de rehabilitación.{% endblock %}
+
+{% block content %}
+<div class="hero-admin mb-4">
+    <div class="hero-content-admin">
+        <h3 class="hero-title-admin">Tu rehabilitación, paso a paso</h3>
+        <p class="hero-subtitle-admin">
+            Aquí puedes ver tu avance, próximas citas y acceder rápidamente a tu rutina guiada.
+        </p>
+        <a href="{{ url_for('patient_start_therapy') }}" class="btn btn-light btn-sm mt-2">
+            <i class="fas fa-play-circle me-2"></i>Iniciar rutina ahora
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-grid-admin">
+    <div class="left-column">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0">Resumen de progreso</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress-grid">
+                    <div class="progress-card">
+                        <div class="progress-number">{{ datos.progreso }}%</div>
+                        <div class="progress-label">Progreso global</div>
+                        <div class="progress-subtitle">Basado en tus sesiones completadas</div>
+                    </div>
+                    <div class="progress-card">
+                        <div class="progress-number">{{ datos.sesiones_completadas }}/{{ datos.sesiones_totales }}</div>
+                        <div class="progress-label">Sesiones</div>
+                        <div class="progress-subtitle">Completadas / Totales</div>
+                    </div>
+                    <div class="progress-card">
+                        <div class="progress-number">3</div>
+                        <div class="progress-label">Sesiones esta semana</div>
+                        <div class="progress-subtitle">Objetivo recomendado: 4</div>
+                    </div>
+                    <div class="progress-card">
+                        <div class="progress-number">Alta</div>
+                        <div class="progress-label">Compromiso</div>
+                        <div class="progress-subtitle">Según asistencia reciente</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-column">
+        <div class="card card-custom mb-3">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0">Próximas sesiones</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3 d-flex justify-content-between">
+                        <div>
+                            <strong>Sesión de movilidad lumbar</strong><br>
+                            <small class="text-muted">Con Dra. Ana Pérez · 03/12/2025 · 10:30 a.m.</small>
+                        </div>
+                        <span class="badge bg-primary">Confirmada</span>
+                    </li>
+                    <li class="mb-3 d-flex justify-content-between">
+                        <div>
+                            <strong>Ejercicios de fortalecimiento</strong><br>
+                            <small class="text-muted">Con Dra. Ana Pérez · 05/12/2025 · 9:00 a.m.</small>
+                        </div>
+                        <span class="badge bg-warning text-dark">Por confirmar</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0">Indicaciones recientes</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Mantener postura neutra al realizar los ejercicios de flexión.
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Evitar movimientos bruscos al levantarse de la silla.
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Realizar estiramientos suaves antes de la rutina.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

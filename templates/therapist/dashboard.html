@@ -1,0 +1,73 @@
+{% extends "therapist/base_terapeuta.html" %}
+
+{% block title %}Dashboard Terapeuta - RehabSystem{% endblock %}
+{% block page_title %}Panel del terapeuta{% endblock %}
+{% block page_description %}Resumen de pacientes, sesiones y actividad reciente.{% endblock %}
+
+{% block content %}
+<div class="hero-admin mb-4">
+    <div class="hero-content-admin">
+        <h3 class="hero-title-admin">Tu agenda clínica de hoy</h3>
+        <p class="hero-subtitle-admin">
+            Revisa tus próximas citas, el estado de tus pacientes y accede rápido al monitoreo por cámara.
+        </p>
+        <a href="{{ url_for('therapist_start_session') }}" class="btn btn-light btn-sm mt-2">
+            <i class="fas fa-video me-2"></i>Monitorear sesión
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-grid-admin">
+    <div class="left-column">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0">Resumen de hoy</h5>
+            </div>
+            <div class="card-body progress-grid">
+                <div class="progress-card">
+                    <div class="progress-number">8</div>
+                    <div class="progress-label">Citas de hoy</div>
+                </div>
+                <div class="progress-card">
+                    <div class="progress-number">24</div>
+                    <div class="progress-label">Pacientes activos</div>
+                </div>
+                <div class="progress-card">
+                    <div class="progress-number">4</div>
+                    <div class="progress-label">Rutinas en revisión</div>
+                </div>
+                <div class="progress-card">
+                    <div class="progress-number">2</div>
+                    <div class="progress-label">Altas programadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-column">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="card-title mb-0">Próximas citas</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3 d-flex justify-content-between">
+                        <div>
+                            <strong>Jackson Navarro</strong><br>
+                            <small class="text-muted">Lumbar básica · 09:00 a.m.</small>
+                        </div>
+                        <span class="badge bg-primary">En horario</span>
+                    </li>
+                    <li class="mb-3 d-flex justify-content-between">
+                        <div>
+                            <strong>María Gómez</strong><br>
+                            <small class="text-muted">Rodilla · 10:30 a.m.</small>
+                        </div>
+                        <span class="badge bg-warning text-dark">Confirmación pendiente</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

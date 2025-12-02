@@ -1,11 +1,30 @@
 from app import create_app, db
-from app.models import User, Patient, Therapist, Exercise
+from app.models import User, Patient, Therapist, Exercise, SystemSettings
 
 app = create_app()
 
 with app.app_context():
     db.drop_all()
     db.create_all()
+    
+    # Crear configuraciones por defecto
+    default_settings = {
+        'theme': 'light',
+        'language': 'es',
+        'session_duration': '45',
+        'sessions_per_week': '3',
+        'rest_time': '30',
+        'email_notifications': 'on',
+        'appointment_reminder': 'on',
+        'progress_report': 'on',
+        'detection_accuracy': '85',
+        'realtime_analysis': 'on',
+        'posture_correction': 'on',
+        'capture_fps': '30'
+    }
+    
+    for key, value in default_settings.items():
+        SystemSettings.set_setting(key, value)
     
     # Crear usuarios
     admin = User(username='admin', email='admin@rehab.com', role='admin')

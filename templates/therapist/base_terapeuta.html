@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel Terapeuta - RehabSystem{% endblock %}</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-medical">
+            <i class="fas fa-user-md"></i>
+            <span>RehabSystem</span>
+        </div>
+    </div>
+
+    <div class="nav-title">Terapeuta</div>
+
+    <a href="{{ url_for('therapist_dashboard') }}" class="nav-link-custom {% if active_page=='dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i> Inicio
+    </a>
+
+    <a href="{{ url_for('therapist_patients') }}" class="nav-link-custom {% if active_page=='patients' %}active{% endif %}">
+        <i class="fas fa-users"></i> Pacientes
+    </a>
+
+    <a href="{{ url_for('therapist_start_session') }}" class="nav-link-custom {% if active_page=='start_session' %}active{% endif %}">
+        <i class="fas fa-dumbbell"></i> Sesión Activa
+    </a>
+
+    <a href="{{ url_for('therapist_appointments') }}" class="nav-link-custom {% if active_page=='appointments' %}active{% endif %}">
+        <i class="fas fa-calendar-check"></i> Citas
+    </a>
+
+    <a href="{{ url_for('therapist_routines') }}" class="nav-link-custom {% if active_page=='routines' %}active{% endif %}">
+        <i class="fas fa-tasks"></i> Rutinas
+    </a>
+
+    <div style="margin-top: 2rem; padding: 0 1.5rem;">
+        <a href="{{ url_for('logout') }}" class="btn btn-danger w-100">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </a>
+    </div>
+</div>
+
+<div class="main-content">
+    <header class="header-bar">
+        <div>
+            <h2>{% block page_title %}{% endblock %}</h2>
+            <p class="page-description">{% block page_description %}{% endblock %}</p>
+        </div>
+
+        <div class="user-avatar">
+            {{ current_user.username[0:2] | upper }}
+        </div>
+    </header>
+
+    <div class="content-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
