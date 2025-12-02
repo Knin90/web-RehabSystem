@@ -233,7 +233,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 ## 👨‍💻 Autor
 
-**Denis** - Desarrollador Principal
+**Kunin Denis** - Desarrollador Principal
 
 ## 🙏 Agradecimientos
 
