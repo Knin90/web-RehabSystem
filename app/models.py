@@ -84,14 +84,14 @@ class SystemSettings(db.Model):
 class SessionCapture(db.Model):
     """Modelo para almacenar capturas de fotos y videos de sesiones"""
     id = db.Column(db.Integer, primary_key=True)
-    therapist_id = db.Column(db.Integer, db.ForeignKey('therapist.id'), nullable=False)
+    therapist_id = db.Column(db.Integer, db.ForeignKey('therapist.id'), nullable=True)  # Nullable para capturas de pacientes
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=True)
     capture_type = db.Column(db.String(20), nullable=False)  # 'photo' o 'video'
     filename = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
     file_size = db.Column(db.Integer)  # Tamaño en bytes
     duration = db.Column(db.Integer)  # Duración en segundos (solo para videos)
-    notes = db.Column(db.Text)  # Notas del terapeuta
+    notes = db.Column(db.Text)  # Notas del terapeuta o paciente
     session_date = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
