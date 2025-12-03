@@ -26,6 +26,11 @@
                        playsinline>
                 </video>
                 
+                <!-- Indicador de grabación -->
+                <div id="recordingIndicator" class="recording-indicator">
+                    <span>REC</span>
+                </div>
+                
                 <!-- Placeholder cuando la cámara está apagada -->
                 <div id="cameraPlaceholder" 
                      class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center text-white"
@@ -37,15 +42,21 @@
             </div>
             
             <!-- Controles de cámara -->
-            <div class="mt-3 d-flex gap-2">
+            <div class="mt-3 d-flex gap-2 flex-wrap">
                 <button id="btnToggleCamera" class="btn btn-success">
                     <i class="fas fa-video"></i> Iniciar Cámara
                 </button>
                 <button id="btnCaptureSnapshot" class="btn btn-primary" disabled>
                     <i class="fas fa-camera"></i> Capturar Foto
                 </button>
+                <button id="btnRecordVideo" class="btn btn-danger" disabled>
+                    <i class="fas fa-circle"></i> Grabar Video
+                </button>
                 <button class="btn btn-secondary" onclick="toggleFullscreen()">
                     <i class="fas fa-expand"></i> Pantalla Completa
+                </button>
+                <button class="btn btn-info" onclick="viewCaptures()">
+                    <i class="fas fa-folder-open"></i> Ver Capturas
                 </button>
             </div>
         </div>
@@ -103,6 +114,80 @@ function saveNote() {
         setTimeout(() => alert.remove(), 3000);
     } else {
         alert('Por favor escribe una nota antes de guardar.');
+    }
+}
+
+// Función para ver capturas guardadas
+async function viewCaptures() {
+    try {
+        const response = await fetch('/api/get-captures');
+        const result = await response.json();
+        
+        if (result.success) {
+            // Crear modal para mostrar capturas
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'capturesModal';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-folder-open"></i> Capturas Guardadas (${result.total})
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Archivo</th>
+                                            <th>Tamaño</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${result.captures.map(capture => `
+                                            <tr>
+                                                <td>
+                                                    <i class="fas fa-${capture.type === 'photo' ? 'camera' : 'video'}"></i>
+                                                    ${capture.type === 'photo' ? 'Foto' : 'Video'}
+                                                </td>
+                                                <td>${capture.filename}</td>
+                                                <td>${(capture.file_size / 1024).toFixed(2)} KB</td>
+                                                <td>${capture.created_at}</td>
+                                                <td>
+                                                    <a href="/${capture.file_path}" target="_blank" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Remover modal al cerrar
+            modal.addEventListener('hidden.bs.modal', () => {
+                modal.remove();
+            });
+        } else {
+            alert('Error al cargar capturas: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cargar capturas');
     }
 }
 
