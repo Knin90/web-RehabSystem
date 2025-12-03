@@ -187,7 +187,6 @@ Para acceder al sistema en modo desarrollo:
 
 ### Base de Datos
 - **SQLite** (desarrollo)
-- **PostgreSQL** (producción recomendada)
 
 ## 📊 Modelos de Base de Datos
 
