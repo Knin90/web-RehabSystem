@@ -1064,15 +1064,21 @@ def register_routes(app):
             exercises_list = []
             for routine_ex in routine.exercises:
                 exercise = routine_ex.exercise
+                
+                # Validar que el ejercicio existe
+                if not exercise:
+                    print(f"Warning: Exercise ID {routine_ex.exercise_id} not found")
+                    continue
+                
                 exercises_list.append({
                     'id': exercise.id,
                     'name': exercise.name,
-                    'description': exercise.description,
-                    'category': exercise.category,
+                    'description': exercise.description or '',
+                    'category': exercise.category or '',
                     'sets': routine_ex.sets,
                     'repetitions': routine_ex.repetitions,
                     'rest_seconds': routine_ex.rest_seconds,
-                    'notes': routine_ex.notes,
+                    'notes': routine_ex.notes or '',
                     'order': routine_ex.order
                 })
             
