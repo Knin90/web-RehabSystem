@@ -61,6 +61,7 @@
                     <td>{{ patient.diagnosis or 'N/A' }}</td>
                     <td>
                         <div class="progress" style="height: 20px;">
+                            <!-- Jinja2 template variable -->
                             <div class="progress-bar" role="progressbar" 
                                  style="width: {{ patient.progress }}%">
                                 {{ patient.progress }}%
@@ -76,10 +77,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="viewPatient({{ patient.id }})">
+                        <button class="btn btn-sm btn-info" data-action="view" data-id="{{ patient.id }}">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-warning" onclick="editPatient({{ patient.id }})">
+                        <button class="btn btn-sm btn-warning" data-action="edit" data-id="{{ patient.id }}">
                             <i class="fas fa-edit"></i>
                         </button>
                     </td>
@@ -151,6 +152,26 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Event delegation para botones de acción
+    const tbody = document.querySelector('tbody');
+    if (tbody) {
+        tbody.addEventListener('click', function(e) {
+            const button = e.target.closest('button[data-action]');
+            if (!button) return;
+            
+            const action = button.dataset.action;
+            const id = button.dataset.id;
+            
+            if (action === 'view') {
+                viewPatient(id);
+            } else if (action === 'edit') {
+                editPatient(id);
+            }
+        });
+    }
+});
+
 function viewPatient(id) {
     alert('Ver detalles del paciente #' + id);
     // Implementar vista detallada

@@ -62,10 +62,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="viewTherapist({{ therapist.id }})">
+                        <button class="btn btn-sm btn-info" data-action="view" data-id="{{ therapist.id }}">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-warning" onclick="editTherapist({{ therapist.id }})">
+                        <button class="btn btn-sm btn-warning" data-action="edit" data-id="{{ therapist.id }}">
                             <i class="fas fa-edit"></i>
                         </button>
                     </td>
@@ -139,6 +139,23 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Event delegation para botones de acción
+    document.querySelector('tbody').addEventListener('click', function(e) {
+        const button = e.target.closest('button[data-action]');
+        if (!button) return;
+        
+        const action = button.dataset.action;
+        const id = button.dataset.id;
+        
+        if (action === 'view') {
+            viewTherapist(id);
+        } else if (action === 'edit') {
+            editTherapist(id);
+        }
+    });
+});
+
 function viewTherapist(id) {
     alert('Ver detalles del terapeuta #' + id);
     // Implementar vista detallada
