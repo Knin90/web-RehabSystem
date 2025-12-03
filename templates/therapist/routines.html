@@ -29,7 +29,7 @@
                         </span>
                         <span class="badge bg-secondary">{{ routine.exercises|length }} ejercicios</span>
                     </div>
-                    <button class="btn btn-sm btn-primary w-100" onclick="assignRoutine({{ routine.id }})">
+                    <button class="btn btn-sm btn-primary w-100" data-routine-id="{{ routine.id }}" data-action="assign-routine">
                         <i class="fas fa-user-plus"></i> Asignar a Paciente
                     </button>
                 </div>
@@ -260,50 +260,81 @@ document.addEventListener('DOMContentLoaded', function() {
         const active = document.querySelector('[data-filter].active');
         loadEx(active ? active.dataset.filter : 'all');
     });
+    
+    // Event delegation para botones de asignar rutina
+    document.addEventListener('click', function(e) {
+        if(e.target.closest('[data-action="assign-routine"]')) {
+            const btn = e.target.closest('[data-action="assign-routine"]');
+            const routineId = parseInt(btn.dataset.routineId);
+            assignRoutine(routineId);
+        }
+        
+        if(e.target.closest('[data-action="confirm-assign"]')) {
+            const btn = e.target.closest('[data-action="confirm-assign"]');
+            const routineId = parseInt(btn.dataset.routineId);
+            confirmAssign(routineId);
+        }
+    });
 });
 
 // Función para asignar rutina a paciente
 async function assignRoutine(routineId) {
-    const patients = {{ patients|tojson }};
-    
-    if(patients.length === 0) {
-        alert('No hay pacientes disponibles');
-        return;
-    }
-    
-    const patientOptions = patients.map(p => 
-        `<option value="${p.id}">${p.full_name}</option>`
-    ).join('');
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal fade';
-    modal.innerHTML = `
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-user-plus"></i> Asignar Rutina</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label">Seleccionar Paciente:</label>
-                    <select class="form-select" id="selectPatient">
-                        <option value="">-- Seleccionar --</option>
-                        ${patientOptions}
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmAssign(${routineId})">Asignar</button>
+    try {
+        // Obtener pacientes desde el API
+        const response = await fetch('/api/get-patients');
+        const result = await response.json();
+        
+        if(!result.success) {
+            alert('❌ Error al cargar pacientes: ' + result.message);
+            return;
+        }
+        
+        const patients = result.patients;
+        
+        if(patients.length === 0) {
+            alert('No hay pacientes disponibles');
+            return;
+        }
+        
+        const patientOptions = patients.map(p => 
+            `<option value="${p.id}">${p.full_name}</option>`
+        ).join('');
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'assignModal';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-user-plus"></i> Asignar Rutina</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Seleccionar Paciente:</label>
+                        <select class="form-select" id="selectPatient">
+                            <option value="">-- Seleccionar --</option>
+                            ${patientOptions}
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" data-action="confirm-assign" data-routine-id="${routineId}">Asignar</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    const bsModal = new bootstrap.Modal(modal);
-    bsModal.show();
-    
-    modal.addEventListener('hidden.bs.modal', () => modal.remove());
+        `;
+        
+        document.body.appendChild(modal);
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+        
+        modal.addEventListener('hidden.bs.modal', () => modal.remove());
+        
+    } catch(error) {
+        alert('❌ Error al cargar pacientes');
+        console.error(error);
+    }
 }
 
 async function confirmAssign(routineId) {
@@ -326,8 +357,15 @@ async function confirmAssign(routineId) {
         
         const result = await response.json();
         if(result.success) {
+            // Cerrar el modal
+            const modalElement = document.getElementById('assignModal');
+            const bsModal = bootstrap.Modal.getInstance(modalElement);
+            if(bsModal) {
+                bsModal.hide();
+            }
+            
             alert('✅ ' + result.message);
-            location.reload();
+            setTimeout(() => location.reload(), 500);
         } else {
             alert('❌ Error: ' + result.message);
         }
