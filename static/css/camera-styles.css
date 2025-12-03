@@ -1,0 +1,225 @@
+/**
+ * Camera Styles - RehabSystem
+ * Estilos para el módulo de cámara del terapeuta
+ */
+
+/* Contenedor de video */
+#patientCamera {
+    background: #000;
+    border-radius: 8px;
+}
+
+/* Placeholder de cámara */
+#cameraPlaceholder {
+    transition: opacity 0.3s ease;
+}
+
+#cameraPlaceholder i {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+/* Controles de cámara */
+.camera-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Botones de control */
+#btnToggleCamera,
+#btnCaptureSnapshot {
+    transition: all 0.3s ease;
+}
+
+#btnToggleCamera:hover,
+#btnCaptureSnapshot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Badge de estado */
+#cameraStatus {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Indicador de grabación */
+.recording-indicator {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+.recording-indicator.active {
+    display: flex;
+}
+
+.recording-indicator::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Métricas en tiempo real */
+.metrics-overlay {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+}
+
+/* Pantalla completa */
+.fullscreen-video {
+    width: 100vw !important;
+    height: 100vh !important;
+    object-fit: contain;
+}
+
+/* Notificaciones personalizadas */
+.camera-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .camera-controls {
+        flex-direction: column;
+    }
+    
+    .camera-controls button {
+        width: 100%;
+    }
+    
+    .metrics-overlay {
+        font-size: 0.75rem;
+        padding: 8px 12px;
+    }
+}
+
+/* Efectos de hover en controles */
+.btn-camera-control {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-camera-control::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-camera-control:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Spinner de carga */
+.camera-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+}
+
+.camera-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+}
+
+/* Snapshot preview */
+.snapshot-preview {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    max-width: 90%;
+    max-height: 90%;
+}
+
+.snapshot-preview img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+}
+
+/* Overlay oscuro */
+.camera-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: none;
+}
+
+.camera-overlay.active {
+    display: block;
+}

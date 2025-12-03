@@ -1,0 +1,269 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Mis Rutinas - RehabSystem{% endblock %}
+{% block page_title %}Mis Rutinas{% endblock %}
+{% block page_description %}Rutinas de ejercicios asignadas por tu terapeuta{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    {% if routines %}
+        {% for routine in routines %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card card-custom h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="routine-icon">
+                            <i class="fas fa-{% if routine.difficulty == 'easy' %}walking{% elif routine.difficulty == 'hard' %}running{% else %}dumbbell{% endif %}"></i>
+                        </div>
+                        <span class="badge bg-{% if routine.difficulty == 'easy' %}success{% elif routine.difficulty == 'hard' %}danger{% else %}warning{% endif %}">
+                            {% if routine.difficulty == 'easy' %}Fácil{% elif routine.difficulty == 'hard' %}Difícil{% else %}Medio{% endif %}
+                        </span>
+                    </div>
+                    
+                    <h5 class="card-title mb-2">{{ routine.name }}</h5>
+                    <p class="text-muted small mb-3">{{ routine.description or 'Sin descripción' }}</p>
+                    
+                    <div class="routine-stats mb-3">
+                        <div class="stat-item">
+                            <i class="fas fa-clock text-primary"></i>
+                            <span>{{ routine.duration_minutes }} min</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-list text-success"></i>
+                            <span>{{ routine.exercises|length }} ejercicios</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100" data-routine-id="{{ routine.id }}" data-action="view-routine">
+                        <i class="fas fa-eye me-2"></i>Ver Detalles
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card card-custom text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No tienes rutinas asignadas</h4>
+                    <p class="text-muted">Tu terapeuta aún no te ha asignado ninguna rutina de ejercicios.</p>
+                    <p class="text-muted small">Las rutinas aparecerán aquí cuando tu terapeuta las asigne.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal para ver detalles de rutina -->
+<div class="modal fade" id="routineDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-clipboard-list me-2"></i><span id="modalRoutineName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <p class="text-muted" id="modalRoutineDescription"></p>
+                    <div class="d-flex gap-3 mb-3">
+                        <span class="badge bg-primary" id="modalRoutineDuration"></span>
+                        <span class="badge bg-secondary" id="modalRoutineDifficulty"></span>
+                    </div>
+                </div>
+                
+                <h6 class="mb-3"><i class="fas fa-list-ol me-2"></i>Ejercicios</h6>
+                <div id="exercisesList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" id="btnStartRoutine">
+                    <i class="fas fa-play me-2"></i>Iniciar Rutina
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-custom {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.card-custom:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    transform: translateY(-5px);
+}
+
+.routine-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.routine-stats {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.exercise-item {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+}
+
+.exercise-item h6 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.exercise-details {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.exercise-details span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+</style>
+
+<script>
+console.log('✓ Script de rutinas cargado');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✓ DOM cargado');
+    
+    // Agregar event listeners a todos los botones "Ver Detalles"
+    const viewButtons = document.querySelectorAll('[data-action="view-routine"]');
+    console.log(`✓ Encontrados ${viewButtons.length} botones "Ver Detalles"`);
+    
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('✓ Click en botón Ver Detalles');
+            const routineId = parseInt(this.dataset.routineId);
+            console.log('Routine ID:', routineId);
+            viewRoutineDetails(routineId);
+        });
+    });
+    
+    // Botón para iniciar rutina
+    const btnStart = document.getElementById('btnStartRoutine');
+    if(btnStart) {
+        btnStart.addEventListener('click', function() {
+            alert('🎯 Funcionalidad de iniciar rutina próximamente');
+        });
+    }
+});
+
+async function viewRoutineDetails(routineId) {
+    console.log('📡 Llamando a API para rutina:', routineId);
+    
+    try {
+        const url = `/api/get-routine-details/${routineId}`;
+        console.log('URL:', url);
+        
+        const response = await fetch(url);
+        console.log('Response status:', response.status);
+        
+        const result = await response.json();
+        console.log('Result:', result);
+        
+        if(!result.success) {
+            console.error('❌ Error del servidor:', result.message);
+            alert('❌ Error al cargar detalles: ' + result.message);
+            return;
+        }
+        
+        const routine = result.routine;
+        console.log('✓ Rutina recibida:', routine);
+        console.log('✓ Ejercicios:', routine.exercises);
+        
+        // Llenar modal con datos
+        console.log('📝 Llenando modal con datos...');
+        document.getElementById('modalRoutineName').textContent = routine.name;
+        document.getElementById('modalRoutineDescription').textContent = routine.description || 'Sin descripción';
+        document.getElementById('modalRoutineDuration').textContent = routine.duration_minutes + ' minutos';
+        
+        let difficultyText = 'Medio';
+        let difficultyClass = 'bg-warning';
+        if(routine.difficulty === 'easy') {
+            difficultyText = 'Fácil';
+            difficultyClass = 'bg-success';
+        } else if(routine.difficulty === 'hard') {
+            difficultyText = 'Difícil';
+            difficultyClass = 'bg-danger';
+        }
+        
+        const difficultyBadge = document.getElementById('modalRoutineDifficulty');
+        difficultyBadge.textContent = difficultyText;
+        difficultyBadge.className = 'badge ' + difficultyClass;
+        
+        // Mostrar ejercicios
+        console.log('📋 Procesando ejercicios...');
+        const exercisesList = document.getElementById('exercisesList');
+        
+        if(routine.exercises && routine.exercises.length > 0) {
+            console.log(`✓ ${routine.exercises.length} ejercicios encontrados`);
+            
+            const exercisesHTML = routine.exercises.map((ex, idx) => {
+                console.log(`  ${idx + 1}. ${ex.name}`);
+                return `
+                    <div class="exercise-item">
+                        <h6>${idx + 1}. ${ex.name}</h6>
+                        <div class="exercise-details">
+                            <span><i class="fas fa-redo"></i> ${ex.sets} series</span>
+                            <span><i class="fas fa-hashtag"></i> ${ex.repetitions} repeticiones</span>
+                            <span><i class="fas fa-clock"></i> ${ex.rest_seconds}s descanso</span>
+                        </div>
+                        ${ex.notes ? `<p class="small text-muted mt-2 mb-0"><i class="fas fa-info-circle"></i> ${ex.notes}</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            exercisesList.innerHTML = exercisesHTML;
+            console.log('✓ HTML de ejercicios insertado');
+        } else {
+            console.warn('⚠️ No hay ejercicios en la rutina');
+            exercisesList.innerHTML = '<p class="text-muted">No hay ejercicios en esta rutina.</p>';
+        }
+        
+        // Mostrar modal
+        console.log('🎭 Mostrando modal...');
+        const modal = new bootstrap.Modal(document.getElementById('routineDetailModal'));
+        modal.show();
+        console.log('✓ Modal mostrado');
+        
+    } catch(error) {
+        console.error('❌ Error en viewRoutineDetails:', error);
+        alert('❌ Error al cargar detalles de la rutina');
+    }
+}
+</script>
+
+{% endblock %}
