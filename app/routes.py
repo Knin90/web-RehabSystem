@@ -127,6 +127,34 @@ def register_routes(app):
     def patient_profile():
         return render_template('patient/profile.html', datos=obtener_datos_paciente(), active_page='profile')
 
+    @app.route('/patient/routines')
+    @login_required
+    @role_required('patient')
+    def patient_routines():
+        """Ver rutinas asignadas al paciente"""
+        try:
+            from app.models import Routine
+            
+            patient = Patient.query.filter_by(user_id=current_user.id).first()
+            if not patient:
+                patient = Patient(user_id=current_user.id, full_name=current_user.username)
+                db.session.add(patient)
+                db.session.commit()
+            
+            # Obtener rutinas asignadas a este paciente
+            routines = Routine.query.filter_by(patient_id=patient.id).all()
+            
+            return render_template('patient/routines.html', 
+                                 datos=obtener_datos_paciente(),
+                                 active_page='routines',
+                                 routines=routines)
+        except Exception as e:
+            print(f"Error en patient_routines: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            flash(f'Error al cargar rutinas: {str(e)}', 'danger')
+            return redirect(url_for('patient_dashboard'))
+
     # ============================================================
     # 🧑‍⚕️ PÁGINAS DEL TERAPEUTA
     # ============================================================
@@ -1011,6 +1039,60 @@ def register_routes(app):
             
         except Exception as e:
             return jsonify({'success': False, 'message': f'Error al obtener capturas: {str(e)}'}), 500
+
+    # ============================================================
+    # 📋 API PARA OBTENER DETALLES DE RUTINA (PACIENTE)
+    # ============================================================
+    @app.route('/api/get-routine-details/<int:routine_id>', methods=['GET'])
+    @login_required
+    @role_required('patient')
+    def get_routine_details(routine_id):
+        """Obtener detalles completos de una rutina"""
+        try:
+            from app.models import Routine, RoutineExercise
+            
+            patient = Patient.query.filter_by(user_id=current_user.id).first()
+            if not patient:
+                return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+            
+            # Verificar que la rutina pertenece al paciente
+            routine = Routine.query.filter_by(id=routine_id, patient_id=patient.id).first()
+            if not routine:
+                return jsonify({'success': False, 'message': 'Rutina no encontrada'}), 404
+            
+            # Obtener ejercicios de la rutina
+            exercises_list = []
+            for routine_ex in routine.exercises:
+                exercise = routine_ex.exercise
+                exercises_list.append({
+                    'id': exercise.id,
+                    'name': exercise.name,
+                    'description': exercise.description,
+                    'category': exercise.category,
+                    'sets': routine_ex.sets,
+                    'repetitions': routine_ex.repetitions,
+                    'rest_seconds': routine_ex.rest_seconds,
+                    'notes': routine_ex.notes,
+                    'order': routine_ex.order
+                })
+            
+            # Ordenar por orden
+            exercises_list.sort(key=lambda x: x['order'])
+            
+            return jsonify({
+                'success': True,
+                'routine': {
+                    'id': routine.id,
+                    'name': routine.name,
+                    'description': routine.description,
+                    'duration_minutes': routine.duration_minutes,
+                    'difficulty': routine.difficulty,
+                    'exercises': exercises_list
+                }
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
     # ============================================================
     # 📋 API PARA OBTENER PACIENTES (TERAPEUTA)

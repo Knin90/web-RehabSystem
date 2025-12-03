@@ -43,6 +43,11 @@
         <i class="fas fa-book-medical"></i> Historial
     </a>
 
+    <a href="{{ url_for('patient_routines') }}" 
+       class="nav-link-custom {% if active_page=='routines' %}active{% endif %}">
+        <i class="fas fa-clipboard-list"></i> Mis Rutinas
+    </a>
+
     <a href="{{ url_for('patient_start_therapy') }}" 
        class="nav-link-custom {% if active_page=='start_therapy' %}active{% endif %}">
         <i class="fas fa-dumbbell"></i> Iniciar Terapia
