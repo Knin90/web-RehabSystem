@@ -98,3 +98,34 @@ class SessionCapture(db.Model):
     # Relaciones
     therapist = db.relationship('Therapist', backref='captures')
     patient = db.relationship('Patient', backref='captures')
+
+class Routine(db.Model):
+    """Modelo para rutinas de ejercicios"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    therapist_id = db.Column(db.Integer, db.ForeignKey('therapist.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=True)  # Null = rutina template
+    duration_minutes = db.Column(db.Integer, default=30)
+    difficulty = db.Column(db.String(20), default='medium')  # easy, medium, hard
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    therapist = db.relationship('Therapist', backref='routines')
+    patient = db.relationship('Patient', backref='routines')
+    exercises = db.relationship('RoutineExercise', backref='routine', cascade='all, delete-orphan')
+
+class RoutineExercise(db.Model):
+    """Tabla intermedia para ejercicios en rutinas"""
+    id = db.Column(db.Integer, primary_key=True)
+    routine_id = db.Column(db.Integer, db.ForeignKey('routine.id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    order = db.Column(db.Integer, default=0)  # Orden en la rutina
+    sets = db.Column(db.Integer, default=3)
+    repetitions = db.Column(db.Integer, default=10)
+    rest_seconds = db.Column(db.Integer, default=30)
+    notes = db.Column(db.Text)
+    
+    # Relaciones
+    exercise = db.relationship('Exercise', backref='routine_exercises')
