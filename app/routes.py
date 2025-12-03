@@ -158,16 +158,36 @@ def register_routes(app):
     @login_required
     @role_required('therapist')
     def therapist_routines():
-        from app.models import Routine
-        therapist = Therapist.query.filter_by(user_id=current_user.id).first()
-        routines = Routine.query.filter_by(therapist_id=therapist.id).all() if therapist else []
-        exercises = Exercise.query.all()
-        patients = Patient.query.join(User).filter(User.is_active == True).all()
-        return render_template('therapist/routines.html', 
-                             active_page='routines',
-                             routines=routines,
-                             exercises=exercises,
-                             patients=patients)
+        try:
+            from app.models import Routine
+            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            
+            # Si no existe el perfil de terapeuta, crearlo
+            if not therapist:
+                therapist = Therapist(
+                    user_id=current_user.id,
+                    full_name=current_user.username,
+                    specialty='General',
+                    total_patients=0
+                )
+                db.session.add(therapist)
+                db.session.commit()
+            
+            routines = Routine.query.filter_by(therapist_id=therapist.id).all()
+            exercises = Exercise.query.all()
+            patients = Patient.query.join(User).filter(User.is_active == True).all()
+            
+            return render_template('therapist/routines.html', 
+                                 active_page='routines',
+                                 routines=routines,
+                                 exercises=exercises,
+                                 patients=patients)
+        except Exception as e:
+            print(f"Error en therapist_routines: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            flash(f'Error al cargar rutinas: {str(e)}', 'danger')
+            return redirect(url_for('therapist_dashboard'))
 
     # ============================================================
     # 📋 GESTIÓN DE RUTINAS (TERAPEUTA)
