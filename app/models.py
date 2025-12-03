@@ -80,3 +80,21 @@ class SystemSettings(db.Model):
             db.session.add(setting)
         db.session.commit()
         return setting
+
+class SessionCapture(db.Model):
+    """Modelo para almacenar capturas de fotos y videos de sesiones"""
+    id = db.Column(db.Integer, primary_key=True)
+    therapist_id = db.Column(db.Integer, db.ForeignKey('therapist.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=True)
+    capture_type = db.Column(db.String(20), nullable=False)  # 'photo' o 'video'
+    filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.Integer)  # Tamaño en bytes
+    duration = db.Column(db.Integer)  # Duración en segundos (solo para videos)
+    notes = db.Column(db.Text)  # Notas del terapeuta
+    session_date = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    therapist = db.relationship('Therapist', backref='captures')
+    patient = db.relationship('Patient', backref='captures')

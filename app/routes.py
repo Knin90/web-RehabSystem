@@ -403,6 +403,180 @@ def register_routes(app):
         return redirect(url_for('index'))
 
     # ============================================================
+    # 📹 RUTAS DE CAPTURA DE SESIÓN (FOTOS Y VIDEOS)
+    # ============================================================
+    @app.route('/api/save-snapshot', methods=['POST'])
+    @login_required
+    @role_required('therapist')
+    def save_snapshot():
+        """Guardar foto capturada de la sesión"""
+        try:
+            import base64
+            import os
+            from app.models import SessionCapture
+            
+            data = request.get_json()
+            image_data = data.get('image')
+            patient_id = data.get('patient_id')
+            notes = data.get('notes', '')
+            
+            if not image_data:
+                return jsonify({'success': False, 'message': 'No se recibió imagen'}), 400
+            
+            # Remover el prefijo data:image/jpeg;base64,
+            if ',' in image_data:
+                image_data = image_data.split(',')[1]
+            
+            # Decodificar base64
+            image_bytes = base64.b64decode(image_data)
+            
+            # Generar nombre de archivo único
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'snapshot_{current_user.id}_{timestamp}.jpg'
+            
+            # Crear ruta completa
+            upload_folder = os.path.join('static', 'uploads', 'photos')
+            os.makedirs(upload_folder, exist_ok=True)
+            file_path = os.path.join(upload_folder, filename)
+            
+            # Guardar archivo
+            with open(file_path, 'wb') as f:
+                f.write(image_bytes)
+            
+            # Obtener tamaño del archivo
+            file_size = os.path.getsize(file_path)
+            
+            # Guardar en base de datos
+            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            if therapist:
+                capture = SessionCapture(
+                    therapist_id=therapist.id,
+                    patient_id=patient_id,
+                    capture_type='photo',
+                    filename=filename,
+                    file_path=file_path,
+                    file_size=file_size,
+                    notes=notes
+                )
+                db.session.add(capture)
+                db.session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Foto guardada correctamente',
+                    'filename': filename,
+                    'file_size': file_size,
+                    'capture_id': capture.id
+                }), 200
+            else:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+                
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error al guardar foto: {str(e)}'}), 500
+    
+    @app.route('/api/save-video', methods=['POST'])
+    @login_required
+    @role_required('therapist')
+    def save_video():
+        """Guardar video grabado de la sesión"""
+        try:
+            import os
+            from app.models import SessionCapture
+            
+            if 'video' not in request.files:
+                return jsonify({'success': False, 'message': 'No se recibió video'}), 400
+            
+            video_file = request.files['video']
+            patient_id = request.form.get('patient_id')
+            notes = request.form.get('notes', '')
+            duration = request.form.get('duration', 0)
+            
+            if video_file.filename == '':
+                return jsonify({'success': False, 'message': 'Archivo vacío'}), 400
+            
+            # Generar nombre de archivo único
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'video_{current_user.id}_{timestamp}.webm'
+            
+            # Crear ruta completa
+            upload_folder = os.path.join('static', 'uploads', 'videos')
+            os.makedirs(upload_folder, exist_ok=True)
+            file_path = os.path.join(upload_folder, filename)
+            
+            # Guardar archivo
+            video_file.save(file_path)
+            
+            # Obtener tamaño del archivo
+            file_size = os.path.getsize(file_path)
+            
+            # Guardar en base de datos
+            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            if therapist:
+                capture = SessionCapture(
+                    therapist_id=therapist.id,
+                    patient_id=patient_id,
+                    capture_type='video',
+                    filename=filename,
+                    file_path=file_path,
+                    file_size=file_size,
+                    duration=int(duration),
+                    notes=notes
+                )
+                db.session.add(capture)
+                db.session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Video guardado correctamente',
+                    'filename': filename,
+                    'file_size': file_size,
+                    'duration': duration,
+                    'capture_id': capture.id
+                }), 200
+            else:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+                
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error al guardar video: {str(e)}'}), 500
+    
+    @app.route('/api/get-captures', methods=['GET'])
+    @login_required
+    @role_required('therapist')
+    def get_captures():
+        """Obtener lista de capturas del terapeuta"""
+        try:
+            from app.models import SessionCapture
+            
+            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            if not therapist:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            
+            captures = SessionCapture.query.filter_by(therapist_id=therapist.id).order_by(SessionCapture.created_at.desc()).all()
+            
+            captures_list = []
+            for capture in captures:
+                captures_list.append({
+                    'id': capture.id,
+                    'type': capture.capture_type,
+                    'filename': capture.filename,
+                    'file_path': capture.file_path,
+                    'file_size': capture.file_size,
+                    'duration': capture.duration,
+                    'notes': capture.notes,
+                    'patient_id': capture.patient_id,
+                    'created_at': capture.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+            
+            return jsonify({
+                'success': True,
+                'captures': captures_list,
+                'total': len(captures_list)
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error al obtener capturas: {str(e)}'}), 500
+
+    # ============================================================
     # LOGOUT
     # ============================================================
     @app.route('/logout')
