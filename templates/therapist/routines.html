@@ -14,30 +14,33 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
+            {% for routine in routines %}
+            {% if not routine.patient_id %}
             <div class="col-md-4">
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-walking"></i></div>
-                    <h3>Lumbar básica</h3>
-                    <p class="small mb-2">Ejercicios suaves de flexión y extensión.</p>
-                    <span class="badge bg-primary">15 min</span>
+                    <div class="feature-icon">
+                        <i class="fas fa-{% if routine.difficulty == 'easy' %}walking{% elif routine.difficulty == 'hard' %}running{% else %}dumbbell{% endif %}"></i>
+                    </div>
+                    <h3>{{ routine.name }}</h3>
+                    <p class="small mb-2">{{ routine.description or 'Sin descripción' }}</p>
+                    <div class="mb-2">
+                        <span class="badge bg-{% if routine.difficulty == 'easy' %}success{% elif routine.difficulty == 'hard' %}danger{% else %}warning{% endif %}">
+                            {{ routine.duration_minutes }} min
+                        </span>
+                        <span class="badge bg-secondary">{{ routine.exercises|length }} ejercicios</span>
+                    </div>
+                    <button class="btn btn-sm btn-primary w-100" onclick="assignRoutine({{ routine.id }})">
+                        <i class="fas fa-user-plus"></i> Asignar a Paciente
+                    </button>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-running"></i></div>
-                    <h3>Rodilla controlada</h3>
-                    <p class="small mb-2">Fortalecimiento progresivo del cuádriceps.</p>
-                    <span class="badge bg-warning text-dark">20 min</span>
-                </div>
+            {% endif %}
+            {% else %}
+            <div class="col-12 text-center text-muted py-5">
+                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                <p>No hay rutinas creadas. Haz clic en "Nueva rutina" para comenzar.</p>
             </div>
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-child"></i></div>
-                    <h3>Movilidad general</h3>
-                    <p class="small mb-2">Trabajo global de movilidad y equilibrio.</p>
-                    <span class="badge bg-success">25 min</span>
-                </div>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -176,14 +179,45 @@ function updateUI() {
     document.getElementById('tips').textContent = tip;
 }
 
-document.getElementById('btnSave').addEventListener('click', () => {
+document.getElementById('btnSave').addEventListener('click', async () => {
     const name = document.getElementById('routineName').value.trim();
     if(!name) return alert('Ingresa un nombre');
     if(selected.length === 0) return alert('Agrega ejercicios');
     
-    alert('✅ Rutina "' + name + '" creada con ' + selected.length + ' ejercicios!');
-    modal.hide();
-    setTimeout(() => location.reload(), 1000);
+    const totalDur = selected.reduce((s,e) => s + e.dur, 0);
+    const totalCal = selected.reduce((s,e) => s + e.cal, 0);
+    const difficulty = totalCal > 150 ? 'hard' : totalCal > 80 ? 'medium' : 'easy';
+    
+    try {
+        const response = await fetch('/therapist/create-routine', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: name,
+                description: `Rutina de ${totalDur} minutos`,
+                duration: totalDur,
+                difficulty: difficulty,
+                exercises: selected.map(e => ({
+                    id: e.id,
+                    sets: 3,
+                    repetitions: parseInt(e.reps.split('x')[1]) || 10,
+                    rest: 30
+                }))
+            })
+        });
+        
+        const result = await response.json();
+        if(result.success) {
+            alert('✅ ' + result.message);
+            modal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert('❌ Error: ' + result.message);
+        }
+    } catch(error) {
+        alert('❌ Error al guardar rutina');
+        console.error(error);
+    }
 });
 
 document.querySelectorAll('[data-filter]').forEach(btn => {
@@ -227,6 +261,81 @@ document.addEventListener('DOMContentLoaded', function() {
         loadEx(active ? active.dataset.filter : 'all');
     });
 });
+
+// Función para asignar rutina a paciente
+async function assignRoutine(routineId) {
+    const patients = {{ patients|tojson }};
+    
+    if(patients.length === 0) {
+        alert('No hay pacientes disponibles');
+        return;
+    }
+    
+    const patientOptions = patients.map(p => 
+        `<option value="${p.id}">${p.full_name}</option>`
+    ).join('');
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus"></i> Asignar Rutina</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Seleccionar Paciente:</label>
+                    <select class="form-select" id="selectPatient">
+                        <option value="">-- Seleccionar --</option>
+                        ${patientOptions}
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmAssign(${routineId})">Asignar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    modal.addEventListener('hidden.bs.modal', () => modal.remove());
+}
+
+async function confirmAssign(routineId) {
+    const patientId = document.getElementById('selectPatient').value;
+    
+    if(!patientId) {
+        alert('Selecciona un paciente');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/therapist/assign-routine', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                routine_id: routineId,
+                patient_id: parseInt(patientId)
+            })
+        });
+        
+        const result = await response.json();
+        if(result.success) {
+            alert('✅ ' + result.message);
+            location.reload();
+        } else {
+            alert('❌ Error: ' + result.message);
+        }
+    } catch(error) {
+        alert('❌ Error al asignar rutina');
+        console.error(error);
+    }
+}
 </script>
 
 {% endblock %}

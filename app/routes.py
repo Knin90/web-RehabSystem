@@ -158,7 +158,129 @@ def register_routes(app):
     @login_required
     @role_required('therapist')
     def therapist_routines():
-        return render_template('therapist/routines.html', active_page='routines')
+        from app.models import Routine
+        therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+        routines = Routine.query.filter_by(therapist_id=therapist.id).all() if therapist else []
+        exercises = Exercise.query.all()
+        patients = Patient.query.join(User).filter(User.is_active == True).all()
+        return render_template('therapist/routines.html', 
+                             active_page='routines',
+                             routines=routines,
+                             exercises=exercises,
+                             patients=patients)
+
+    # ============================================================
+    # 📋 GESTIÓN DE RUTINAS (TERAPEUTA)
+    # ============================================================
+    @app.route('/therapist/create-routine', methods=['POST'])
+    @login_required
+    @role_required('therapist')
+    def create_routine():
+        """Crear nueva rutina"""
+        try:
+            from app.models import Routine, RoutineExercise
+            import json
+            
+            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            if not therapist:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            
+            data = request.get_json()
+            name = data.get('name')
+            description = data.get('description', '')
+            duration = data.get('duration', 30)
+            difficulty = data.get('difficulty', 'medium')
+            exercises_data = data.get('exercises', [])
+            
+            # Crear rutina
+            routine = Routine(
+                name=name,
+                description=description,
+                therapist_id=therapist.id,
+                duration_minutes=duration,
+                difficulty=difficulty
+            )
+            db.session.add(routine)
+            db.session.flush()
+            
+            # Agregar ejercicios a la rutina
+            for idx, ex_data in enumerate(exercises_data):
+                routine_exercise = RoutineExercise(
+                    routine_id=routine.id,
+                    exercise_id=ex_data['id'],
+                    order=idx,
+                    sets=ex_data.get('sets', 3),
+                    repetitions=ex_data.get('repetitions', 10),
+                    rest_seconds=ex_data.get('rest', 30)
+                )
+                db.session.add(routine_exercise)
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Rutina "{name}" creada exitosamente',
+                'routine_id': routine.id
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+    
+    @app.route('/therapist/assign-routine', methods=['POST'])
+    @login_required
+    @role_required('therapist')
+    def assign_routine():
+        """Asignar rutina a paciente"""
+        try:
+            from app.models import Routine, RoutineExercise
+            
+            data = request.get_json()
+            routine_id = data.get('routine_id')
+            patient_id = data.get('patient_id')
+            
+            # Obtener rutina original
+            original_routine = Routine.query.get(routine_id)
+            if not original_routine:
+                return jsonify({'success': False, 'message': 'Rutina no encontrada'}), 404
+            
+            # Crear copia de la rutina para el paciente
+            new_routine = Routine(
+                name=original_routine.name,
+                description=original_routine.description,
+                therapist_id=original_routine.therapist_id,
+                patient_id=patient_id,
+                duration_minutes=original_routine.duration_minutes,
+                difficulty=original_routine.difficulty
+            )
+            db.session.add(new_routine)
+            db.session.flush()
+            
+            # Copiar ejercicios
+            for ex in original_routine.exercises:
+                new_exercise = RoutineExercise(
+                    routine_id=new_routine.id,
+                    exercise_id=ex.exercise_id,
+                    order=ex.order,
+                    sets=ex.sets,
+                    repetitions=ex.repetitions,
+                    rest_seconds=ex.rest_seconds,
+                    notes=ex.notes
+                )
+                db.session.add(new_exercise)
+            
+            db.session.commit()
+            
+            patient = Patient.query.get(patient_id)
+            return jsonify({
+                'success': True,
+                'message': f'Rutina asignada a {patient.full_name}',
+                'routine_id': new_routine.id
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
     # ============================================================
     # 🛠️ PÁGINAS DEL ADMINISTRADOR
