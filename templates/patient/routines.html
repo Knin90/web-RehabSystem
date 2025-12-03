@@ -158,17 +158,18 @@ console.log('✓ Script de rutinas cargado');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✓ DOM cargado');
     
-    // Event delegation para ver detalles de rutina
-    document.addEventListener('click', async function(e) {
-        console.log('Click detectado en:', e.target);
-        
-        if(e.target.closest('[data-action="view-routine"]')) {
+    // Agregar event listeners a todos los botones "Ver Detalles"
+    const viewButtons = document.querySelectorAll('[data-action="view-routine"]');
+    console.log(`✓ Encontrados ${viewButtons.length} botones "Ver Detalles"`);
+    
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
             console.log('✓ Click en botón Ver Detalles');
-            const btn = e.target.closest('[data-action="view-routine"]');
-            const routineId = parseInt(btn.dataset.routineId);
+            const routineId = parseInt(this.dataset.routineId);
             console.log('Routine ID:', routineId);
-            await viewRoutineDetails(routineId);
-        }
+            viewRoutineDetails(routineId);
+        });
     });
     
     // Botón para iniciar rutina
