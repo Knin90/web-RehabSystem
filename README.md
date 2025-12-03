@@ -27,6 +27,11 @@ Sistema web completo para gestión de rehabilitación física con visión artifi
   - Gestión de sesiones y citas
   - Biblioteca de 8 ejercicios predefinidos
   - Estadísticas en tiempo real
+  - **📹 Módulo de Cámara en Tiempo Real** (NUEVO)
+    - Captura de video en vivo
+    - Monitoreo de sesiones de pacientes
+    - Captura de instantáneas
+    - Métricas en tiempo real
 
 - **🤕 Panel de Paciente**
   - Dashboard personalizado con progreso
