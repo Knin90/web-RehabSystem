@@ -1013,6 +1013,37 @@ def register_routes(app):
             return jsonify({'success': False, 'message': f'Error al obtener capturas: {str(e)}'}), 500
 
     # ============================================================
+    # 📋 API PARA OBTENER PACIENTES (TERAPEUTA)
+    # ============================================================
+    @app.route('/api/get-patients', methods=['GET'])
+    @login_required
+    @role_required('therapist')
+    def get_patients():
+        """Obtener lista de pacientes activos"""
+        try:
+            patients = Patient.query.join(User).filter(User.is_active == True).all()
+            
+            patients_list = []
+            for patient in patients:
+                patients_list.append({
+                    'id': patient.id,
+                    'full_name': patient.full_name,
+                    'diagnosis': patient.diagnosis or 'Sin diagnóstico',
+                    'progress': patient.progress,
+                    'completed_sessions': patient.completed_sessions,
+                    'total_sessions': patient.total_sessions
+                })
+            
+            return jsonify({
+                'success': True,
+                'patients': patients_list,
+                'total': len(patients_list)
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+    # ============================================================
     # LOGOUT
     # ============================================================
     @app.route('/logout')
