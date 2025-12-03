@@ -6,6 +6,13 @@
 
 {% block content %}
 
+<!-- Botón para agregar terapeuta -->
+<div class="mb-4">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTherapistModal">
+        <i class="fas fa-plus"></i> Agregar Terapeuta
+    </button>
+</div>
+
 <div class="card-custom p-4">
 
     <h4>Resumen General</h4>
@@ -13,41 +20,133 @@
 
     <div class="progress-grid mb-4">
         <div class="progress-card">
-            <div class="progress-number">24</div>
-            <div class="progress-label">Activos</div>
+            <div class="progress-number">{{ therapists|length }}</div>
+            <div class="progress-label">Total Terapeutas</div>
         </div>
         <div class="progress-card">
-            <div class="progress-number">5</div>
-            <div class="progress-label">Nuevos este mes</div>
+            <div class="progress-number">{{ active_therapists }}</div>
+            <div class="progress-label">Activos</div>
         </div>
     </div>
 
-    <h4 class="mt-4">Acciones</h4>
+    <h4 class="mt-4">Lista de Terapeutas</h4>
 
-    <div class="control-grid">
-
-        <div class="control-item">
-            <div class="control-icon icon-therapists"><i class="fas fa-user-md"></i></div>
-            <span class="control-text">Registrar terapeuta</span>
-        </div>
-
-        <div class="control-item">
-            <div class="control-icon icon-export"><i class="fas fa-file-export"></i></div>
-            <span class="control-text">Exportar listado</span>
-        </div>
-
-        <div class="control-item">
-            <div class="control-icon icon-config"><i class="fas fa-calendar-check"></i></div>
-            <span class="control-text">Asignar horarios</span>
-        </div>
-
-        <div class="control-item">
-            <div class="control-icon icon-va"><i class="fas fa-chart-line"></i></div>
-            <span class="control-text">Ver rendimiento</span>
-        </div>
-
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre Completo</th>
+                    <th>Usuario</th>
+                    <th>Email</th>
+                    <th>Especialidad</th>
+                    <th>Pacientes</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for therapist in therapists %}
+                <tr>
+                    <td>{{ therapist.id }}</td>
+                    <td>{{ therapist.full_name }}</td>
+                    <td>{{ therapist.user.username }}</td>
+                    <td>{{ therapist.user.email }}</td>
+                    <td>{{ therapist.specialty or 'N/A' }}</td>
+                    <td>{{ therapist.total_patients }}</td>
+                    <td>
+                        {% if therapist.user.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewTherapist({{ therapist.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="editTherapist({{ therapist.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted">No hay terapeutas registrados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
 </div>
 
+<!-- Modal para agregar terapeuta -->
+<div class="modal fade" id="addTherapistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-md"></i> Agregar Nuevo Terapeuta
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_therapist') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre Completo *</label>
+                        <input type="text" class="form-control" name="full_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de Usuario *</label>
+                        <input type="text" class="form-control" name="username" required>
+                        <small class="text-muted">Sin espacios, solo letras y números</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña *</label>
+                        <input type="password" class="form-control" name="password" required minlength="6">
+                        <small class="text-muted">Mínimo 6 caracteres</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Especialidad</label>
+                        <select class="form-select" name="specialty">
+                            <option value="">Seleccionar...</option>
+                            <option value="Fisioterapia General">Fisioterapia General</option>
+                            <option value="Rehabilitación Deportiva">Rehabilitación Deportiva</option>
+                            <option value="Terapia Neurológica">Terapia Neurológica</option>
+                            <option value="Terapia Ortopédica">Terapia Ortopédica</option>
+                            <option value="Terapia Geriátrica">Terapia Geriátrica</option>
+                            <option value="Terapia Pediátrica">Terapia Pediátrica</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Terapeuta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewTherapist(id) {
+    alert('Ver detalles del terapeuta #' + id);
+    // Implementar vista detallada
+}
+
+function editTherapist(id) {
+    alert('Editar terapeuta #' + id);
+    // Implementar edición
+}
+</script>
 {% endblock %}

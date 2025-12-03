@@ -185,7 +185,12 @@ def register_routes(app):
     @login_required
     @role_required('admin')
     def admin_therapists():
-        return render_template('admin/therapists.html', active_page='therapists',
+        therapists = Therapist.query.all()
+        active_therapists = sum(1 for t in therapists if t.user.is_active)
+        return render_template('admin/therapists.html', 
+                             active_page='therapists',
+                             therapists=therapists,
+                             active_therapists=active_therapists,
                              system_theme=SystemSettings.get_setting('theme', 'light'),
                              system_language=SystemSettings.get_setting('language', 'es'),
                              system_compact=SystemSettings.get_setting('compact_mode', 'off'))
@@ -194,7 +199,14 @@ def register_routes(app):
     @login_required
     @role_required('admin')
     def admin_patients():
-        return render_template('admin/patients.html', active_page='patients',
+        patients = Patient.query.all()
+        active_patients = sum(1 for p in patients if p.user.is_active)
+        in_therapy = sum(1 for p in patients if p.completed_sessions < p.total_sessions and p.user.is_active)
+        return render_template('admin/patients.html', 
+                             active_page='patients',
+                             patients=patients,
+                             active_patients=active_patients,
+                             in_therapy=in_therapy,
                              system_theme=SystemSettings.get_setting('theme', 'light'),
                              system_language=SystemSettings.get_setting('language', 'es'),
                              system_compact=SystemSettings.get_setting('compact_mode', 'off'))
@@ -298,6 +310,117 @@ def register_routes(app):
                              system_theme=SystemSettings.get_setting('theme', 'light'),
                              system_language=SystemSettings.get_setting('language', 'es'),
                              system_compact=SystemSettings.get_setting('compact_mode', 'off'))
+    
+    # ============================================================
+    # 👨‍⚕️ AGREGAR TERAPEUTA
+    # ============================================================
+    @app.route('/admin/add-therapist', methods=['POST'])
+    @login_required
+    @role_required('admin')
+    def add_therapist():
+        """Agregar nuevo terapeuta"""
+        try:
+            # Obtener datos del formulario
+            full_name = request.form.get('full_name')
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            specialty = request.form.get('specialty', '')
+            
+            # Validar que no exista el usuario
+            if User.query.filter_by(username=username).first():
+                flash('❌ El nombre de usuario ya existe', 'danger')
+                return redirect(url_for('admin_therapists'))
+            
+            if User.query.filter_by(email=email).first():
+                flash('❌ El email ya está registrado', 'danger')
+                return redirect(url_for('admin_therapists'))
+            
+            # Crear usuario
+            user = User(
+                username=username,
+                email=email,
+                role='therapist',
+                is_active=True
+            )
+            user.set_password(password)
+            db.session.add(user)
+            db.session.flush()  # Para obtener el user.id
+            
+            # Crear perfil de terapeuta
+            therapist = Therapist(
+                user_id=user.id,
+                full_name=full_name,
+                specialty=specialty,
+                total_patients=0
+            )
+            db.session.add(therapist)
+            db.session.commit()
+            
+            flash(f'✅ Terapeuta {full_name} creado exitosamente', 'success')
+            return redirect(url_for('admin_therapists'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al crear terapeuta: {str(e)}', 'danger')
+            return redirect(url_for('admin_therapists'))
+    
+    # ============================================================
+    # 🤕 AGREGAR PACIENTE
+    # ============================================================
+    @app.route('/admin/add-patient', methods=['POST'])
+    @login_required
+    @role_required('admin')
+    def add_patient():
+        """Agregar nuevo paciente"""
+        try:
+            # Obtener datos del formulario
+            full_name = request.form.get('full_name')
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            diagnosis = request.form.get('diagnosis', '')
+            total_sessions = int(request.form.get('total_sessions', 20))
+            
+            # Validar que no exista el usuario
+            if User.query.filter_by(username=username).first():
+                flash('❌ El nombre de usuario ya existe', 'danger')
+                return redirect(url_for('admin_patients'))
+            
+            if User.query.filter_by(email=email).first():
+                flash('❌ El email ya está registrado', 'danger')
+                return redirect(url_for('admin_patients'))
+            
+            # Crear usuario
+            user = User(
+                username=username,
+                email=email,
+                role='patient',
+                is_active=True
+            )
+            user.set_password(password)
+            db.session.add(user)
+            db.session.flush()  # Para obtener el user.id
+            
+            # Crear perfil de paciente
+            patient = Patient(
+                user_id=user.id,
+                full_name=full_name,
+                diagnosis=diagnosis,
+                progress=0.0,
+                total_sessions=total_sessions,
+                completed_sessions=0
+            )
+            db.session.add(patient)
+            db.session.commit()
+            
+            flash(f'✅ Paciente {full_name} creado exitosamente', 'success')
+            return redirect(url_for('admin_patients'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al crear paciente: {str(e)}', 'danger')
+            return redirect(url_for('admin_patients'))
     
     @app.route('/admin/export/<data_type>')
     @login_required
