@@ -153,36 +153,58 @@
 </style>
 
 <script>
+console.log('✓ Script de rutinas cargado');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('✓ DOM cargado');
+    
     // Event delegation para ver detalles de rutina
     document.addEventListener('click', async function(e) {
+        console.log('Click detectado en:', e.target);
+        
         if(e.target.closest('[data-action="view-routine"]')) {
+            console.log('✓ Click en botón Ver Detalles');
             const btn = e.target.closest('[data-action="view-routine"]');
             const routineId = parseInt(btn.dataset.routineId);
+            console.log('Routine ID:', routineId);
             await viewRoutineDetails(routineId);
         }
     });
     
     // Botón para iniciar rutina
-    document.getElementById('btnStartRoutine').addEventListener('click', function() {
-        alert('🎯 Funcionalidad de iniciar rutina próximamente');
-        // Aquí se puede redirigir a la página de terapia con la rutina seleccionada
-    });
+    const btnStart = document.getElementById('btnStartRoutine');
+    if(btnStart) {
+        btnStart.addEventListener('click', function() {
+            alert('🎯 Funcionalidad de iniciar rutina próximamente');
+        });
+    }
 });
 
 async function viewRoutineDetails(routineId) {
+    console.log('📡 Llamando a API para rutina:', routineId);
+    
     try {
-        const response = await fetch(`/api/get-routine-details/${routineId}`);
+        const url = `/api/get-routine-details/${routineId}`;
+        console.log('URL:', url);
+        
+        const response = await fetch(url);
+        console.log('Response status:', response.status);
+        
         const result = await response.json();
+        console.log('Result:', result);
         
         if(!result.success) {
+            console.error('❌ Error del servidor:', result.message);
             alert('❌ Error al cargar detalles: ' + result.message);
             return;
         }
         
         const routine = result.routine;
+        console.log('✓ Rutina recibida:', routine);
+        console.log('✓ Ejercicios:', routine.exercises);
         
         // Llenar modal con datos
+        console.log('📝 Llenando modal con datos...');
         document.getElementById('modalRoutineName').textContent = routine.name;
         document.getElementById('modalRoutineDescription').textContent = routine.description || 'Sin descripción';
         document.getElementById('modalRoutineDuration').textContent = routine.duration_minutes + ' minutos';
@@ -202,30 +224,43 @@ async function viewRoutineDetails(routineId) {
         difficultyBadge.className = 'badge ' + difficultyClass;
         
         // Mostrar ejercicios
+        console.log('📋 Procesando ejercicios...');
         const exercisesList = document.getElementById('exercisesList');
+        
         if(routine.exercises && routine.exercises.length > 0) {
-            exercisesList.innerHTML = routine.exercises.map((ex, idx) => `
-                <div class="exercise-item">
-                    <h6>${idx + 1}. ${ex.name}</h6>
-                    <div class="exercise-details">
-                        <span><i class="fas fa-redo"></i> ${ex.sets} series</span>
-                        <span><i class="fas fa-hashtag"></i> ${ex.repetitions} repeticiones</span>
-                        <span><i class="fas fa-clock"></i> ${ex.rest_seconds}s descanso</span>
+            console.log(`✓ ${routine.exercises.length} ejercicios encontrados`);
+            
+            const exercisesHTML = routine.exercises.map((ex, idx) => {
+                console.log(`  ${idx + 1}. ${ex.name}`);
+                return `
+                    <div class="exercise-item">
+                        <h6>${idx + 1}. ${ex.name}</h6>
+                        <div class="exercise-details">
+                            <span><i class="fas fa-redo"></i> ${ex.sets} series</span>
+                            <span><i class="fas fa-hashtag"></i> ${ex.repetitions} repeticiones</span>
+                            <span><i class="fas fa-clock"></i> ${ex.rest_seconds}s descanso</span>
+                        </div>
+                        ${ex.notes ? `<p class="small text-muted mt-2 mb-0"><i class="fas fa-info-circle"></i> ${ex.notes}</p>` : ''}
                     </div>
-                    ${ex.notes ? `<p class="small text-muted mt-2 mb-0"><i class="fas fa-info-circle"></i> ${ex.notes}</p>` : ''}
-                </div>
-            `).join('');
+                `;
+            }).join('');
+            
+            exercisesList.innerHTML = exercisesHTML;
+            console.log('✓ HTML de ejercicios insertado');
         } else {
+            console.warn('⚠️ No hay ejercicios en la rutina');
             exercisesList.innerHTML = '<p class="text-muted">No hay ejercicios en esta rutina.</p>';
         }
         
         // Mostrar modal
+        console.log('🎭 Mostrando modal...');
         const modal = new bootstrap.Modal(document.getElementById('routineDetailModal'));
         modal.show();
+        console.log('✓ Modal mostrado');
         
     } catch(error) {
+        console.error('❌ Error en viewRoutineDetails:', error);
         alert('❌ Error al cargar detalles de la rutina');
-        console.error(error);
     }
 }
 </script>
