@@ -1053,12 +1053,19 @@ def register_routes(app):
             
             patient = Patient.query.filter_by(user_id=current_user.id).first()
             if not patient:
+                print(f"❌ Paciente no encontrado para user_id: {current_user.id}")
                 return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+            
+            print(f"✓ Paciente encontrado: {patient.full_name} (ID: {patient.id})")
             
             # Verificar que la rutina pertenece al paciente
             routine = Routine.query.filter_by(id=routine_id, patient_id=patient.id).first()
             if not routine:
+                print(f"❌ Rutina {routine_id} no encontrada para paciente {patient.id}")
                 return jsonify({'success': False, 'message': 'Rutina no encontrada'}), 404
+            
+            print(f"✓ Rutina encontrada: {routine.name} (ID: {routine.id})")
+            print(f"  Ejercicios en relación: {len(routine.exercises)}")
             
             # Obtener ejercicios de la rutina
             exercises_list = []
@@ -1067,9 +1074,10 @@ def register_routes(app):
                 
                 # Validar que el ejercicio existe
                 if not exercise:
-                    print(f"Warning: Exercise ID {routine_ex.exercise_id} not found")
+                    print(f"⚠️ Warning: Exercise ID {routine_ex.exercise_id} not found")
                     continue
                 
+                print(f"  ✓ Agregando ejercicio: {exercise.name}")
                 exercises_list.append({
                     'id': exercise.id,
                     'name': exercise.name,
@@ -1085,7 +1093,9 @@ def register_routes(app):
             # Ordenar por orden
             exercises_list.sort(key=lambda x: x['order'])
             
-            return jsonify({
+            print(f"✓ Total ejercicios en respuesta: {len(exercises_list)}")
+            
+            response_data = {
                 'success': True,
                 'routine': {
                     'id': routine.id,
@@ -1095,9 +1105,15 @@ def register_routes(app):
                     'difficulty': routine.difficulty,
                     'exercises': exercises_list
                 }
-            }), 200
+            }
+            
+            print(f"✓ Enviando respuesta con {len(exercises_list)} ejercicios")
+            return jsonify(response_data), 200
             
         except Exception as e:
+            print(f"❌ Error en get_routine_details: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
     # ============================================================
