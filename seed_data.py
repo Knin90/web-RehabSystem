@@ -26,32 +26,53 @@ with app.app_context():
     for key, value in default_settings.items():
         SystemSettings.set_setting(key, value)
     
-    # Crear usuarios
-    admin = User(username='admin', email='admin@rehab.com', role='admin')
+    # Crear usuarios (usar los nombres de columnas definidos en models.py)
+    admin = User(
+        nombre_usuario='admin',
+        correo_electronico='admin@rehab.com',
+        rol='admin'
+    )
     admin.set_password('admin123')
     
-    terapeuta_user = User(username='terapeuta', email='tera@rehab.com', role='therapist')
+    terapeuta_user = User(
+        nombre_usuario='terapeuta',
+        correo_electronico='tera@rehab.com',
+        rol='therapist'
+    )
     terapeuta_user.set_password('tera123')
     
-    paciente_user = User(username='paciente', email='paci@rehab.com', role='patient')
+    paciente_user = User(
+        nombre_usuario='paciente',
+        correo_electronico='paci@rehab.com',
+        rol='patient'
+    )
     paciente_user.set_password('paci123')
     
     db.session.add_all([admin, terapeuta_user, paciente_user])
     db.session.commit()
     
-    # Crear perfiles
-    terapeuta = Therapist(user_id=terapeuta_user.id, full_name='Rafael Lu', specialty='Fisioterapeuta')
-    paciente = Patient(user_id=paciente_user.id, full_name='Andrea Luna', 
-                      diagnosis='Rehabilitación rodilla', total_sessions=16, completed_sessions=12)
+    # Crear perfiles (usar nombres de campos reales)
+    terapeuta = Therapist(
+        id_usuario=terapeuta_user.id,
+        nombre_completo='Rafael Lu',
+        especialidad='Fisioterapeuta'
+    )
+    paciente = Patient(
+        id_usuario=paciente_user.id,
+        nombre_completo='Andrea Luna',
+        diagnostico='Rehabilitación rodilla',
+        sesiones_totales=16,
+        sesiones_completadas=12
+    )
     
     db.session.add_all([terapeuta, paciente])
     db.session.commit()
     
-    # Crear ejercicios
+    # Crear ejercicios (usar nombres de columnas en español)
     ejercicios = [
-        Exercise(name='Flexiones de rodilla', repetitions='3x15', category='inferior'),
-        Exercise(name='Elevaciones de pierna', repetitions='3x12', category='inferior'),
-        Exercise(name='Estiramientos', repetitions='4x30seg', category='estiramiento')
+        Exercise(nombre='Flexiones de rodilla', repeticiones='3x15', categoria='inferior'),
+        Exercise(nombre='Elevaciones de pierna', repeticiones='3x12', categoria='inferior'),
+        Exercise(nombre='Estiramientos', repeticiones='4x30seg', categoria='estiramiento')
     ]
     db.session.add_all(ejercicios)
     db.session.commit()

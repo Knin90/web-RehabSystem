@@ -1,0 +1,60 @@
+{% extends "therapist/base_terapeuta.html" %}
+
+{% block title %}Pacientes - RehabSystem{% endblock %}
+{% block page_title %}Pacientes asignados{% endblock %}
+{% block page_description %}Consulta el estado y las últimas rutinas realizadas.{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Listado de pacientes</h5>
+        <input type="text" class="form-control form-control-sm w-auto" placeholder="Buscar...">
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Paciente</th>
+                        <th>Diagnóstico</th>
+                        <th>Última rutina</th>
+                        <th>Fecha</th>
+                        <th>Repeticiones</th>
+                        <th>Estado</th>
+                        <th class="text-end">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Jackson Navarro</td>
+                        <td>Lumbargia crónica</td>
+                        <td>Lumbar básica</td>
+                        <td>01/12/2025</td>
+                        <td>45</td>
+                        <td><span class="badge bg-success">Estable</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>María Gómez</td>
+                        <td>Rehabilitación de rodilla</td>
+                        <td>Flexión controlada</td>
+                        <td>30/11/2025</td>
+                        <td>30</td>
+                        <td><span class="badge bg-warning text-dark">Revisión</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Más filas ejemplo -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

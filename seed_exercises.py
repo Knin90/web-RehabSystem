@@ -13,59 +13,59 @@ def seed_exercises():
         exercises = [
             {
                 'id': 1,
-                'name': 'Flexiones de rodilla',
-                'description': 'Ejercicio para fortalecer las rodillas',
-                'category': 'lower',
-                'repetitions': '3x15'
+                'nombre': 'Flexiones de rodilla',
+                'descripcion': 'Ejercicio para fortalecer las rodillas',
+                'categoria': 'lower',
+                'repeticiones': '3x15'
             },
             {
                 'id': 2,
-                'name': 'Elevaciones de pierna',
-                'description': 'Ejercicio para fortalecer piernas',
-                'category': 'lower',
-                'repetitions': '3x12'
+                'nombre': 'Elevaciones de pierna',
+                'descripcion': 'Ejercicio para fortalecer piernas',
+                'categoria': 'lower',
+                'repeticiones': '3x12'
             },
             {
                 'id': 3,
-                'name': 'Estiramientos lumbares',
-                'description': 'Ejercicio para estirar la zona lumbar',
-                'category': 'lower',
-                'repetitions': '4x30s'
+                'nombre': 'Estiramientos lumbares',
+                'descripcion': 'Ejercicio para estirar la zona lumbar',
+                'categoria': 'lower',
+                'repeticiones': '4x30s'
             },
             {
                 'id': 4,
-                'name': 'Rotación de hombros',
-                'description': 'Ejercicio para movilidad de hombros',
-                'category': 'upper',
-                'repetitions': '3x10'
+                'nombre': 'Rotación de hombros',
+                'descripcion': 'Ejercicio para movilidad de hombros',
+                'categoria': 'upper',
+                'repeticiones': '3x10'
             },
             {
                 'id': 5,
-                'name': 'Flexiones de brazo',
-                'description': 'Ejercicio para fortalecer brazos',
-                'category': 'upper',
-                'repetitions': '3x8'
+                'nombre': 'Flexiones de brazo',
+                'descripcion': 'Ejercicio para fortalecer brazos',
+                'categoria': 'upper',
+                'repeticiones': '3x8'
             },
             {
                 'id': 6,
-                'name': 'Plancha abdominal',
-                'description': 'Ejercicio para fortalecer core',
-                'category': 'core',
-                'repetitions': '3x30s'
+                'nombre': 'Plancha abdominal',
+                'descripcion': 'Ejercicio para fortalecer core',
+                'categoria': 'core',
+                'repeticiones': '3x30s'
             },
             {
                 'id': 7,
-                'name': 'Sentadillas asistidas',
-                'description': 'Ejercicio para fortalecer piernas',
-                'category': 'lower',
-                'repetitions': '3x12'
+                'nombre': 'Sentadillas asistidas',
+                'descripcion': 'Ejercicio para fortalecer piernas',
+                'categoria': 'lower',
+                'repeticiones': '3x12'
             },
             {
                 'id': 8,
-                'name': 'Puente de glúteos',
-                'description': 'Ejercicio para fortalecer glúteos',
-                'category': 'lower',
-                'repetitions': '3x15'
+                'nombre': 'Puente de glúteos',
+                'descripcion': 'Ejercicio para fortalecer glúteos',
+                'categoria': 'lower',
+                'repeticiones': '3x15'
             }
         ]
         
@@ -78,24 +78,24 @@ def seed_exercises():
             
             if exercise:
                 # Actualizar si existe
-                exercise.name = ex_data['name']
-                exercise.description = ex_data['description']
-                exercise.category = ex_data['category']
-                exercise.repetitions = ex_data['repetitions']
+                exercise.nombre = ex_data['nombre']
+                exercise.descripcion = ex_data['descripcion']
+                exercise.categoria = ex_data['categoria']
+                exercise.repeticiones = ex_data['repeticiones']
                 updated += 1
-                print(f"✓ Actualizado: {exercise.name}")
+                print(f"✓ Actualizado: {exercise.nombre}")
             else:
                 # Crear nuevo
                 exercise = Exercise(
                     id=ex_data['id'],
-                    name=ex_data['name'],
-                    description=ex_data['description'],
-                    category=ex_data['category'],
-                    repetitions=ex_data['repetitions']
+                    nombre=ex_data['nombre'],
+                    descripcion=ex_data['descripcion'],
+                    categoria=ex_data['categoria'],
+                    repeticiones=ex_data['repeticiones']
                 )
                 db.session.add(exercise)
                 added += 1
-                print(f"+ Agregado: {exercise.name}")
+                print(f"+ Agregado: {exercise.nombre}")
         
         db.session.commit()
         

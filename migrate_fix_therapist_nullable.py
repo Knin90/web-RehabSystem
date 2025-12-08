@@ -37,34 +37,37 @@ def migrate():
             print("🗑️ Eliminando tabla antigua...")
             cursor.execute("DROP TABLE IF EXISTS session_capture")
             
-            # Crear nueva tabla con therapist_id nullable
+            # Crear nueva tabla con id_terapeuta nullable
             print("🔨 Creando nueva tabla...")
             cursor.execute("""
                 CREATE TABLE session_capture (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    therapist_id INTEGER,
-                    patient_id INTEGER,
-                    capture_type VARCHAR(20) NOT NULL,
-                    filename VARCHAR(255) NOT NULL,
-                    file_path VARCHAR(500) NOT NULL,
-                    file_size INTEGER,
-                    duration INTEGER,
-                    notes TEXT,
-                    session_date DATETIME,
-                    created_at DATETIME,
-                    FOREIGN KEY (therapist_id) REFERENCES therapist(id),
-                    FOREIGN KEY (patient_id) REFERENCES patient(id)
+                    id_terapeuta INTEGER,
+                    id_paciente INTEGER,
+                    tipo_captura VARCHAR(20) NOT NULL,
+                    nombre_archivo VARCHAR(255) NOT NULL,
+                    ruta_archivo VARCHAR(500) NOT NULL,
+                    tamano_archivo INTEGER,
+                    duracion INTEGER,
+                    notas TEXT,
+                    fecha_sesion DATETIME,
+                    fecha_creacion DATETIME,
+                    es_permanente BOOLEAN DEFAULT 0,
+                    contiene_audio BOOLEAN DEFAULT 0,
+                    FOREIGN KEY (id_terapeuta) REFERENCES therapist(id),
+                    FOREIGN KEY (id_paciente) REFERENCES patient(id)
                 )
             """)
             
             # Restaurar datos existentes si los hay
             if existing_data:
                 print(f"📥 Restaurando {len(existing_data)} registros...")
+                # Nota: Ajustar según la estructura antigua de datos
                 cursor.executemany("""
                     INSERT INTO session_capture 
-                    (id, therapist_id, patient_id, capture_type, filename, file_path, 
-                     file_size, duration, notes, session_date, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (id, id_terapeuta, id_paciente, tipo_captura, nombre_archivo, ruta_archivo, 
+                     tamano_archivo, duracion, notas, fecha_sesion, fecha_creacion, es_permanente, contiene_audio)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
                 """, existing_data)
             
             conn.commit()

@@ -55,22 +55,22 @@
                 {% for patient in patients %}
                 <tr>
                     <td>{{ patient.id }}</td>
-                    <td>{{ patient.full_name }}</td>
-                    <td>{{ patient.user.username }}</td>
-                    <td>{{ patient.user.email }}</td>
-                    <td>{{ patient.diagnosis or 'N/A' }}</td>
+                    <td>{{ patient.nombre_completo }}</td>
+<td>{{ patient.usuario.nombre_usuario }}</td>
+                    <td>{{ patient.usuario.correo_electronico }}</td>
+                    <td>{{ patient.diagnostico or 'N/A' }}</td>
                     <td>
                         <div class="progress" style="height: 20px;">
                             <!-- Jinja2 template variable -->
                             <div class="progress-bar" role="progressbar" 
-                                 style="width: {{ patient.progress }}%">
-                                {{ patient.progress }}%
+style="width: {{ patient.progreso }}%">
+                                 {{ patient.progreso }}%
                             </div>
                         </div>
                     </td>
-                    <td>{{ patient.completed_sessions }}/{{ patient.total_sessions }}</td>
+                    <td>{{ patient.sesiones_completadas }}/{{ patient.sesiones_totales }}</td>
                     <td>
-                        {% if patient.user.is_active %}
+                        {% if patient.usuario.esta_activo %}
                             <span class="badge bg-success">Activo</span>
                         {% else %}
                             <span class="badge bg-secondary">Inactivo</span>

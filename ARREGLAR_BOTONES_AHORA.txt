@@ -1,0 +1,128 @@
+========================================
+ARREGLAR BOTONES - SOLUCIÓN INMEDIATA
+========================================
+
+PROBLEMA: Los botones de reproducir no funcionan
+
+SOLUCIÓN EN 4 PASOS:
+
+========================================
+PASO 1: REINICIAR SERVIDOR
+========================================
+
+En la terminal donde corre Flask:
+
+1. Presiona: Ctrl + C
+2. Ejecuta: python run.py
+3. Espera a ver: * Running on http://127.0.0.1:5000
+
+========================================
+PASO 2: LIMPIAR CACHÉ DEL NAVEGADOR
+========================================
+
+Opción A (Recomendado):
+- Presiona: Ctrl + Shift + R
+- Repite 3 veces
+
+Opción B:
+- Presiona: Ctrl + Shift + N (modo incógnito)
+
+========================================
+PASO 3: ABRIR DEVTOOLS
+========================================
+
+1. Presiona: F12
+2. Click en la pestaña "Console"
+3. Deja la consola abierta
+
+========================================
+PASO 4: PROBAR
+========================================
+
+1. Login (terapeuta / tera123 o paciente / paci123)
+2. Ve a "Galería de Videos"
+3. Click en "Reproducir" en un video
+4. OBSERVA LA CONSOLA
+
+========================================
+QUÉ BUSCAR EN LA CONSOLA:
+========================================
+
+SI VES ESTO = FUNCIONA:
+  🎥 DEBUG: playVideo llamada
+  📹 DEBUG: Asignando src al video
+  ✓ Video: loadstart
+  ✓ Video: canplay
+
+SI VES ESTO = ERROR:
+  Uncaught ReferenceError: playVideoFromData is not defined
+  
+  SOLUCIÓN: Vuelve al PASO 1
+
+SI VES ESTO = ARCHIVO NO EXISTE:
+  ❌ Video error code: 4
+  
+  SOLUCIÓN: Graba un nuevo video
+
+========================================
+TEST RÁPIDO:
+========================================
+
+Abre en el navegador:
+http://localhost:5000/static/test_botones_simple.html
+
+Si los botones funcionan aquí, el problema es específico
+de la galería.
+
+========================================
+VERIFICACIÓN EN LA CONSOLA:
+========================================
+
+Copia y pega esto en la consola (F12):
+
+typeof playVideoFromData
+
+DEBE DECIR: "function"
+
+SI DICE: "undefined"
+  → El servidor no se reinició correctamente
+  → Vuelve al PASO 1
+
+========================================
+SI NADA FUNCIONA:
+========================================
+
+Ejecuta estos comandos y comparte el resultado:
+
+python verificar_ruta_video.py
+
+En la consola del navegador (F12):
+
+console.log('playVideoFromData:', typeof playVideoFromData);
+console.log('playVideo:', typeof playVideo);
+console.log('downloadFile:', typeof downloadFile);
+
+========================================
+CHECKLIST:
+========================================
+
+[ ] Reinicié el servidor (Ctrl+C → python run.py)
+[ ] Vi "Running on http://127.0.0.1:5000"
+[ ] Limpié el caché (Ctrl+Shift+R x3)
+[ ] Abrí DevTools (F12)
+[ ] Estoy en la pestaña Console
+[ ] typeof playVideoFromData devuelve "function"
+[ ] Intenté hacer click en Reproducir
+[ ] Observé los mensajes en la consola
+
+========================================
+RESULTADO ESPERADO:
+========================================
+
+1. Click en "Reproducir"
+2. Se abre un modal
+3. El video se carga
+4. El video se reproduce
+5. No hay errores en la consola
+
+========================================

@@ -1,0 +1,893 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Galería de Videos - RehabSystem{% endblock %}
+
+{% block page_title %}Galería de Videos{% endblock %}
+{% block page_description %}Tus videos de sesiones de rehabilitación{% endblock %}
+
+{% block extra_css %}
+<style>
+.video-gallery {
+    padding: 20px 0;
+}
+
+.video-card {
+    transition: transform 0.2s;
+    margin-bottom: 20px;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    border-radius: 8px;
+}
+
+.video-info {
+    padding: 15px;
+}
+
+.video-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    word-break: break-all;
+}
+
+.video-meta {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.permanent-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.audio-badge {
+    background-color: #17a2b8;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #ddd;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid video-gallery">
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs mb-4" id="videoTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="my-videos-tab" data-bs-toggle="tab" data-bs-target="#my-videos" 
+                    type="button" role="tab" aria-controls="my-videos" aria-selected="true">
+                <i class="fas fa-video"></i> Mis Videos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="shared-videos-tab" data-bs-toggle="tab" data-bs-target="#shared-videos" 
+                    type="button" role="tab" aria-controls="shared-videos" aria-selected="false">
+                <i class="fas fa-share-alt"></i> Videos Compartidos
+                <span class="badge bg-danger" id="unreadBadge" style="display: none;">0</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="videoTabsContent">
+        <!-- Pestaña: Mis Videos -->
+        <div class="tab-pane fade show active" id="my-videos" role="tabpanel" aria-labelledby="my-videos-tab">
+    <!-- Filtros -->
+    <div class="filter-section">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="filterType" class="form-label">Tipo</label>
+                <select class="form-select" id="filterType">
+                    <option value="">Todos</option>
+                    <option value="video">Videos</option>
+                    <option value="photo">Fotos</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterPermanent" class="form-label">Almacenamiento</label>
+                <select class="form-select" id="filterPermanent">
+                    <option value="">Todos</option>
+                    <option value="true">Permanentes</option>
+                    <option value="false">Temporales</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterAudio" class="form-label">Audio</label>
+                <select class="form-select" id="filterAudio">
+                    <option value="">Todos</option>
+                    <option value="true">Con audio</option>
+                    <option value="false">Sin audio</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterSearch" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="filterSearch" placeholder="Buscar en notas...">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <button class="btn btn-primary" onclick="loadCaptures()">
+                    <i class="fas fa-search"></i> Aplicar filtros
+                </button>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Limpiar filtros
+                </button>
+                <button class="btn btn-success float-end" onclick="refreshGallery()">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contador -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <span id="captureCount">Cargando...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando videos...</p>
+    </div>
+
+    <!-- Galería -->
+    <div class="row" id="videoGallery">
+        <!-- Los videos se cargarán aquí dinámicamente -->
+    </div>
+
+    <!-- Estado vacío -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+        <i class="fas fa-video-slash"></i>
+        <h3>No se encontraron videos</h3>
+        <p>No hay videos disponibles con los filtros seleccionados.</p>
+    </div>
+        </div>
+
+        <!-- Pestaña: Videos Compartidos -->
+        <div class="tab-pane fade" id="shared-videos" role="tabpanel" aria-labelledby="shared-videos-tab">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="sharedCount">Cargando videos compartidos...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading-spinner" id="sharedLoadingSpinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando videos compartidos...</p>
+            </div>
+
+            <!-- Galería de videos compartidos -->
+            <div class="row" id="sharedVideoGallery">
+                <!-- Los videos compartidos se cargarán aquí -->
+            </div>
+
+            <!-- Estado vacío -->
+            <div class="empty-state" id="sharedEmptyState" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h3>No hay videos compartidos</h3>
+                <p>Tu terapeuta aún no ha compartido videos contigo.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para reproducir video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="videoModalLabel">Reproducir Video</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <video id="modalVideo" controls controlsList="nodownload" style="width: 100%; max-height: 500px; background: #000;">
+                    Tu navegador no soporta el elemento de video.
+                </video>
+                <div id="videoInfo" class="mt-3"></div>
+                
+                <!-- Controles adicionales -->
+                <div class="mt-3 d-flex justify-content-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="changePlaybackSpeed(0.5)">
+                        <i class="fas fa-backward"></i> 0.5x
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="changePlaybackSpeed(1)">
+                        <i class="fas fa-play"></i> 1x
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="changePlaybackSpeed(1.5)">
+                        <i class="fas fa-forward"></i> 1.5x
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="changePlaybackSpeed(2)">
+                        <i class="fas fa-fast-forward"></i> 2x
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i> Pantalla completa
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="downloadVideoBtn">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para compartir video con terapeuta -->
+<div class="modal fade" id="shareVideoModal" tabindex="-1" aria-labelledby="shareVideoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareVideoModalLabel">
+                    <i class="fas fa-share"></i> Compartir Video con Terapeuta
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="shareVideoForm">
+                    <input type="hidden" id="shareCaptureId">
+                    
+                    <div class="mb-3">
+                        <label for="shareTherapistSelect" class="form-label">Seleccionar Terapeuta</label>
+                        <select class="form-select" id="shareTherapistSelect" required>
+                            <option value="">Cargando terapeutas...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="shareMessage" class="form-label">Mensaje (opcional)</label>
+                        <textarea class="form-control" id="shareMessage" rows="3" 
+                                  placeholder="Escribe un mensaje para tu terapeuta..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Tu terapeuta recibirá una notificación y podrá ver este video.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmShareVideo()">
+                    <i class="fas fa-paper-plane"></i> Compartir Video
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCaptures = [];
+let currentVideoPath = '';
+
+function normalizePath(p) {
+    if (!p) return '';
+    let url = p.replace(/\\/g, '/');
+    if (!url.startsWith('/')) url = '/' + url;
+    return url.replace(/\/+/g, '/');
+}
+
+// Cargar capturas al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    loadCaptures();
+    loadSharedVideos();
+    
+    // Listener para cambio de pestañas
+    document.getElementById('shared-videos-tab').addEventListener('shown.bs.tab', function() {
+        loadSharedVideos();
+    });
+});
+
+function loadCaptures() {
+    showLoading(true);
+    
+    const filters = {
+        type: document.getElementById('filterType').value,
+        permanent: document.getElementById('filterPermanent').value,
+        audio: document.getElementById('filterAudio').value,
+        search: document.getElementById('filterSearch').value
+    };
+    
+    fetch('/api/get-captures?' + new URLSearchParams(filters))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentCaptures = data.captures;
+                renderGallery(data.captures);
+                updateCounter(data.total);
+            } else {
+                showError('Error al cargar capturas: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error de conexión al cargar capturas');
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+}
+
+function renderGallery(captures) {
+    const gallery = document.getElementById('videoGallery');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (captures.length === 0) {
+        gallery.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    gallery.innerHTML = captures.map(capture => `
+        <div class="col-lg-4 col-md-6">
+            <div class="card video-card">
+                <div class="video-thumbnail">
+                    <i class="fas fa-${capture.type === 'video' ? 'video' : 'camera'}"></i>
+                </div>
+                <div class="video-info">
+                    <div class="video-title">${capture.filename}</div>
+                    <div class="video-meta">
+                        <small>
+                            <i class="fas fa-calendar"></i> ${capture.created_at}<br>
+                            ${capture.duration ? `<i class="fas fa-clock"></i> ${capture.duration}s<br>` : ''}
+                            ${capture.file_size ? `<i class="fas fa-file"></i> ${formatFileSize(capture.file_size)}<br>` : ''}
+                            ${capture.is_permanent ? '<span class="permanent-badge">Permanente</span> ' : ''}
+                            ${capture.has_audio ? '<span class="audio-badge">Audio</span>' : ''}
+                        </small>
+                    </div>
+                    ${capture.notes ? `<div class="mt-2"><small>${capture.notes}</small></div>` : ''}
+                    <div class="mt-3 btn-group w-100" role="group">
+                        ${capture.type === 'video' ? `
+                            <button class="btn btn-primary btn-sm" 
+                                    data-filepath="${capture.file_path}" 
+                                    data-filename="${capture.filename}" 
+                                    data-duration="${capture.duration || 0}" 
+                                    data-notes="${capture.notes || ''}"
+                                    onclick="playVideoFromData(this)">
+                                <i class="fas fa-play"></i> Reproducir
+                            </button>
+                        ` : `
+                            <button class="btn btn-info btn-sm" 
+                                    data-filepath="${capture.file_path}"
+                                    onclick="viewImageFromData(this)">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                        `}
+                        <button class="btn btn-success btn-sm" 
+                                data-filepath="${capture.file_path}" 
+                                data-filename="${capture.filename}"
+                                onclick="downloadFileFromData(this)">
+                            <i class="fas fa-download"></i> Descargar
+                        </button>
+                    </div>
+                    ${capture.type === 'video' && capture.patient_id ? `
+                        <button class="btn btn-warning btn-sm w-100 mt-2" onclick="shareVideoWithTherapist(${capture.id})">
+                            <i class="fas fa-share"></i> Compartir con Terapeuta
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Funciones wrapper que leen datos de atributos data-*
+function playVideoFromData(button) {
+    const filePath = button.getAttribute('data-filepath');
+    const filename = button.getAttribute('data-filename');
+    const duration = button.getAttribute('data-duration');
+    const notes = button.getAttribute('data-notes');
+    playVideo(filePath, filename, duration, notes);
+}
+
+function viewImageFromData(button) {
+    const filePath = button.getAttribute('data-filepath');
+    viewImage(filePath);
+}
+
+function downloadFileFromData(button) {
+    const filePath = button.getAttribute('data-filepath');
+    const filename = button.getAttribute('data-filename');
+    downloadFile(filePath, filename);
+}
+
+function playVideo(filePath, filename, duration, notes) {
+    console.log('🎥 DEBUG: playVideo llamada');
+    console.log('  - filePath:', filePath);
+    console.log('  - filename:', filename);
+    
+    currentVideoPath = filePath;
+    const modal = new bootstrap.Modal(document.getElementById('videoModal'));
+    const video = document.getElementById('modalVideo');
+    const videoInfo = document.getElementById('videoInfo');
+    const downloadBtn = document.getElementById('downloadVideoBtn');
+    
+    // Limpiar video anterior
+    video.pause();
+    video.src = '';
+    
+    // Cargar nuevo video
+    console.log('📹 DEBUG: Asignando src al video:', filePath);
+    const src = normalizePath(filePath);
+    video.src = src;
+    video.load();
+    
+    // Agregar event listeners para debug
+    video.addEventListener('loadstart', () => console.log('✓ Video: loadstart'));
+    video.addEventListener('loadedmetadata', () => console.log('✓ Video: loadedmetadata'));
+    video.addEventListener('loadeddata', () => console.log('✓ Video: loadeddata'));
+    video.addEventListener('canplay', () => console.log('✓ Video: canplay'));
+    video.addEventListener('error', (e) => {
+        console.error('❌ Video error:', e);
+        console.error('❌ Video error code:', video.error ? video.error.code : 'unknown');
+        console.error('❌ Video error message:', video.error ? video.error.message : 'unknown');
+    });
+    
+    videoInfo.innerHTML = `
+        <strong>${filename}</strong><br>
+        ${duration ? `Duración: ${duration} segundos<br>` : ''}
+        ${notes ? `Notas: ${notes}` : ''}
+    `;
+    
+    downloadBtn.onclick = () => downloadFile(filePath, filename);
+    
+    modal.show();
+    
+    // Reproducir automáticamente cuando esté listo
+    video.play().catch(error => {
+        console.log('⚠️ Autoplay bloqueado:', error);
+    });
+}
+
+function viewImage(filePath) {
+    const src = normalizePath(filePath);
+    window.open(src, '_blank');
+}
+
+function downloadFile(filePath, filename) {
+    // Mostrar mensaje de descarga
+    showSuccess('Iniciando descarga de ' + filename);
+    
+    // Crear elemento de descarga
+    const link = document.createElement('a');
+    link.href = normalizePath(filePath);
+    link.download = filename;
+    link.style.display = 'none';
+    
+    // Agregar al DOM, hacer click y remover
+    document.body.appendChild(link);
+    link.click();
+    
+    // Remover después de un pequeño delay
+    setTimeout(() => {
+        document.body.removeChild(link);
+    }, 100);
+    
+    // Método alternativo si el primero falla
+    setTimeout(() => {
+        fetch(normalizePath(filePath))
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Error en descarga alternativa:', error);
+                window.open(normalizePath(filePath), '_blank');
+            });
+    }, 500);
+}
+
+function updateCounter(total) {
+    const countElement = document.getElementById('captureCount');
+    const videos = currentCaptures.filter(c => c.type === 'video').length;
+    const photos = currentCaptures.filter(c => c.type === 'photo').length;
+    const permanent = currentCaptures.filter(c => c.is_permanente).length;
+    
+    countElement.innerHTML = `
+        Total: ${total} elementos | 
+        Videos: ${videos} | 
+        Fotos: ${photos} | 
+        Permanentes: ${permanent}
+    `;
+}
+
+function clearFilters() {
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterPermanent').value = '';
+    document.getElementById('filterAudio').value = '';
+    document.getElementById('filterSearch').value = '';
+    loadCaptures();
+}
+
+function refreshGallery() {
+    loadCaptures();
+}
+
+function showLoading(show) {
+    document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+}
+
+function showError(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// ============================================================
+// FUNCIONES PARA VIDEOS COMPARTIDOS
+// ============================================================
+
+function loadSharedVideos() {
+    const spinner = document.getElementById('sharedLoadingSpinner');
+    if (spinner) spinner.style.display = 'block';
+    
+    fetch('/api/get-shared-videos')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderSharedVideos(data.videos);
+                updateSharedCounter(data.total);
+                updateUnreadBadge(data.videos);
+            } else {
+                showError('Error al cargar videos compartidos: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error de conexión al cargar videos compartidos');
+        })
+        .finally(() => {
+            if (spinner) spinner.style.display = 'none';
+        });
+}
+
+function renderSharedVideos(videos) {
+    const gallery = document.getElementById('sharedVideoGallery');
+    const emptyState = document.getElementById('sharedEmptyState');
+    
+    if (videos.length === 0) {
+        gallery.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    gallery.innerHTML = videos.map(video => `
+        <div class="col-lg-4 col-md-6">
+            <div class="card video-card ${!video.leido ? 'border-primary' : ''}">
+                ${!video.leido ? '<div class="badge bg-primary position-absolute top-0 end-0 m-2">Nuevo</div>' : ''}
+                <div class="video-thumbnail">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="video-info">
+                    <div class="video-title">${video.filename}</div>
+                    <div class="video-meta">
+                        <small>
+                            <i class="fas fa-user-md"></i> ${video.therapist_name}<br>
+                            <i class="fas fa-calendar"></i> ${video.fecha_compartido}<br>
+                            ${video.duration ? `<i class="fas fa-clock"></i> ${video.duration}s<br>` : ''}
+                            ${video.file_size ? `<i class="fas fa-file"></i> ${formatFileSize(video.file_size)}<br>` : ''}
+                            ${video.has_audio ? '<span class="audio-badge">Audio</span>' : ''}
+                        </small>
+                    </div>
+                    ${video.message ? `
+                        <div class="mt-2 p-2 bg-light rounded">
+                            <small><strong>Mensaje:</strong> ${video.message}</small>
+                        </div>
+                    ` : ''}
+                    <div class="mt-3 btn-group w-100" role="group">
+                        <button class="btn btn-primary btn-sm" 
+                                data-filepath="${video.file_path}" 
+                                data-filename="${video.filename}" 
+                                data-duration="${video.duration}" 
+                                data-message="${video.message || ''}"
+                                data-shareid="${video.id}"
+                                data-isread="${video.leido}"
+                                onclick="playSharedVideoFromData(this)">
+                            <i class="fas fa-play"></i> Reproducir
+                        </button>
+                        <button class="btn btn-success btn-sm" 
+                                data-filepath="${video.file_path}" 
+                                data-filename="${video.filename}"
+                                onclick="downloadFileFromData(this)">
+                            <i class="fas fa-download"></i> Descargar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function playSharedVideoFromData(button) {
+    const filePath = button.getAttribute('data-filepath');
+    const filename = button.getAttribute('data-filename');
+    const duration = button.getAttribute('data-duration');
+    const message = button.getAttribute('data-message');
+    const shareId = button.getAttribute('data-shareid');
+    const isRead = button.getAttribute('data-isread') === 'true';
+    
+    console.log('🎬 DEBUG: playSharedVideoFromData llamada');
+    console.log('  - filePath:', filePath);
+    console.log('  - filename:', filename);
+    console.log('  - duration:', duration);
+    console.log('  - message:', message);
+    console.log('  - shareId:', shareId);
+    console.log('  - isRead:', isRead);
+    
+    playSharedVideo(filePath, filename, duration, message, shareId, isRead);
+}
+
+function playSharedVideo(filePath, filename, duration, message, shareId, isRead) {
+    playVideo(filePath, filename, duration, message);
+    
+    // Marcar como leído si no lo está
+    if (!isRead) {
+        markVideoAsRead(shareId);
+    }
+}
+
+function markVideoAsRead(shareId) {
+    fetch(`/api/mark-video-as-read/${shareId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Recargar videos compartidos para actualizar el estado
+            loadSharedVideos();
+        }
+    })
+    .catch(error => {
+        console.error('Error al marcar video como leído:', error);
+    });
+}
+
+function updateSharedCounter(total) {
+    const countElement = document.getElementById('sharedCount');
+    if (countElement) {
+        countElement.textContent = `Total de videos compartidos: ${total}`;
+    }
+}
+
+function updateUnreadBadge(videos) {
+    const unreadCount = videos.filter(v => !v.leido).length;
+    const badge = document.getElementById('unreadBadge');
+    
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// ============================================================
+// FUNCIONES PARA COMPARTIR VIDEOS CON TERAPEUTA
+// ============================================================
+
+function shareVideoWithTherapist(captureId) {
+    document.getElementById('shareCaptureId').value = captureId;
+    loadTherapistsForSharing();
+    const modal = new bootstrap.Modal(document.getElementById('shareVideoModal'));
+    modal.show();
+}
+
+function loadTherapistsForSharing() {
+    const select = document.getElementById('shareTherapistSelect');
+    select.innerHTML = '<option value="">Cargando terapeutas...</option>';
+    
+    fetch('/api/get-patient-therapists')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.therapists.length === 0) {
+                    select.innerHTML = '<option value="">No tienes terapeutas asignados</option>';
+                } else {
+                    select.innerHTML = '<option value="">Selecciona un terapeuta...</option>' +
+                        data.therapists.map(therapist => 
+                            `<option value="${therapist.id}">${therapist.name} - ${therapist.specialty}</option>`
+                        ).join('');
+                }
+            } else {
+                select.innerHTML = '<option value="">Error al cargar terapeutas</option>';
+                showError('Error al cargar terapeutas: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            select.innerHTML = '<option value="">Error de conexión</option>';
+            showError('Error de conexión al cargar terapeutas');
+        });
+}
+
+function confirmShareVideo() {
+    const captureId = document.getElementById('shareCaptureId').value;
+    const therapistId = document.getElementById('shareTherapistSelect').value;
+    const message = document.getElementById('shareMessage').value;
+    
+    if (!therapistId) {
+        showError('Por favor selecciona un terapeuta');
+        return;
+    }
+    
+    // Deshabilitar botón mientras se procesa
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Compartiendo...';
+    
+    fetch('/api/patient-share-video', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            capture_id: parseInt(captureId),
+            therapist_id: parseInt(therapistId),
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Video compartido exitosamente con tu terapeuta');
+            bootstrap.Modal.getInstance(document.getElementById('shareVideoModal')).hide();
+            document.getElementById('shareVideoForm').reset();
+        } else {
+            showError('Error al compartir video: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Error de conexión al compartir video');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Compartir Video';
+    });
+}
+
+function showSuccess(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+
+// ============================================================
+// CONTROLES ADICIONALES DE VIDEO
+// ============================================================
+
+function changePlaybackSpeed(speed) {
+    const video = document.getElementById('modalVideo');
+    video.playbackRate = speed;
+    showSuccess(`Velocidad de reproducción: ${speed}x`);
+}
+
+function toggleFullscreen() {
+    const video = document.getElementById('modalVideo');
+    
+    if (!document.fullscreenElement) {
+        if (video.requestFullscreen) {
+            video.requestFullscreen();
+        } else if (video.webkitRequestFullscreen) {
+            video.webkitRequestFullscreen();
+        } else if (video.msRequestFullscreen) {
+            video.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+}
+
+// Limpiar video cuando se cierra el modal
+document.getElementById('videoModal').addEventListener('hidden.bs.modal', function () {
+    const video = document.getElementById('modalVideo');
+    video.pause();
+    video.src = '';
+});
+</script>
+{% endblock %}

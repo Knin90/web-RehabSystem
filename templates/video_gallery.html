@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}Galería de Videos - RehabSystem{% endblock %}
+
+{% block extra_css %}
+<style>
+.video-gallery {
+    padding: 20px 0;
+}
+
+.video-card {
+    transition: transform 0.2s;
+    margin-bottom: 20px;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    border-radius: 8px;
+}
+
+.video-info {
+    padding: 15px;
+}
+
+.video-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    word-break: break-all;
+}
+
+.video-meta {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.permanent-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.audio-badge {
+    background-color: #17a2b8;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #ddd;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid video-gallery">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-video"></i>
+                Galería de Videos
+                {% if current_user.rol == 'therapist' %}
+                    <small class="text-muted">- Terapeuta</small>
+                {% elif current_user.rol == 'patient' %}
+                    <small class="text-muted">- Paciente</small>
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="filterType" class="form-label">Tipo</label>
+                <select class="form-select" id="filterType">
+                    <option value="">Todos</option>
+                    <option value="video">Videos</option>
+                    <option value="photo">Fotos</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterPermanent" class="form-label">Almacenamiento</label>
+                <select class="form-select" id="filterPermanent">
+                    <option value="">Todos</option>
+                    <option value="true">Permanentes</option>
+                    <option value="false">Temporales</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterAudio" class="form-label">Audio</label>
+                <select class="form-select" id="filterAudio">
+                    <option value="">Todos</option>
+                    <option value="true">Con audio</option>
+                    <option value="false">Sin audio</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterSearch" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="filterSearch" placeholder="Buscar en notas...">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <button class="btn btn-primary" onclick="loadCaptures()">
+                    <i class="fas fa-search"></i> Aplicar filtros
+                </button>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Limpiar filtros
+                </button>
+                <button class="btn btn-success float-end" onclick="refreshGallery()">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contador -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <span id="captureCount">Cargando...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando videos...</p>
+    </div>
+
+    <!-- Galería -->
+    <div class="row" id="videoGallery">
+        <!-- Los videos se cargarán aquí dinámicamente -->
+    </div>
+
+    <!-- Estado vacío -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+        <i class="fas fa-video-slash"></i>
+        <h3>No se encontraron videos</h3>
+        <p>No hay videos disponibles con los filtros seleccionados.</p>
+    </div>
+</div>
+
+<!-- Modal para reproducir video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="videoModalLabel">Reproducir Video</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <video id="modalVideo" controls style="width: 100%; max-height: 500px;">
+                    Tu navegador no soporta el elemento de video.
+                </video>
+                <div id="videoInfo" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="downloadVideoBtn">Descargar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCaptures = [];
+let currentVideoPath = '';
+
+// Cargar capturas al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    loadCaptures();
+});
+
+function loadCaptures() {
+    showLoading(true);
+    
+    const filters = {
+        type: document.getElementById('filterType').value,
+        permanent: document.getElementById('filterPermanent').value,
+        audio: document.getElementById('filterAudio').value,
+        search: document.getElementById('filterSearch').value
+    };
+    
+    fetch('/api/get-captures?' + new URLSearchParams(filters))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentCaptures = data.captures;
+                renderGallery(data.captures);
+                updateCounter(data.total);
+            } else {
+                showError('Error al cargar capturas: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error de conexión al cargar capturas');
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+}
+
+function renderGallery(captures) {
+    const gallery = document.getElementById('videoGallery');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (captures.length === 0) {
+        gallery.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    gallery.innerHTML = captures.map(capture => `
+        <div class="col-lg-4 col-md-6">
+            <div class="card video-card">
+                <div class="video-thumbnail">
+                    <i class="fas fa-${capture.type === 'video' ? 'video' : 'camera'}"></i>
+                </div>
+                <div class="video-info">
+                    <div class="video-title">${capture.filename}</div>
+                    <div class="video-meta">
+                        <small>
+                            <i class="fas fa-calendar"></i> ${capture.created_at}<br>
+                            ${capture.duration ? `<i class="fas fa-clock"></i> ${capture.duration}s<br>` : ''}
+                            ${capture.file_size ? `<i class="fas fa-file"></i> ${formatFileSize(capture.file_size)}<br>` : ''}
+                            ${capture.is_permanent ? '<span class="permanent-badge">Permanente</span> ' : ''}
+                            ${capture.has_audio ? '<span class="audio-badge">Audio</span>' : ''}
+                        </small>
+                    </div>
+                    ${capture.notes ? `<div class="mt-2"><small>${capture.notes}</small></div>` : ''}
+                    <div class="mt-3 btn-group w-100" role="group">
+                        ${capture.type === 'video' ? `
+                            <button class="btn btn-primary btn-sm" onclick="playVideo('${capture.file_path}', '${capture.filename}', ${capture.duration}, '${capture.notes || ''}')">
+                                <i class="fas fa-play"></i> Reproducir
+                            </button>
+                        ` : `
+                            <button class="btn btn-info btn-sm" onclick="viewImage('${capture.file_path}')">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                        `}
+                        <button class="btn btn-success btn-sm" onclick="downloadFile('${capture.file_path}', '${capture.filename}')">
+                            <i class="fas fa-download"></i> Descargar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function playVideo(filePath, filename, duration, notes) {
+    currentVideoPath = filePath;
+    const modal = new bootstrap.Modal(document.getElementById('videoModal'));
+    const video = document.getElementById('modalVideo');
+    const videoInfo = document.getElementById('videoInfo');
+    const downloadBtn = document.getElementById('downloadVideoBtn');
+    
+    video.src = filePath;
+    videoInfo.innerHTML = `
+        <strong>${filename}</strong><br>
+        ${duration ? `Duración: ${duration} segundos<br>` : ''}
+        ${notes ? `Notas: ${notes}` : ''}
+    `;
+    
+    downloadBtn.onclick = () => downloadFile(filePath, filename);
+    
+    modal.show();
+}
+
+function viewImage(filePath) {
+    window.open(filePath, '_blank');
+}
+
+function downloadFile(filePath, filename) {
+    const link = document.createElement('a');
+    link.href = filePath;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function updateCounter(total) {
+    const countElement = document.getElementById('captureCount');
+    const videos = currentCaptures.filter(c => c.type === 'video').length;
+    const photos = currentCaptures.filter(c => c.type === 'photo').length;
+    const permanent = currentCaptures.filter(c => c.is_permanente).length;
+    
+    countElement.innerHTML = `
+        Total: ${total} elementos | 
+        Videos: ${videos} | 
+        Fotos: ${photos} | 
+        Permanentes: ${permanent}
+    `;
+}
+
+function clearFilters() {
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterPermanent').value = '';
+    document.getElementById('filterAudio').value = '';
+    document.getElementById('filterSearch').value = '';
+    loadCaptures();
+}
+
+function refreshGallery() {
+    loadCaptures();
+}
+
+function showLoading(show) {
+    document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+}
+
+function showError(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
+{% endblock %}

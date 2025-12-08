@@ -1,0 +1,600 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Iniciar Rutina - RehabSystem{% endblock %}
+{% block page_title %}Rutina guiada con visión artificial{% endblock %}
+{% block page_description %}Activa tu cámara para que el sistema pueda analizar tus movimientos.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/camera-styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="card card-custom mb-4">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Sesión actual</h5>
+        <div>
+            <span class="badge bg-primary me-2">Rutina: Lumbar básica · 15 min</span>
+            <span id="cameraStatus" class="badge bg-secondary">Desconectado</span>
+        </div>
+    </div>
+    <div class="card-body row g-4">
+        <div class="col-lg-8">
+            <div class="position-relative border rounded bg-dark overflow-hidden" style="aspect-ratio: 16/9;">
+                <!-- Video de la cámara -->
+                <video id="patientCamera" 
+                       class="w-100 h-100" 
+                       style="object-fit: cover; display: block;"
+                       autoplay 
+                       playsinline>
+                </video>
+
+                <!-- Lienzo para MediaPipe (opcional luego) -->
+                <canvas id="poseCanvas"
+                        class="position-absolute top-0 start-0 w-100 h-100"
+                        style="pointer-events: none; z-index: 2;"></canvas>
+
+                <!-- Indicador de grabación -->
+                <div id="recordingIndicator" class="recording-indicator">
+                    <span>REC</span>
+                </div>
+
+                <!-- Placeholder cuando la cámara está apagada -->
+                <div id="cameraPlaceholder"
+                     class="position-absolute top-0 start-0 w-100 h-100"
+                     style="background: #000; z-index: 1; display: flex;">
+                </div>
+            </div>
+
+            <!-- Controles de cámara -->
+            <div class="mt-3 d-flex gap-2 flex-wrap">
+                <button id="btnToggleCamera" class="btn btn-success">
+                    <i class="fas fa-video"></i> Activar Cámara
+                </button>
+                <button id="btnCaptureSnapshot" class="btn btn-primary" disabled>
+                    <i class="fas fa-camera"></i> Capturar Foto
+                </button>
+                <button id="btnRecordVideo" class="btn btn-danger" disabled>
+                    <i class="fas fa-circle"></i> Grabar Sesión
+                </button>
+                <button class="btn btn-secondary" onclick="toggleFullscreen()">
+                    <i class="fas fa-expand"></i> Pantalla Completa
+                </button>
+                <button class="btn btn-info" onclick="viewMyCaptures()">
+                    <i class="fas fa-folder-open"></i> Mis Videos
+                </button>
+            </div>
+
+            <!-- Métricas en tiempo real -->
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-success me-2" id="poseStatus">Detección: Inactiva</span>
+                    <span class="badge bg-secondary">Repeticiones: <span id="repCount">0</span></span>
+                </div>
+                <div>
+                    <span class="badge bg-info">Tiempo: <span id="sessionTime">00:00</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <h6>Pasos de la rutina</h6>
+            <ol class="small">
+                <li>Posiciónate frente a la cámara a una distancia cómoda.</li>
+                <li>Sigue las indicaciones de postura en pantalla.</li>
+                <li>Realiza flexiones suaves según el rango recomendado.</li>
+                <li>Evita movimientos bruscos y detente si sientes dolor.</li>
+            </ol>
+
+            <hr>
+
+            <h6>Notas de la sesión</h6>
+            <textarea id="sessionNotes" class="form-control mb-2" rows="3"
+                      placeholder="Escribe cómo te sientes durante la sesión..."></textarea>
+            <button class="btn btn-primary btn-sm w-100" onclick="saveNote()">
+                <i class="fas fa-save"></i> Guardar Nota
+            </button>
+
+            <hr>
+
+            <h6>Indicaciones de seguridad</h6>
+            <p class="small text-muted mb-0">
+                Esta rutina ha sido prescrita por tu terapeuta. Si presentas mareos, dolor intenso
+                o cualquier molestia inusual, detén la sesión y comunícate con tu especialista.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/**
+ * Camera Manager para Pacientes - RehabSystem
+ * Versión adaptada para el módulo de paciente
+ */
+
+class PatientCameraManager {
+    constructor(videoElementId) {
+        this.videoElement = document.getElementById(videoElementId);
+        this.stream = null;
+        this.isActive = false;
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+        this.recordingStartTime = null;
+    }
+
+    async startCamera() {
+        try {
+            const constraints = {
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user'
+                },
+                audio: false
+            };
+
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            if (this.videoElement) {
+                this.videoElement.srcObject = this.stream;
+                this.videoElement.play();
+                this.isActive = true;
+                
+                console.log('✅ Cámara iniciada correctamente');
+                this.showNotification('Cámara conectada', 'success');
+                this.updateUI(true);
+            }
+        } catch (error) {
+            console.error('❌ Error al acceder a la cámara:', error);
+            this.handleCameraError(error);
+        }
+    }
+
+    stopCamera() {
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+            this.isActive = false;
+            
+            if (this.videoElement) {
+                this.videoElement.srcObject = null;
+            }
+            
+            console.log('🛑 Cámara detenida');
+            this.showNotification('Cámara desconectada', 'info');
+            this.updateUI(false);
+        }
+    }
+
+    toggleCamera() {
+        if (this.isActive) {
+            this.stopCamera();
+        } else {
+            this.startCamera();
+        }
+    }
+
+    captureSnapshot() {
+        if (!this.isActive || !this.videoElement) {
+            this.showNotification('La cámara no está activa', 'warning');
+            return null;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = this.videoElement.videoWidth;
+        canvas.height = this.videoElement.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.videoElement, 0, 0);
+        
+        return canvas.toDataURL('image/jpeg', 0.8);
+    }
+
+    async saveSnapshot(imageData, notes = '') {
+        try {
+            const response = await fetch('/api/save-patient-snapshot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: imageData,
+                    notes: notes
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification(`✅ Foto guardada: ${result.filename}`, 'success');
+                return result;
+            } else {
+                this.showNotification(`❌ Error: ${result.message}`, 'danger');
+                return null;
+            }
+        } catch (error) {
+            console.error('Error al guardar foto:', error);
+            this.showNotification('❌ Error al guardar foto en el servidor', 'danger');
+            return null;
+        }
+    }
+
+    startRecording() {
+        if (!this.isActive || !this.stream) {
+            this.showNotification('La cámara no está activa', 'warning');
+            return;
+        }
+
+        try {
+            this.mediaRecorder = new MediaRecorder(this.stream, {
+                mimeType: 'video/webm;codecs=vp9'
+            });
+
+            this.recordedChunks = [];
+            this.recordingStartTime = Date.now();
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.recordedChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = () => {
+                const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                const duration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                this.saveRecording(blob, duration);
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+
+            console.log('🔴 Grabación iniciada');
+            this.showNotification('🔴 Grabación iniciada', 'info');
+            this.updateRecordingUI(true);
+
+        } catch (error) {
+            console.error('Error al iniciar grabación:', error);
+            this.showNotification('❌ Error al iniciar grabación', 'danger');
+        }
+    }
+
+    stopRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+
+            console.log('⏹️ Grabación detenida');
+            this.showNotification('⏹️ Grabación detenida, guardando...', 'info');
+            this.updateRecordingUI(false);
+        }
+    }
+
+    async saveRecording(blob, duration) {
+        try {
+            const formData = new FormData();
+            formData.append('video', blob, 'recording.webm');
+            formData.append('notes', '');
+            formData.append('duration', duration);
+
+            const response = await fetch('/api/save-patient-video', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification(`✅ Video guardado: ${result.filename} (${duration}s)`, 'success');
+                return result;
+            } else {
+                this.showNotification(`❌ Error: ${result.message}`, 'danger');
+                return null;
+            }
+        } catch (error) {
+            console.error('Error al guardar video:', error);
+            this.showNotification('❌ Error al guardar video en el servidor', 'danger');
+            return null;
+        }
+    }
+
+    updateUI(isActive) {
+        const btnToggle = document.getElementById('btnToggleCamera');
+        const btnCapture = document.getElementById('btnCaptureSnapshot');
+        const btnRecord = document.getElementById('btnRecordVideo');
+        const statusBadge = document.getElementById('cameraStatus');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        const poseStatus = document.getElementById('poseStatus');
+        
+        if (btnToggle) {
+            if (isActive) {
+                btnToggle.innerHTML = '<i class="fas fa-video-slash"></i> Detener Cámara';
+                btnToggle.classList.remove('btn-success');
+                btnToggle.classList.add('btn-danger');
+            } else {
+                btnToggle.innerHTML = '<i class="fas fa-video"></i> Activar Cámara';
+                btnToggle.classList.remove('btn-danger');
+                btnToggle.classList.add('btn-success');
+            }
+        }
+        
+        if (btnCapture) {
+            btnCapture.disabled = !isActive;
+        }
+        
+        if (btnRecord) {
+            btnRecord.disabled = !isActive;
+        }
+        
+        if (statusBadge) {
+            if (isActive) {
+                statusBadge.textContent = 'Conectado';
+                statusBadge.classList.remove('bg-secondary');
+                statusBadge.classList.add('bg-success');
+            } else {
+                statusBadge.textContent = 'Desconectado';
+                statusBadge.classList.remove('bg-success');
+                statusBadge.classList.add('bg-secondary');
+            }
+        }
+        
+        if (poseStatus && isActive) {
+            poseStatus.textContent = 'Detección: Activa';
+            poseStatus.classList.remove('bg-success');
+            poseStatus.classList.add('bg-warning');
+        } else if (poseStatus) {
+            poseStatus.textContent = 'Detección: Inactiva';
+            poseStatus.classList.remove('bg-warning');
+            poseStatus.classList.add('bg-success');
+        }
+        
+        if (placeholder) {
+            placeholder.style.display = isActive ? 'none' : 'flex';
+        }
+    }
+
+    updateRecordingUI(isRecording) {
+        const btnRecord = document.getElementById('btnRecordVideo');
+        const recordingIndicator = document.getElementById('recordingIndicator');
+        
+        if (btnRecord) {
+            if (isRecording) {
+                btnRecord.innerHTML = '<i class="fas fa-stop"></i> Detener Grabación';
+                btnRecord.classList.remove('btn-danger');
+                btnRecord.classList.add('btn-warning');
+            } else {
+                btnRecord.innerHTML = '<i class="fas fa-circle"></i> Grabar Sesión';
+                btnRecord.classList.remove('btn-warning');
+                btnRecord.classList.add('btn-danger');
+            }
+        }
+        
+        if (recordingIndicator) {
+            recordingIndicator.style.display = isRecording ? 'flex' : 'none';
+        }
+    }
+
+    handleCameraError(error) {
+        let message = 'Error al acceder a la cámara';
+        
+        if (error.name === 'NotAllowedError') {
+            message = 'Permiso de cámara denegado. Por favor, permite el acceso.';
+        } else if (error.name === 'NotFoundError') {
+            message = 'No se encontró ninguna cámara en el dispositivo.';
+        } else if (error.name === 'NotReadableError') {
+            message = 'La cámara está siendo usada por otra aplicación.';
+        }
+        
+        this.showNotification(message, 'danger');
+    }
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    static checkCameraSupport() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('❌ Tu navegador no soporta acceso a cámara');
+            return false;
+        }
+        return true;
+    }
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    if (!PatientCameraManager.checkCameraSupport()) {
+        alert('Tu navegador no soporta acceso a cámara. Usa Chrome, Firefox o Edge.');
+        return;
+    }
+
+    const cameraManager = new PatientCameraManager('patientCamera');
+
+    const btnToggle = document.getElementById('btnToggleCamera');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', () => {
+            cameraManager.toggleCamera();
+        });
+    }
+
+    const btnCapture = document.getElementById('btnCaptureSnapshot');
+    if (btnCapture) {
+        btnCapture.addEventListener('click', async () => {
+            const snapshot = cameraManager.captureSnapshot();
+            if (snapshot) {
+                const notesElement = document.getElementById('sessionNotes');
+                const notes = notesElement ? notesElement.value : '';
+                await cameraManager.saveSnapshot(snapshot, notes);
+            }
+        });
+    }
+
+    const btnRecord = document.getElementById('btnRecordVideo');
+    if (btnRecord) {
+        btnRecord.addEventListener('click', () => {
+            if (cameraManager.isRecording) {
+                cameraManager.stopRecording();
+            } else {
+                cameraManager.startRecording();
+            }
+        });
+    }
+
+    window.addEventListener('beforeunload', () => {
+        if (cameraManager.isRecording) {
+            cameraManager.stopRecording();
+        }
+        cameraManager.stopCamera();
+    });
+});
+</script>
+<script>
+// Función para pantalla completa
+function toggleFullscreen() {
+    const videoContainer = document.getElementById('patientCamera').parentElement;
+    if (!document.fullscreenElement) {
+        videoContainer.requestFullscreen().catch(err => {
+            console.error('Error al entrar en pantalla completa:', err);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// Función para guardar nota
+function saveNote() {
+    const notes = document.getElementById('sessionNotes').value;
+    if (notes.trim()) {
+        console.log('Nota guardada:', notes);
+        
+        // Mostrar confirmación
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+        alert.innerHTML = `
+            <i class="fas fa-check-circle"></i> Nota guardada correctamente
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        setTimeout(() => alert.remove(), 3000);
+    } else {
+        alert('Por favor escribe una nota antes de guardar.');
+    }
+}
+
+// Función para ver capturas del paciente
+async function viewMyCaptures() {
+    try {
+        const response = await fetch('/api/get-patient-captures');
+        const result = await response.json();
+        
+        if (result.success) {
+            // Crear modal para mostrar capturas
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'capturesModal';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-folder-open"></i> Mis Videos y Fotos (${result.total})
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            ${result.total === 0 ? `
+                                <div class="text-center py-5">
+                                    <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Aún no tienes videos o fotos guardadas.</p>
+                                    <p class="small">Graba tu primera sesión para verla aquí.</p>
+                                </div>
+                            ` : `
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Tipo</th>
+                                                <th>Archivo</th>
+                                                <th>Tamaño</th>
+                                                <th>Fecha</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${result.captures.map(capture => `
+                                                <tr>
+                                                    <td>
+                                                        <i class="fas fa-${capture.type === 'photo' ? 'camera' : 'video'}"></i>
+                                                        ${capture.type === 'photo' ? 'Foto' : 'Video'}
+                                                    </td>
+                                                    <td>${capture.filename}</td>
+                                                    <td>${(capture.file_size / 1024).toFixed(2)} KB</td>
+                                                    <td>${capture.created_at}</td>
+                                                    <td>
+                                                        <a href="/${capture.file_path}" target="_blank" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-eye"></i> Ver
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Remover modal al cerrar
+            modal.addEventListener('hidden.bs.modal', () => {
+                modal.remove();
+            });
+        } else {
+            alert('Error al cargar videos: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cargar videos');
+    }
+}
+
+// Simulador de métricas en tiempo real
+let sessionSeconds = 0;
+let repsCount = 0;
+
+setInterval(() => {
+    // Actualizar tiempo de sesión
+    sessionSeconds++;
+    const minutes = Math.floor(sessionSeconds / 60);
+    const seconds = sessionSeconds % 60;
+    document.getElementById('sessionTime').textContent = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    // Simular incremento de repeticiones (aleatorio)
+    if (Math.random() > 0.97) {
+        repsCount++;
+        document.getElementById('repCount').textContent = repsCount;
+    }
+}, 1000);
+</script>
+{% endblock %}

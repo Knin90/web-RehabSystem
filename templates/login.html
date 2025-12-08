@@ -305,24 +305,24 @@
           </div>
           {% endif %}
 
-          <div class="form-group">
-            <label for="username" class="form-label">Usuario</label>
+<div class="form-group">
+            <label for="nombre_usuario" class="form-label">Usuario</label>
             <div class="input-group">
               <span class="input-group-text">
                 <i class="fas fa-user"></i>
               </span>
-              <input type="text" class="form-control" id="username" name="username" placeholder="Ingrese su usuario"
+              <input type="text" class="form-control" id="nombre_usuario" name="nombre_usuario" placeholder="Ingrese su usuario"
                 required autofocus />
             </div>
           </div>
 
           <div class="form-group">
-            <label for="password" class="form-label">Contraseña</label>
+            <label for="contrasena" class="form-label">Contraseña</label>
             <div class="input-group">
               <span class="input-group-text">
                 <i class="fas fa-lock"></i>
               </span>
-              <input type="password" class="form-control" id="password" name="password"
+              <input type="password" class="form-control" id="contrasena" name="contrasena"
                 placeholder="Ingrese su contraseña" required />
             </div>
           </div>
@@ -357,13 +357,13 @@
         }, 5000);
       });
 
-      // Form validation enhancement
+// Form validation enhancement
       const form = document.querySelector("form");
       form.addEventListener("submit", function (e) {
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value;
-
-        if (!username || !password) {
+        const nombre_usuario = document.getElementById("nombre_usuario").value.trim();
+        const contrasena = document.getElementById("contrasena").value;
+        
+        if (!nombre_usuario || !contrasena) {
           e.preventDefault();
           alert("Por favor, complete todos los campos.");
         }

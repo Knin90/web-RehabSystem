@@ -1,0 +1,27 @@
+{% extends "patient/base_paciente.html" %}
+
+{% block title %}Mi Terapeuta - RehabSystem{% endblock %}
+{% block page_title %}Equipo terapéutico{% endblock %}
+{% block page_description %}Información de contacto de tu terapeuta asignado.{% endblock %}
+
+{% block content %}
+<div class="card card-custom">
+    <div class="card-header-custom">
+        <h5 class="card-title mb-0">Terapeuta principal</h5>
+    </div>
+    <div class="card-body d-flex flex-column flex-md-row align-items-center gap-4">
+        <div class="avatar-user">
+            <span>AP</span>
+        </div>
+        <div>
+            <h5 class="mb-1">Dra. Ana Pérez</h5>
+            <p class="mb-1 text-muted">Especialista en Rehabilitación Física</p>
+            <p class="mb-2 small">
+                <i class="fas fa-envelope me-2"></i>ana.perez@rehabsystem.com<br>
+                <i class="fas fa-phone me-2"></i>+507 6000-0000
+            </p>
+            <span class="badge bg-success">Disponible</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

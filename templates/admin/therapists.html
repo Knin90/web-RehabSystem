@@ -49,13 +49,13 @@
                 {% for therapist in therapists %}
                 <tr>
                     <td>{{ therapist.id }}</td>
-                    <td>{{ therapist.full_name }}</td>
-                    <td>{{ therapist.user.username }}</td>
-                    <td>{{ therapist.user.email }}</td>
-                    <td>{{ therapist.specialty or 'N/A' }}</td>
-                    <td>{{ therapist.total_patients }}</td>
+                    <td>{{ therapist.nombre_completo }}</td>
+<td>{{ therapist.usuario.nombre_usuario }}</td>
+                    <td>{{ therapist.usuario.correo_electronico }}</td>
+                    <td>{{ therapist.especialidad or 'N/A' }}</td>
+                    <td>{{ therapist.total_pacientes }}</td>
                     <td>
-                        {% if therapist.user.is_active %}
+                        {% if therapist.usuario.esta_activo %}
                             <span class="badge bg-success">Activo</span>
                         {% else %}
                             <span class="badge bg-secondary">Inactivo</span>

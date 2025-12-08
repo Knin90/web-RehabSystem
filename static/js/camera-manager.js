@@ -19,14 +19,19 @@ class CameraManager {
      */
     async startCamera() {
         try {
-            // Solicitar acceso a la cámara
+// Solicitar acceso a la cámara con audio
             const constraints = {
                 video: {
                     width: { ideal: 1280 },
                     height: { ideal: 720 },
                     facingMode: 'user'
                 },
-                audio: false
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: 44100
+                }
             };
 
             this.stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -144,9 +149,15 @@ class CameraManager {
         }
 
         try {
-            // Crear MediaRecorder
+// Crear MediaRecorder con audio y video
+            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') 
+                ? 'video/webm;codecs=vp9,opus' 
+                : 'video/webm';
+            
             this.mediaRecorder = new MediaRecorder(this.stream, {
-                mimeType: 'video/webm;codecs=vp9'
+                mimeType: mimeType,
+                videoBitsPerSecond: 2500000, // 2.5 Mbps
+                audioBitsPerSecond: 128000   // 128 kbps
             });
 
             this.recordedChunks = [];
@@ -197,15 +208,19 @@ class CameraManager {
     /**
      * Guardar grabación en el servidor
      */
-    async saveRecording(blob, duration) {
+async saveRecording(blob, duration) {
         try {
             const formData = new FormData();
-            formData.append('video', blob, 'recording.webm');
-            formData.append('patient_id', ''); // Agregar ID del paciente si está disponible
-            formData.append('notes', '');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `sesion_permanente_${timestamp}.webm`;
+            
+            formData.append('video', blob, filename);
+            formData.append('patient_id', this.getCurrentPatientId() || ''); 
+            formData.append('notes', this.getSessionNotes() || '');
             formData.append('duration', duration);
+            formData.append('permanent', 'true'); // Marcar como grabación permanente
 
-            const response = await fetch('/api/save-video', {
+            const response = await fetch('/api/save-video-permanent', {
                 method: 'POST',
                 body: formData
             });
@@ -213,17 +228,92 @@ class CameraManager {
             const result = await response.json();
             
             if (result.success) {
-                this.showNotification(`✅ Video guardado: ${result.filename} (${duration}s)`, 'success');
+                this.showNotification(`✅ Video permanente guardado: ${result.filename} (${duration}s)`, 'success');
+                this.addVideoToGallery(result);
                 return result;
             } else {
                 this.showNotification(`❌ Error: ${result.message}`, 'danger');
                 return null;
             }
         } catch (error) {
-            console.error('Error al guardar video:', error);
-            this.showNotification('❌ Error al guardar video en el servidor', 'danger');
+            console.error('Error al guardar video permanente:', error);
+            this.showNotification('❌ Error al guardar video permanente en el servidor', 'danger');
             return null;
         }
+    }
+
+    normalizePath(p) {
+        if (!p) return '';
+        let url = p.replace(/\\/g, '/');
+        if (!url.startsWith('/')) url = '/' + url;
+        return url.replace(/\/+/g, '/');
+    }
+
+    /**
+     * Obtener ID del paciente actual
+     */
+    getCurrentPatientId() {
+        // Intentar obtener del DOM o de variables globales
+        const patientSelect = document.getElementById('patientSelect');
+        return patientSelect ? patientSelect.value : null;
+    }
+
+    /**
+     * Obtener notas de la sesión
+     */
+    getSessionNotes() {
+        const notesElement = document.getElementById('sessionNotes');
+        return notesElement ? notesElement.value : '';
+    }
+
+    /**
+     * Agregar video a la galería de videos guardados
+     */
+    addVideoToGallery(videoData) {
+        const galleryContainer = document.getElementById('videoGallery');
+        if (!galleryContainer) return;
+
+        const videoCard = document.createElement('div');
+        videoCard.className = 'col-md-4 mb-3';
+        videoCard.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">${videoData.filename}</h6>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            Duración: ${videoData.duration}s<br>
+                            Fecha: ${new Date(videoData.created_at).toLocaleString()}
+                        </small>
+                    </p>
+                    <button class="btn btn-sm btn-primary" onclick="this.playVideo('${videoData.file_path}')">
+                        <i class="fas fa-play"></i> Reproducir
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="this.downloadVideo('${videoData.file_path}', '${videoData.filename}')">
+                        <i class="fas fa-download"></i> Descargar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        galleryContainer.appendChild(videoCard);
+    }
+
+    /**
+     * Reproducir video
+     */
+    playVideo(filePath) {
+        const src = this.normalizePath(filePath);
+        window.open(src, '_blank');
+    }
+
+    /**
+     * Descargar video
+     */
+    downloadVideo(filePath, filename) {
+        const link = document.createElement('a');
+        link.href = this.normalizePath(filePath);
+        link.download = filename;
+        link.click();
     }
 
     /**
