@@ -1541,12 +1541,9 @@ exercise.id, exercise.nombre, exercise.descripcion or 'N/A',
             if not therapist:
                 return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
             
-            # Verificar que el terapeuta está asignado al paciente (a través de rutinas)
-            assigned_therapists = db.session.query(Routine.id_terapeuta).filter_by(id_paciente=patient.id).distinct().all()
-            assigned_therapist_ids = [t[0] for t in assigned_therapists]
-            
-            if therapist.id not in assigned_therapist_ids:
-                return jsonify({'success': False, 'message': 'Este terapeuta no está asignado a ti'}), 403
+            # Verificar que el terapeuta está activo
+            if not therapist.usuario.esta_activo:
+                return jsonify({'success': False, 'message': 'El terapeuta no está activo'}), 403
             
             # Verificar si el video ya fue compartido con este terapeuta
             existing_share = VideoShare.query.filter_by(
@@ -1664,7 +1661,7 @@ exercise.id, exercise.nombre, exercise.descripcion or 'N/A',
     @login_required
     @role_required('patient')
     def get_patient_therapists():
-        """Obtener lista de terapeutas asignados al paciente para compartir videos"""
+        """Obtener lista de terapeutas para compartir videos (todos los activos)"""
         try:
             from app.models import Routine
             
@@ -1672,26 +1669,30 @@ exercise.id, exercise.nombre, exercise.descripcion or 'N/A',
             if not patient:
                 return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
             
-            # Obtener terapeutas asignados al paciente a través de rutinas
-            therapist_ids = db.session.query(Routine.id_terapeuta)\
+            # Obtener terapeutas asignados al paciente a través de rutinas (para marcarlos)
+            therapist_ids_assigned = db.session.query(Routine.id_terapeuta)\
                 .filter_by(id_paciente=patient.id)\
                 .distinct().all()
             
-            therapist_ids = [t[0] for t in therapist_ids]
-            therapists = Therapist.query.filter(Therapist.id.in_(therapist_ids)).all() if therapist_ids else []
+            assigned_ids = set([t[0] for t in therapist_ids_assigned])
+            
+            # Obtener TODOS los terapeutas activos
+            therapists = Therapist.query.join(User).filter(User.esta_activo == True).all()
             
             therapists_list = []
             for therapist in therapists:
                 therapists_list.append({
                     'id': therapist.id,
                     'name': therapist.nombre_completo,
-                    'specialty': therapist.especialidad or 'General'
+                    'specialty': therapist.especialidad or 'General',
+                    'assigned': therapist.id in assigned_ids
                 })
             
             return jsonify({
                 'success': True,
                 'therapists': therapists_list,
-                'total': len(therapists_list)
+                'total': len(therapists_list),
+                'total_assigned': len(assigned_ids)
             }), 200
             
         except Exception as e:
