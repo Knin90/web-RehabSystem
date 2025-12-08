@@ -18,7 +18,7 @@ SQLAlchemy==2.0.44
 greenlet==3.2.4
 
 # PostgreSQL Driver (para producción)
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
 
 # Security
 bcrypt==5.0.0
