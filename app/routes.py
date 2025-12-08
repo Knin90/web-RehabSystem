@@ -2,12 +2,12 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, s
 from flask_login import login_user, logout_user, login_required, current_user
 from functools import wraps
 from app import db
-from app.models import User, Patient, Therapist, Exercise, Appointment, SystemSettings
-from app.forms import LoginForm
+from app.models import User, Patient, Therapist, Exercise, Appointment, SystemSettings, SessionCapture
 import csv
 import io
+import os
 from datetime import datetime
-
+from app.forms import LoginForm # Import LoginForm from forms.py
 
 # ============================================================
 # 🔐 Decorador para roles
@@ -16,7 +16,7 @@ def role_required(role):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if not current_user.is_authenticated or current_user.role != role:
+            if not current_user.is_authenticated or current_user.rol != role:
                 flash('No tienes permisos para acceder a esta sección.', 'danger')
                 return redirect(url_for('login'))
             return f(*args, **kwargs)
@@ -47,16 +47,16 @@ def register_routes(app):
         form = LoginForm()
 
         if form.validate_on_submit():
-            user = User.query.filter_by(username=form.username.data).first()
+            user = User.query.filter_by(nombre_usuario=form.nombre_usuario.data).first()
 
-            if user and user.check_password(form.password.data):
+            if user and user.check_password(form.contrasena.data):
                 login_user(user)
 
-                if user.role == 'admin':
+                if user.rol == 'admin':
                     return redirect(url_for('admin_dashboard'))
-                elif user.role == 'therapist':
+                elif user.rol == 'therapist':
                     return redirect(url_for('therapist_dashboard'))
-                elif user.role == 'patient':
+                elif user.rol == 'patient':
                     return redirect(url_for('patient_dashboard'))
 
                 flash("Tu rol no está configurado correctamente.", "danger")
@@ -70,89 +70,94 @@ def register_routes(app):
     # 👤 PÁGINAS DEL PACIENTE
     # ============================================================
     def obtener_datos_paciente():
-        patient = Patient.query.filter_by(user_id=current_user.id).first()
+        paciente = Patient.query.filter_by(id_usuario=current_user.id).first()
 
-        if not patient:
-            patient = Patient(user_id=current_user.id, full_name=current_user.username)
-            db.session.add(patient)
+        if not paciente:
+            paciente = Patient(id_usuario=current_user.id, nombre_completo=current_user.nombre_usuario)
+            db.session.add(paciente)
             db.session.commit()
 
         return {
-            'nombre_completo': patient.full_name,
-            'diagnostico': patient.diagnosis or 'Sin diagnóstico',
-            'progreso': patient.progress,
-            'sesiones_completadas': patient.completed_sessions,
-            'sesiones_totales': patient.total_sessions
+            'nombre_completo': paciente.nombre_completo,
+            'diagnostico': paciente.diagnostico or 'Sin diagnóstico',
+            'progreso': paciente.progreso,
+            'sesiones_completadas': paciente.sesiones_completadas,
+            'sesiones_totales': paciente.sesiones_totales
         }
 
     @app.route('/patient/dashboard')
     @login_required
     @role_required('patient')
     def patient_dashboard():
-        return render_template('patient/dashboard.html', datos=obtener_datos_paciente(), active_page='dashboard')
+        return render_template('paciente/dashboard.html', datos=obtener_datos_paciente(), active_page='dashboard')
 
     @app.route('/patient/history')
     @login_required
     @role_required('patient')
     def patient_history():
-        return render_template('patient/history.html', datos=obtener_datos_paciente(), active_page='history')
+        return render_template('paciente/history.html', datos=obtener_datos_paciente(), active_page='history')
 
     @app.route('/patient/therapists')
     @login_required
     @role_required('patient')
     def patient_therapists():
-        return render_template('patient/therapists.html', datos=obtener_datos_paciente(), active_page='therapists')
+        return render_template('paciente/therapists.html', datos=obtener_datos_paciente(), active_page='therapists')
 
     @app.route('/patient/start-therapy')
     @login_required
     @role_required('patient')
     def patient_start_therapy():
-        return render_template('patient/start_therapy.html', datos=obtener_datos_paciente(), active_page='start_therapy')
+        return render_template('paciente/start_therapy.html', datos=obtener_datos_paciente(), active_page='start_therapy')
 
     @app.route('/patient/messages')
     @login_required
     @role_required('patient')
     def patient_messages():
-        return render_template('patient/messages.html', datos=obtener_datos_paciente(), active_page='messages')
+        return render_template('paciente/messages.html', datos=obtener_datos_paciente(), active_page='messages')
 
     @app.route('/patient/settings')
     @login_required
     @role_required('patient')
     def patient_settings():
-        return render_template('patient/settings.html', datos=obtener_datos_paciente(), active_page='settings')
+        return render_template('paciente/settings.html', datos=obtener_datos_paciente(), active_page='settings')
 
     @app.route('/patient/profile')
     @login_required
     @role_required('patient')
     def patient_profile():
-        return render_template('patient/profile.html', datos=obtener_datos_paciente(), active_page='profile')
+        return render_template('paciente/profile.html', datos=obtener_datos_paciente(), active_page='profile')
+
+    @app.route('/patient/video-gallery')
+    @login_required
+    @role_required('patient')
+    def patient_video_gallery():
+        return render_template('paciente/video_gallery.html', datos=obtener_datos_paciente(), active_page='video_gallery')
 
     @app.route('/patient/routines')
     @login_required
     @role_required('patient')
     def patient_routines():
-        """Ver rutinas asignadas al paciente"""
         try:
             from app.models import Routine
             
-            patient = Patient.query.filter_by(user_id=current_user.id).first()
-            if not patient:
-                patient = Patient(user_id=current_user.id, full_name=current_user.username)
-                db.session.add(patient)
+            paciente = Patient.query.filter_by(id_usuario=current_user.id).first()
+            if not paciente:
+                paciente = Patient(id_usuario=current_user.id, nombre_completo=current_user.nombre_usuario)
+                db.session.add(paciente)
                 db.session.commit()
             
             # Obtener rutinas asignadas a este paciente
-            routines = Routine.query.filter_by(patient_id=patient.id).all()
+            rutinas = Routine.query.filter_by(id_paciente=paciente.id).all()
             
-            return render_template('patient/routines.html', 
+            return render_template('paciente/routines.html', 
                                  datos=obtener_datos_paciente(),
                                  active_page='routines',
-                                 routines=routines)
+                                 routines=rutinas)
         except Exception as e:
             print(f"Error en patient_routines: {str(e)}")
             import traceback
             traceback.print_exc()
-            flash(f'Error al cargar rutinas: {str(e)}', 'danger')
+            flash(f"Error al cargar rutinas: {str(e)}", 'danger')
             return redirect(url_for('patient_dashboard'))
 
     # ============================================================
@@ -162,25 +167,31 @@ def register_routes(app):
     @login_required
     @role_required('therapist')
     def therapist_dashboard():
-        return render_template('therapist/dashboard.html', active_page='dashboard')
+        return render_template('terapeuta/dashboard.html', active_page='dashboard')
 
     @app.route('/therapist/patients')
     @login_required
     @role_required('therapist')
     def therapist_patients():
-        return render_template('therapist/patients.html', active_page='patients')
+        return render_template('terapeuta/patients.html', active_page='patients')
 
     @app.route('/therapist/start-session')
     @login_required
     @role_required('therapist')
     def therapist_start_session():
-        return render_template('therapist/start_session.html', active_page='start_session')
+        return render_template('terapeuta/start_session.html', active_page='start_session')
+
+    @app.route('/therapist/video-gallery')
+    @login_required
+    @role_required('therapist')
+    def therapist_video_gallery():
+        return render_template('terapeuta/video_gallery.html', active_page='video_gallery')
 
     @app.route('/therapist/appointments')
     @login_required
     @role_required('therapist')
     def therapist_appointments():
-        return render_template('therapist/appointments.html', active_page='appointments')
+        return render_template('terapeuta/appointments.html', active_page='appointments')
 
     @app.route('/therapist/routines')
     @login_required
@@ -188,33 +199,33 @@ def register_routes(app):
     def therapist_routines():
         try:
             from app.models import Routine
-            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            terapeuta = Therapist.query.filter_by(id_usuario=current_user.id).first()
             
             # Si no existe el perfil de terapeuta, crearlo
-            if not therapist:
-                therapist = Therapist(
-                    user_id=current_user.id,
-                    full_name=current_user.username,
-                    specialty='General',
-                    total_patients=0
+            if not terapeuta:
+                terapeuta = Therapist(
+                    id_usuario=current_user.id,
+                    nombre_completo=current_user.nombre_usuario,
+                    especialidad='General',
+                    total_pacientes=0
                 )
-                db.session.add(therapist)
+                db.session.add(terapeuta)
                 db.session.commit()
             
-            routines = Routine.query.filter_by(therapist_id=therapist.id).all()
-            exercises = Exercise.query.all()
-            patients = Patient.query.join(User).filter(User.is_active == True).all()
+            rutinas = Routine.query.filter_by(id_terapeuta=terapeuta.id).all()
+            ejercicios = Exercise.query.all()
+            pacientes = Patient.query.join(User).filter(User.esta_activo == True).all()
             
-            return render_template('therapist/routines.html', 
+            return render_template('terapeuta/routines.html', 
                                  active_page='routines',
-                                 routines=routines,
-                                 exercises=exercises,
-                                 patients=patients)
+                                 routines=rutinas,
+                                 exercises=ejercicios,
+                                 patients=pacientes)
         except Exception as e:
             print(f"Error en therapist_routines: {str(e)}")
             import traceback
             traceback.print_exc()
-            flash(f'Error al cargar rutinas: {str(e)}', 'danger')
+            flash(f"Error al cargar rutinas: {str(e)}", 'danger')
             return redirect(url_for('therapist_dashboard'))
 
     # ============================================================
@@ -229,46 +240,46 @@ def register_routes(app):
             from app.models import Routine, RoutineExercise
             import json
             
-            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
-            if not therapist:
+            terapeuta = Therapist.query.filter_by(id_usuario=current_user.id).first()
+            if not terapeuta:
                 return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
             
-            data = request.get_json()
-            name = data.get('name')
-            description = data.get('description', '')
-            duration = data.get('duration', 30)
-            difficulty = data.get('difficulty', 'medium')
-            exercises_data = data.get('exercises', [])
+            datos = request.get_json()
+            nombre = datos.get('name')
+            descripcion = datos.get('description', '')
+            duracion = datos.get('duration', 30)
+            dificultad = datos.get('difficulty', 'media')
+            ejercicios_datos = datos.get('exercises', [])
             
             # Crear rutina
-            routine = Routine(
-                name=name,
-                description=description,
-                therapist_id=therapist.id,
-                duration_minutes=duration,
-                difficulty=difficulty
+            rutina = Routine(
+                nombre=nombre,
+                descripcion=descripcion,
+                id_terapeuta=terapeuta.id,
+                duracion_minutos=duracion,
+                dificultad=dificultad
             )
-            db.session.add(routine)
+            db.session.add(rutina)
             db.session.flush()
             
             # Agregar ejercicios a la rutina
-            for idx, ex_data in enumerate(exercises_data):
-                routine_exercise = RoutineExercise(
-                    routine_id=routine.id,
-                    exercise_id=ex_data['id'],
-                    order=idx,
-                    sets=ex_data.get('sets', 3),
-                    repetitions=ex_data.get('repetitions', 10),
-                    rest_seconds=ex_data.get('rest', 30)
+            for idx, ex_data in enumerate(ejercicios_datos):
+                ejercicio_rutina = RoutineExercise(
+                    id_rutina=rutina.id,
+                    id_ejercicio=ex_data['id'],
+                    orden=idx,
+                    series=ex_data.get('sets', 3),
+                    repeticiones=ex_data.get('repetitions', 10),
+                    segundos_descanso=ex_data.get('rest', 30)
                 )
-                db.session.add(routine_exercise)
+                db.session.add(ejercicio_rutina)
             
             db.session.commit()
             
             return jsonify({
                 'success': True,
-                'message': f'Rutina "{name}" creada exitosamente',
-                'routine_id': routine.id
+                'message': f'Rutina "{nombre}" creada exitosamente',
+                'routine_id': rutina.id
             }), 200
             
         except Exception as e:
@@ -283,47 +294,47 @@ def register_routes(app):
         try:
             from app.models import Routine, RoutineExercise
             
-            data = request.get_json()
-            routine_id = data.get('routine_id')
-            patient_id = data.get('patient_id')
+            datos = request.get_json()
+            id_rutina = datos.get('routine_id')
+            id_paciente = datos.get('patient_id')
             
             # Obtener rutina original
-            original_routine = Routine.query.get(routine_id)
-            if not original_routine:
+            rutina_original = Routine.query.get(id_rutina)
+            if not rutina_original:
                 return jsonify({'success': False, 'message': 'Rutina no encontrada'}), 404
             
             # Crear copia de la rutina para el paciente
-            new_routine = Routine(
-                name=original_routine.name,
-                description=original_routine.description,
-                therapist_id=original_routine.therapist_id,
-                patient_id=patient_id,
-                duration_minutes=original_routine.duration_minutes,
-                difficulty=original_routine.difficulty
+            nueva_rutina = Routine(
+                nombre=rutina_original.nombre,
+                descripcion=rutina_original.descripcion,
+                id_terapeuta=rutina_original.id_terapeuta,
+                id_paciente=id_paciente,
+                duracion_minutos=rutina_original.duracion_minutos,
+                dificultad=rutina_original.dificultad
             )
-            db.session.add(new_routine)
+            db.session.add(nueva_rutina)
             db.session.flush()
             
             # Copiar ejercicios
-            for ex in original_routine.exercises:
-                new_exercise = RoutineExercise(
-                    routine_id=new_routine.id,
-                    exercise_id=ex.exercise_id,
-                    order=ex.order,
-                    sets=ex.sets,
-                    repetitions=ex.repetitions,
-                    rest_seconds=ex.rest_seconds,
-                    notes=ex.notes
+            for ex in rutina_original.ejercicios:
+                nuevo_ejercicio = RoutineExercise(
+                    id_rutina=nueva_rutina.id,
+                    id_ejercicio=ex.id_ejercicio,
+                    orden=ex.orden,
+                    series=ex.series,
+                    repeticiones=ex.repeticiones,
+                    segundos_descanso=ex.segundos_descanso,
+                    notas=ex.notas
                 )
-                db.session.add(new_exercise)
+                db.session.add(nuevo_ejercicio)
             
             db.session.commit()
             
-            patient = Patient.query.get(patient_id)
+            paciente = Patient.query.get(id_paciente)
             return jsonify({
                 'success': True,
-                'message': f'Rutina asignada a {patient.full_name}',
-                'routine_id': new_routine.id
+                'message': f'Rutina asignada a {paciente.nombre_completo}',
+                'routine_id': nueva_rutina.id
             }), 200
             
         except Exception as e:
@@ -356,7 +367,7 @@ def register_routes(app):
     @role_required('admin')
     def admin_therapists():
         therapists = Therapist.query.all()
-        active_therapists = sum(1 for t in therapists if t.user.is_active)
+        active_therapists = sum(1 for t in therapists if t.usuario.esta_activo)
         return render_template('admin/therapists.html', 
                              active_page='therapists',
                              therapists=therapists,
@@ -370,8 +381,8 @@ def register_routes(app):
     @role_required('admin')
     def admin_patients():
         patients = Patient.query.all()
-        active_patients = sum(1 for p in patients if p.user.is_active)
-        in_therapy = sum(1 for p in patients if p.completed_sessions < p.total_sessions and p.user.is_active)
+        active_patients = sum(1 for p in patients if p.usuario.esta_activo)
+        in_therapy = sum(1 for p in patients if p.sesiones_completadas < p.sesiones_totales and p.usuario.esta_activo)
         return render_template('admin/patients.html', 
                              active_page='patients',
                              patients=patients,
@@ -498,20 +509,20 @@ def register_routes(app):
             specialty = request.form.get('specialty', '')
             
             # Validar que no exista el usuario
-            if User.query.filter_by(username=username).first():
+            if User.query.filter_by(nombre_usuario=username).first():
                 flash('❌ El nombre de usuario ya existe', 'danger')
                 return redirect(url_for('admin_therapists'))
             
-            if User.query.filter_by(email=email).first():
+            if User.query.filter_by(correo_electronico=email).first():
                 flash('❌ El email ya está registrado', 'danger')
                 return redirect(url_for('admin_therapists'))
             
             # Crear usuario
             user = User(
-                username=username,
-                email=email,
-                role='therapist',
-                is_active=True
+                nombre_usuario=username,
+                correo_electronico=email,
+                rol='therapist',
+                esta_activo=True
             )
             user.set_password(password)
             db.session.add(user)
@@ -519,10 +530,10 @@ def register_routes(app):
             
             # Crear perfil de terapeuta
             therapist = Therapist(
-                user_id=user.id,
-                full_name=full_name,
-                specialty=specialty,
-                total_patients=0
+                id_usuario=user.id,
+                nombre_completo=full_name,
+                especialidad=specialty,
+                total_pacientes=0
             )
             db.session.add(therapist)
             db.session.commit()
@@ -553,20 +564,20 @@ def register_routes(app):
             total_sessions = int(request.form.get('total_sessions', 20))
             
             # Validar que no exista el usuario
-            if User.query.filter_by(username=username).first():
+            if User.query.filter_by(nombre_usuario=username).first():
                 flash('❌ El nombre de usuario ya existe', 'danger')
                 return redirect(url_for('admin_patients'))
             
-            if User.query.filter_by(email=email).first():
+            if User.query.filter_by(correo_electronico=email).first():
                 flash('❌ El email ya está registrado', 'danger')
                 return redirect(url_for('admin_patients'))
             
             # Crear usuario
             user = User(
-                username=username,
-                email=email,
-                role='patient',
-                is_active=True
+                nombre_usuario=username,
+                correo_electronico=email,
+                rol='patient',
+                esta_activo=True
             )
             user.set_password(password)
             db.session.add(user)
@@ -574,12 +585,12 @@ def register_routes(app):
             
             # Crear perfil de paciente
             patient = Patient(
-                user_id=user.id,
-                full_name=full_name,
-                diagnosis=diagnosis,
-                progress=0.0,
-                total_sessions=total_sessions,
-                completed_sessions=0
+                id_usuario=user.id,
+                nombre_completo=full_name,
+                diagnostico=diagnosis,
+                progreso=0.0,
+                sesiones_totales=total_sessions,
+                sesiones_completadas=0
             )
             db.session.add(patient)
             db.session.commit()
@@ -604,9 +615,9 @@ def register_routes(app):
             users = User.query.all()
             for user in users:
                 writer.writerow([
-                    user.id, user.username, user.email, user.role, 
-                    'Sí' if user.is_active else 'No', 
-                    user.created_at.strftime('%Y-%m-%d %H:%M')
+user.id, user.nombre_usuario, user.correo_electronico, user.rol, 
+                    'Sí' if user.esta_activo else 'No', 
+                    user.fecha_creacion.strftime('%Y-%m-%d %H:%M')
                 ])
             filename = f'usuarios_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
             
@@ -615,9 +626,9 @@ def register_routes(app):
             patients = Patient.query.all()
             for patient in patients:
                 writer.writerow([
-                    patient.id, patient.full_name, patient.diagnosis or 'N/A', 
-                    f'{patient.progress}%', patient.completed_sessions, 
-                    patient.total_sessions, patient.created_at.strftime('%Y-%m-%d')
+patient.id, patient.nombre_completo, patient.diagnostico or 'N/A', 
+                    f'{patient.progreso}%', patient.sesiones_completadas, 
+                    patient.sesiones_totales, patient.fecha_creacion.strftime('%Y-%m-%d')
                 ])
             filename = f'pacientes_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
             
@@ -626,8 +637,8 @@ def register_routes(app):
             therapists = Therapist.query.all()
             for therapist in therapists:
                 writer.writerow([
-                    therapist.id, therapist.full_name, therapist.specialty or 'N/A',
-                    therapist.total_patients, therapist.created_at.strftime('%Y-%m-%d')
+therapist.id, therapist.nombre_completo, therapist.especialidad or 'N/A',
+                    therapist.total_pacientes, therapist.fecha_creacion.strftime('%Y-%m-%d')
                 ])
             filename = f'terapeutas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
             
@@ -636,9 +647,9 @@ def register_routes(app):
             exercises = Exercise.query.all()
             for exercise in exercises:
                 writer.writerow([
-                    exercise.id, exercise.name, exercise.description or 'N/A',
-                    exercise.category or 'N/A', exercise.repetitions or 'N/A',
-                    exercise.created_at.strftime('%Y-%m-%d')
+exercise.id, exercise.nombre, exercise.descripcion or 'N/A',
+                    exercise.categoria or 'N/A', exercise.repeticiones or 'N/A',
+                    exercise.fecha_creacion.strftime('%Y-%m-%d')
                 ])
             filename = f'ejercicios_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
             
@@ -647,25 +658,24 @@ def register_routes(app):
             writer.writerow(['=== USUARIOS ==='])
             writer.writerow(['ID', 'Usuario', 'Email', 'Rol', 'Activo'])
             for user in User.query.all():
-                writer.writerow([user.id, user.username, user.email, user.role, 'Sí' if user.is_active else 'No'])
+                writer.writerow([user.id, user.nombre_usuario, user.correo_electronico, user.rol, 'Sí' if user.esta_activo else 'No'])
             
             writer.writerow([])
             writer.writerow(['=== PACIENTES ==='])
             writer.writerow(['ID', 'Nombre', 'Diagnóstico', 'Progreso', 'Sesiones'])
             for patient in Patient.query.all():
-                writer.writerow([patient.id, patient.full_name, patient.diagnosis or 'N/A', f'{patient.progress}%', f'{patient.completed_sessions}/{patient.total_sessions}'])
+                writer.writerow([patient.id, patient.nombre_completo, patient.diagnostico or 'N/A', f'{patient.progreso}%', f'{patient.sesiones_completadas}/{patient.sesiones_totales}'])
             
             writer.writerow([])
             writer.writerow(['=== TERAPEUTAS ==='])
             writer.writerow(['ID', 'Nombre', 'Especialidad', 'Total Pacientes'])
             for therapist in Therapist.query.all():
-                writer.writerow([therapist.id, therapist.full_name, therapist.specialty or 'N/A', therapist.total_patients])
+                writer.writerow([therapist.id, therapist.nombre_completo, therapist.especialidad or 'N/A', therapist.total_pacientes])
             
             writer.writerow([])
             writer.writerow(['=== EJERCICIOS ==='])
-            writer.writerow(['ID', 'Nombre', 'Categoría', 'Repeticiones'])
             for exercise in Exercise.query.all():
-                writer.writerow([exercise.id, exercise.name, exercise.category or 'N/A', exercise.repetitions or 'N/A'])
+                writer.writerow([exercise.id, exercise.nombre, exercise.categoria or 'N/A', exercise.repeticiones or 'N/A'])
             
             filename = f'rehabsystem_completo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
         else:
@@ -687,11 +697,11 @@ def register_routes(app):
     @app.route('/dashboard')
     @login_required
     def dashboard():
-        if current_user.role == 'admin':
+        if current_user.rol == 'admin':
             return redirect(url_for('admin_dashboard'))
-        elif current_user.role == 'therapist':
+        elif current_user.rol == 'therapist':
             return redirect(url_for('therapist_dashboard'))
-        elif current_user.role == 'patient':
+        elif current_user.rol == 'patient':
             return redirect(url_for('patient_dashboard'))
         return redirect(url_for('index'))
 
@@ -706,7 +716,6 @@ def register_routes(app):
         try:
             import base64
             import os
-            from app.models import SessionCapture
             
             data = request.get_json()
             image_data = data.get('image')
@@ -740,16 +749,16 @@ def register_routes(app):
             file_size = os.path.getsize(file_path)
             
             # Guardar en base de datos
-            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
             if therapist:
                 capture = SessionCapture(
-                    therapist_id=therapist.id,
-                    patient_id=patient_id,
-                    capture_type='photo',
-                    filename=filename,
-                    file_path=file_path,
-                    file_size=file_size,
-                    notes=notes
+                    id_terapeuta=therapist.id,
+                    id_paciente=patient_id,
+                    tipo_captura='photo',
+                    nombre_archivo=filename,
+                    ruta_archivo=file_path,
+                    tamano_archivo=file_size,
+                    notas=notes
                 )
                 db.session.add(capture)
                 db.session.commit()
@@ -767,14 +776,108 @@ def register_routes(app):
         except Exception as e:
             return jsonify({'success': False, 'message': f'Error al guardar foto: {str(e)}'}), 500
     
+    @app.route('/api/save-video-permanent', methods=['POST'])
+    @login_required
+    def save_video_permanent():
+        """Guardar video permanente con audio de la sesión"""
+        try:
+            import os
+            
+            if 'video' not in request.files:
+                return jsonify({'success': False, 'message': 'No se recibió video'}), 400
+            
+            video_file = request.files['video']
+            patient_id = request.form.get('patient_id')
+            notes = request.form.get('notes', '')
+            duration = request.form.get('duration', 0)
+            is_permanent = request.form.get('permanent', 'false').lower() == 'true'
+            
+            if video_file.filename == '':
+                return jsonify({'success': False, 'message': 'Archivo vacío'}), 400
+            
+            # Verificar permisos: solo terapeuta o paciente pueden guardar
+            if current_user.rol not in ['therapist', 'patient']:
+                return jsonify({'success': False, 'message': 'No tienes permisos para guardar videos'}), 403
+            
+            # Generar nombre de archivo único
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            role_prefix = 'terapeuta' if current_user.rol == 'therapist' else 'paciente'
+            filename = f'video_permanente_{role_prefix}_{current_user.id}_{timestamp}.webm'
+            
+            # Crear ruta completa en carpeta permanente
+            upload_folder = os.path.join('static', 'uploads', 'videos_permanentes')
+            os.makedirs(upload_folder, exist_ok=True)
+            file_path = os.path.join(upload_folder, filename)
+            
+            # Guardar archivo permanentemente
+            video_file.save(file_path)
+            
+            # Obtener tamaño del archivo
+            file_size = os.path.getsize(file_path)
+            
+            # Guardar en base de datos
+            if current_user.rol == 'therapist':
+                therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
+                if not therapist:
+                    return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+                
+                capture = SessionCapture(
+                    id_terapeuta=therapist.id,
+                    id_paciente=patient_id if patient_id else None,
+                    tipo_captura='video',
+                    nombre_archivo=filename,
+                    ruta_archivo=file_path,
+                    tamano_archivo=file_size,
+                    duracion=int(duration),
+                    notas=notes,
+                    es_permanente=is_permanent,
+                    contiene_audio=True
+                )
+            else:  # patient
+                patient = Patient.query.filter_by(id_usuario=current_user.id).first()
+                if not patient:
+                    return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+                
+                capture = SessionCapture(
+                    id_terapeuta=None,
+                    id_paciente=patient.id,
+                    tipo_captura='video',
+                    nombre_archivo=filename,
+                    ruta_archivo=file_path,
+                    tamano_archivo=file_size,
+                    duracion=int(duration),
+                    notas=notes,
+                    es_permanente=is_permanent,
+                    contiene_audio=True
+                )
+            
+            db.session.add(capture)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Video permanente guardado correctamente',
+                'filename': filename,
+                'file_path': file_path,
+                'file_size': file_size,
+                'duration': duration,
+                'capture_id': capture.id,
+                'created_at': capture.fecha_creacion.isoformat(),
+                'is_permanent': is_permanent,
+                'has_audio': True
+            }), 200
+                
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error al guardar video permanente: {str(e)}'}), 500
+
     @app.route('/api/save-video', methods=['POST'])
     @login_required
     @role_required('therapist')
     def save_video():
-        """Guardar video grabado de la sesión"""
+        """Guardar video grabado de la sesión (método antiguo para compatibilidad)"""
         try:
             import os
-            from app.models import SessionCapture
             
             if 'video' not in request.files:
                 return jsonify({'success': False, 'message': 'No se recibió video'}), 400
@@ -803,17 +906,17 @@ def register_routes(app):
             file_size = os.path.getsize(file_path)
             
             # Guardar en base de datos
-            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
+            therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
             if therapist:
                 capture = SessionCapture(
-                    therapist_id=therapist.id,
-                    patient_id=patient_id,
-                    capture_type='video',
-                    filename=filename,
-                    file_path=file_path,
-                    file_size=file_size,
-                    duration=int(duration),
-                    notes=notes
+                    id_terapeuta=therapist.id,
+                    id_paciente=patient_id,
+                    tipo_captura='video',
+                    nombre_archivo=filename,
+                    ruta_archivo=file_path,
+                    tamano_archivo=file_size,
+                    duracion=int(duration),
+                    notas=notes
                 )
                 db.session.add(capture)
                 db.session.commit()
@@ -834,31 +937,90 @@ def register_routes(app):
     
     @app.route('/api/get-captures', methods=['GET'])
     @login_required
-    @role_required('therapist')
     def get_captures():
-        """Obtener lista de capturas del terapeuta"""
+        """Obtener lista de capturas del terapeuta o paciente con control de acceso"""
         try:
-            from app.models import SessionCapture
+            from app.models import Routine
+            patient_id_filter = request.args.get('patient_id', type=int)
             
-            therapist = Therapist.query.filter_by(user_id=current_user.id).first()
-            if not therapist:
-                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            # Inicializar variables para el contexto completo
+            therapist = None
+            patient = None
+            assigned_patient_ids = []
+            assigned_therapist_ids = []
             
-            captures = SessionCapture.query.filter_by(therapist_id=therapist.id).order_by(SessionCapture.created_at.desc()).all()
+            if current_user.rol == 'therapist':
+                therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
+                if not therapist:
+                    return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+                
+                # Obtener los IDs de los pacientes asignados a este terapeuta
+                # This relationship should be defined in the Therapist model or dynamically resolved
+                # For now, let's assume `therapist.pacientes_asignados` is a list of Patient objects
+                assigned_patient_ids = [p.id for p in therapist.pacientes_asignados] if hasattr(therapist, 'pacientes_asignados') else []
+                
+                # El terapeuta puede ver sus propias capturas
+                # Y las capturas de sus pacientes (filtrando si patient_id_filter está presente)
+                captures_query = SessionCapture.query.filter(
+                    (SessionCapture.id_terapeuta == therapist.id) |
+                    (SessionCapture.id_paciente.in_(assigned_patient_ids))
+                )
+                
+                if patient_id_filter:
+                    if patient_id_filter not in assigned_patient_ids:
+                        return jsonify({'success': False, 'message': 'Paciente no asignado a este terapeuta'}), 403
+                    captures_query = captures_query.filter(SessionCapture.id_paciente == patient_id_filter)
+                
+                captures = captures_query.order_by(SessionCapture.fecha_creacion.desc()).all()
+                
+            elif current_user.rol == 'patient':
+                patient = Patient.query.filter_by(id_usuario=current_user.id).first()
+                if not patient:
+                    return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+                
+                # Get IDs of therapists assigned to this patient through routines
+                assigned_therapist_ids = [
+                    r.id_terapeuta for r in Routine.query.filter_by(id_paciente=patient.id).all()
+                ]
+                
+                # The patient can see their own captures
+                # AND permanent captures made by their assigned therapists
+                captures = SessionCapture.query.filter(
+                    (SessionCapture.id_paciente == patient.id) |
+                    ((SessionCapture.id_terapeuta.in_(assigned_therapist_ids)) & (SessionCapture.es_permanente == True))
+                ).order_by(SessionCapture.fecha_creacion.desc()).all()
+                
+            else:
+                return jsonify({'success': False, 'message': 'Rol no autorizado'}), 403
             
             captures_list = []
             for capture in captures:
-                captures_list.append({
-                    'id': capture.id,
-                    'type': capture.capture_type,
-                    'filename': capture.filename,
-                    'file_path': capture.file_path,
-                    'file_size': capture.file_size,
-                    'duration': capture.duration,
-                    'notes': capture.notes,
-                    'patient_id': capture.patient_id,
-                    'created_at': capture.created_at.strftime('%Y-%m-%d %H:%M:%S')
-                })
+                # Verificar permisos de acceso (redundante si el query es correcto, pero añade una capa de seguridad)
+                has_access = False
+                if current_user.rol == 'therapist':
+                    # Terapeuta tiene acceso a sus propias capturas o a las de sus pacientes
+                    has_access = (capture.id_terapeuta == therapist.id) or \
+                                 (capture.id_paciente in assigned_patient_ids)
+                elif current_user.rol == 'patient':
+                    # Paciente tiene acceso a sus propias capturas o a capturas permanentes del terapeuta
+                    has_access = (capture.id_paciente == patient.id) or \
+                                 ((capture.id_terapeuta != None) and (capture.es_permanente == True)) 
+                
+                if has_access:
+                    captures_list.append({
+                        'id': capture.id,
+                        'type': capture.tipo_captura,
+                        'filename': capture.nombre_archivo,
+                        'file_path': capture.ruta_archivo,
+                        'file_size': capture.tamano_archivo,
+                        'duration': capture.duracion,
+                        'notas': capture.notas,
+                        'patient_id': capture.id_paciente,
+                        'therapist_id': capture.id_terapeuta,
+                        'created_at': capture.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S'),
+                        'is_permanent': capture.es_permanente,
+                        'has_audio': capture.contiene_audio
+                    })
             
             return jsonify({
                 'success': True,
@@ -880,7 +1042,6 @@ def register_routes(app):
         try:
             import base64
             import os
-            from app.models import SessionCapture
             
             data = request.get_json()
             image_data = data.get('image')
@@ -913,16 +1074,16 @@ def register_routes(app):
             file_size = os.path.getsize(file_path)
             
             # Guardar en base de datos
-            patient = Patient.query.filter_by(user_id=current_user.id).first()
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
             if patient:
                 capture = SessionCapture(
-                    therapist_id=None,  # No hay terapeuta asociado
-                    patient_id=patient.id,
-                    capture_type='photo',
-                    filename=filename,
-                    file_path=file_path,
-                    file_size=file_size,
-                    notes=notes
+                    id_terapeuta=None,  # No hay terapeuta asociado
+                    id_paciente=patient.id,
+                    tipo_captura='photo',
+                    nombre_archivo=filename,
+                    ruta_archivo=file_path,
+                    tamano_archivo=file_size,
+                    notas=notes
                 )
                 db.session.add(capture)
                 db.session.commit()
@@ -947,7 +1108,6 @@ def register_routes(app):
         """Guardar video grabado por el paciente"""
         try:
             import os
-            from app.models import SessionCapture
             
             if 'video' not in request.files:
                 return jsonify({'success': False, 'message': 'No se recibió video'}), 400
@@ -975,17 +1135,17 @@ def register_routes(app):
             file_size = os.path.getsize(file_path)
             
             # Guardar en base de datos
-            patient = Patient.query.filter_by(user_id=current_user.id).first()
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
             if patient:
                 capture = SessionCapture(
-                    therapist_id=None,  # No hay terapeuta asociado
-                    patient_id=patient.id,
-                    capture_type='video',
-                    filename=filename,
-                    file_path=file_path,
-                    file_size=file_size,
-                    duration=int(duration),
-                    notes=notes
+                    id_terapeuta=None,  # No hay terapeuta asociado
+                    id_paciente=patient.id,
+                    tipo_captura='video',
+                    nombre_archivo=filename,
+                    ruta_archivo=file_path,
+                    tamano_archivo=file_size,
+                    duracion=int(duration),
+                    notas=notes
                 )
                 db.session.add(capture)
                 db.session.commit()
@@ -1010,25 +1170,24 @@ def register_routes(app):
     def get_patient_captures():
         """Obtener lista de capturas del paciente"""
         try:
-            from app.models import SessionCapture
             
-            patient = Patient.query.filter_by(user_id=current_user.id).first()
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
             if not patient:
                 return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
             
-            captures = SessionCapture.query.filter_by(patient_id=patient.id).order_by(SessionCapture.created_at.desc()).all()
+            captures = SessionCapture.query.filter_by(id_paciente=patient.id).order_by(SessionCapture.fecha_creacion.desc()).all()
             
             captures_list = []
             for capture in captures:
                 captures_list.append({
-                    'id': capture.id,
-                    'type': capture.capture_type,
-                    'filename': capture.filename,
-                    'file_path': capture.file_path,
-                    'file_size': capture.file_size,
-                    'duration': capture.duration,
-                    'notes': capture.notes,
-                    'created_at': capture.created_at.strftime('%Y-%m-%d %H:%M:%S')
+'id': capture.id,
+                    'type': capture.tipo_captura,
+                    'filename': capture.nombre_archivo,
+                    'file_path': capture.ruta_archivo,
+                    'file_size': capture.tamano_archivo,
+                    'duration': capture.duracion,
+                    'notas': capture.notas,
+                    'created_at': capture.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S')
                 })
             
             return jsonify({
@@ -1051,43 +1210,43 @@ def register_routes(app):
         try:
             from app.models import Routine, RoutineExercise
             
-            patient = Patient.query.filter_by(user_id=current_user.id).first()
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
             if not patient:
-                print(f"❌ Paciente no encontrado para user_id: {current_user.id}")
+                print(f"❌ Paciente no encontrado para id_usuario: {current_user.id}")
                 return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
             
-            print(f"✓ Paciente encontrado: {patient.full_name} (ID: {patient.id})")
+            print(f"✓ Paciente encontrado: {patient.nombre_completo} (ID: {patient.id})")
             
             # Verificar que la rutina pertenece al paciente
-            routine = Routine.query.filter_by(id=routine_id, patient_id=patient.id).first()
+            routine = Routine.query.filter_by(id=routine_id, id_paciente=patient.id).first()
             if not routine:
                 print(f"❌ Rutina {routine_id} no encontrada para paciente {patient.id}")
                 return jsonify({'success': False, 'message': 'Rutina no encontrada'}), 404
             
-            print(f"✓ Rutina encontrada: {routine.name} (ID: {routine.id})")
-            print(f"  Ejercicios en relación: {len(routine.exercises)}")
+            print(f"✓ Rutina encontrada: {routine.nombre} (ID: {routine.id})")
+            print(f"  Ejercicios en relación: {len(routine.ejercicios)}")
             
             # Obtener ejercicios de la rutina
             exercises_list = []
-            for routine_ex in routine.exercises:
-                exercise = routine_ex.exercise
+            for routine_ex in routine.ejercicios:
+                exercise = routine_ex.ejercicio
                 
                 # Validar que el ejercicio existe
                 if not exercise:
-                    print(f"⚠️ Warning: Exercise ID {routine_ex.exercise_id} not found")
+                    print(f"⚠️ Warning: Exercise ID {routine_ex.id_ejercicio} not found")
                     continue
                 
-                print(f"  ✓ Agregando ejercicio: {exercise.name}")
+                print(f"  ✓ Agregando ejercicio: {exercise.nombre}")
                 exercises_list.append({
                     'id': exercise.id,
-                    'name': exercise.name,
-                    'description': exercise.description or '',
-                    'category': exercise.category or '',
-                    'sets': routine_ex.sets,
-                    'repetitions': routine_ex.repetitions,
-                    'rest_seconds': routine_ex.rest_seconds,
-                    'notes': routine_ex.notes or '',
-                    'order': routine_ex.order
+                    'name': exercise.nombre,
+                    'description': exercise.descripcion or '',
+                    'category': exercise.categoria or '',
+                    'sets': routine_ex.series,
+                    'repetitions': routine_ex.repeticiones,
+                    'rest_seconds': routine_ex.segundos_descanso,
+                    'notas': routine_ex.notas or '',
+                    'order': routine_ex.orden
                 })
             
             # Ordenar por orden
@@ -1099,10 +1258,10 @@ def register_routes(app):
                 'success': True,
                 'routine': {
                     'id': routine.id,
-                    'name': routine.name,
-                    'description': routine.description,
-                    'duration_minutes': routine.duration_minutes,
-                    'difficulty': routine.difficulty,
+                    'name': routine.nombre,
+                    'description': routine.descripcion,
+                    'duration_minutes': routine.duracion_minutos,
+                    'difficulty': routine.dificultad,
                     'exercises': exercises_list
                 }
             }
@@ -1125,17 +1284,17 @@ def register_routes(app):
     def get_patients():
         """Obtener lista de pacientes activos"""
         try:
-            patients = Patient.query.join(User).filter(User.is_active == True).all()
+            patients = Patient.query.join(User).filter(User.esta_activo == True).all()
             
             patients_list = []
             for patient in patients:
                 patients_list.append({
                     'id': patient.id,
-                    'full_name': patient.full_name,
-                    'diagnosis': patient.diagnosis or 'Sin diagnóstico',
-                    'progress': patient.progress,
-                    'completed_sessions': patient.completed_sessions,
-                    'total_sessions': patient.total_sessions
+                    'full_name': patient.nombre_completo,
+                    'diagnosis': patient.diagnostico or 'Sin diagnóstico',
+                    'progress': patient.progreso,
+                    'completed_sessions': patient.sesiones_completadas,
+                    'total_sessions': patient.sesiones_totales
                 })
             
             return jsonify({
@@ -1156,3 +1315,383 @@ def register_routes(app):
         logout_user()
         flash('Sesión cerrada correctamente.', 'info')
         return redirect(url_for('login'))
+
+    # ============================================================
+    # 🎥 COMPARTIR VIDEOS (TERAPEUTA)
+    # ============================================================
+    @app.route('/api/share-video', methods=['POST'])
+    @login_required
+    @role_required('therapist')
+    def share_video():
+        """Compartir un video con un paciente"""
+        try:
+            from app.models import VideoShare
+            
+            capture_id = request.json.get('capture_id')
+            patient_id = request.json.get('patient_id')
+            message = request.json.get('message', '')
+            
+            if not capture_id or not patient_id:
+                return jsonify({'success': False, 'message': 'Faltan datos requeridos'}), 400
+            
+            # Verificar que la captura existe y pertenece al terapeuta
+            capture = SessionCapture.query.get(capture_id)
+            if not capture:
+                return jsonify({'success': False, 'message': 'Video no encontrado'}), 404
+            
+            therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
+            if not therapist:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            
+            # Verificar que el video pertenece al terapeuta
+            if capture.id_terapeuta != therapist.id:
+                return jsonify({'success': False, 'message': 'No tienes permisos para compartir este video'}), 403
+            
+            # Verificar que el paciente existe y está asignado al terapeuta
+            patient = Patient.query.get(patient_id)
+            if not patient:
+                return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+            
+            # Verificar que el paciente está asignado al terapeuta (a través de rutinas)
+            assigned_patients = [p.id for p in therapist.pacientes_asignados] if hasattr(therapist, 'pacientes_asignados') else []
+            if patient.id not in assigned_patients:
+                return jsonify({'success': False, 'message': 'El paciente no está asignado a este terapeuta'}), 403
+            
+            # Verificar si el video ya fue compartido con este paciente
+            existing_share = VideoShare.query.filter_by(
+                id_captura=capture_id,
+                id_paciente=patient_id
+            ).first()
+            
+            if existing_share:
+                return jsonify({'success': False, 'message': 'Este video ya fue compartido con este paciente'}), 400
+            
+            # Crear el registro de compartición
+            video_share = VideoShare(
+                id_captura=capture_id,
+                id_terapeuta=therapist.id,
+                id_paciente=patient_id,
+                mensaje=message
+            )
+            
+            db.session.add(video_share)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Video compartido exitosamente',
+                'share_id': video_share.id
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error al compartir video: {str(e)}'}), 500
+
+    @app.route('/api/get-shared-videos', methods=['GET'])
+    @login_required
+    @role_required('patient')
+    def get_shared_videos():
+        """Obtener videos compartidos con el paciente actual"""
+        try:
+            from app.models import VideoShare
+            
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
+            if not patient:
+                return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+            
+            # Obtener videos compartidos con el paciente
+            shared_videos = VideoShare.query.filter_by(id_paciente=patient.id)\
+                .order_by(VideoShare.fecha_compartido.desc()).all()
+            
+            videos_list = []
+            for share in shared_videos:
+                videos_list.append({
+                    'id': share.id,
+                    'capture_id': share.id_captura,
+                    'filename': share.captura.nombre_archivo,
+                    'file_path': share.captura.ruta_archivo,
+                    'file_size': share.captura.tamano_archivo,
+                    'duration': share.captura.duracion,
+                    'therapist_name': share.terapeuta.nombre_completo,
+                    'message': share.mensaje,
+                    'fecha_compartido': share.fecha_compartido.strftime('%Y-%m-%d %H:%M:%S'),
+                    'leido': share.leido,
+                    'fecha_leido': share.fecha_leido.strftime('%Y-%m-%d %H:%M:%S') if share.fecha_leido else None,
+                    'has_audio': share.captura.contiene_audio
+                })
+            
+            return jsonify({
+                'success': True,
+                'videos': videos_list,
+                'total': len(videos_list)
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error al obtener videos compartidos: {str(e)}'}), 500
+
+    @app.route('/api/mark-video-as-read/<int:share_id>', methods=['POST'])
+    @login_required
+    @role_required('patient')
+    def mark_video_as_read(share_id):
+        """Marcar un video compartido como leído"""
+        try:
+            from app.models import VideoShare
+            
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
+            if not patient:
+                return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+            
+            video_share = VideoShare.query.get(share_id)
+            if not video_share:
+                return jsonify({'success': False, 'message': 'Video compartido no encontrado'}), 404
+            
+            # Verificar que el video compartido pertene al paciente actual
+            if video_share.id_paciente != patient.id:
+                return jsonify({'success': False, 'message': 'No tienes permisos para este video'}), 403
+            
+            # Marcar como leído
+            video_share.leido = True
+            video_share.fecha_leido = datetime.utcnow()
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Video marcado como leído'
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error al marcar video como leído: {str(e)}'}), 500
+
+    @app.route('/api/get-patients-for-sharing', methods=['GET'])
+    @login_required
+    @role_required('therapist')
+    def get_patients_for_sharing():
+        """Obtener lista de pacientes para compartir videos (marcando asignados)"""
+        try:
+            therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
+            if not therapist:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            
+            # Pacientes asignados por rutinas
+            assigned_patients = therapist.pacientes_asignados if hasattr(therapist, 'pacientes_asignados') else []
+
+            # Todos los pacientes activos (fallback y visualización completa)
+            from app.models import User
+            active_patients = Patient.query.join(User).filter(User.esta_activo == True).all()
+
+            # Combinar y marcar si está asignado
+            assigned_ids = set([p.id for p in assigned_patients])
+            patients_list = []
+            seen_ids = set()
+            for p in active_patients:
+                if p.id in seen_ids:
+                    continue
+                seen_ids.add(p.id)
+                patients_list.append({
+                    'id': p.id,
+                    'name': p.nombre_completo,
+                    'diagnosis': p.diagnostico or 'Sin diagnóstico',
+                    'assigned': p.id in assigned_ids
+                })
+            
+            return jsonify({
+                'success': True,
+                'patients': patients_list,
+                'total': len(patients_list),
+                'total_assigned': len(assigned_ids)
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error al obtener pacientes: {str(e)}'}), 500
+
+    # ============================================================
+    # 🎥 COMPARTIR VIDEOS (PACIENTE A TERAPEUTA)
+    # ============================================================
+    @app.route('/api/patient-share-video', methods=['POST'])
+    @login_required
+    @role_required('patient')
+    def patient_share_video():
+        """Paciente comparte un video con su terapeuta"""
+        try:
+            from app.models import VideoShare, Routine
+            
+            capture_id = request.json.get('capture_id')
+            therapist_id = request.json.get('therapist_id')
+            message = request.json.get('message', '')
+            
+            if not capture_id or not therapist_id:
+                return jsonify({'success': False, 'message': 'Faltan datos requeridos'}), 400
+            
+            # Verificar que la captura existe y pertenece al paciente
+            capture = SessionCapture.query.get(capture_id)
+            if not capture:
+                return jsonify({'success': False, 'message': 'Video no encontrado'}), 404
+            
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
+            if not patient:
+                return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+            
+            # Verificar que el video pertenece al paciente
+            if capture.id_paciente != patient.id:
+                return jsonify({'success': False, 'message': 'No tienes permisos para compartir este video'}), 403
+            
+            # Verificar que el terapeuta existe
+            therapist = Therapist.query.get(therapist_id)
+            if not therapist:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            
+            # Verificar que el terapeuta está asignado al paciente (a través de rutinas)
+            assigned_therapists = db.session.query(Routine.id_terapeuta).filter_by(id_paciente=patient.id).distinct().all()
+            assigned_therapist_ids = [t[0] for t in assigned_therapists]
+            
+            if therapist.id not in assigned_therapist_ids:
+                return jsonify({'success': False, 'message': 'Este terapeuta no está asignado a ti'}), 403
+            
+            # Verificar si el video ya fue compartido con este terapeuta
+            existing_share = VideoShare.query.filter_by(
+                id_captura=capture_id,
+                id_terapeuta=therapist_id,
+                id_paciente=patient.id
+            ).first()
+            
+            if existing_share:
+                return jsonify({'success': False, 'message': 'Este video ya fue compartido con este terapeuta'}), 400
+            
+            # Crear el registro de compartición
+            video_share = VideoShare(
+                id_captura=capture_id,
+                id_terapeuta=therapist_id,
+                id_paciente=patient.id,
+                mensaje=message
+            )
+            
+            db.session.add(video_share)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Video compartido exitosamente con el terapeuta',
+                'share_id': video_share.id
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error al compartir video: {str(e)}'}), 500
+
+    @app.route('/api/get-therapist-shared-videos', methods=['GET'])
+    @login_required
+    @role_required('therapist')
+    def get_therapist_shared_videos():
+        """Obtener videos compartidos por pacientes con el terapeuta actual"""
+        try:
+            from app.models import VideoShare
+            
+            therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
+            if not therapist:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            
+            # Obtener videos compartidos con el terapeuta
+            shared_videos = VideoShare.query.filter_by(id_terapeuta=therapist.id)\
+                .filter(VideoShare.id_paciente.isnot(None))\
+                .order_by(VideoShare.fecha_compartido.desc()).all()
+            
+            videos_list = []
+            for share in shared_videos:
+                # Solo incluir videos que fueron compartidos por pacientes (no los del terapeuta)
+                if share.captura.id_paciente == share.id_paciente:
+                    videos_list.append({
+                        'id': share.id,
+                        'capture_id': share.id_captura,
+                        'filename': share.captura.nombre_archivo,
+                        'file_path': share.captura.ruta_archivo,
+                        'file_size': share.captura.tamano_archivo,
+                        'duration': share.captura.duracion,
+                        'patient_name': share.paciente.nombre_completo,
+                        'patient_id': share.id_paciente,
+                        'message': share.mensaje,
+                        'fecha_compartido': share.fecha_compartido.strftime('%Y-%m-%d %H:%M:%S'),
+                        'leido': share.leido,
+                        'fecha_leido': share.fecha_leido.strftime('%Y-%m-%d %H:%M:%S') if share.fecha_leido else None,
+                        'has_audio': share.captura.contiene_audio
+                    })
+            
+            return jsonify({
+                'success': True,
+                'videos': videos_list,
+                'total': len(videos_list)
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error al obtener videos compartidos: {str(e)}'}), 500
+
+    @app.route('/api/therapist-mark-video-as-read/<int:share_id>', methods=['POST'])
+    @login_required
+    @role_required('therapist')
+    def therapist_mark_video_as_read(share_id):
+        """Terapeuta marca un video compartido como leído"""
+        try:
+            from app.models import VideoShare
+            
+            therapist = Therapist.query.filter_by(id_usuario=current_user.id).first()
+            if not therapist:
+                return jsonify({'success': False, 'message': 'Terapeuta no encontrado'}), 404
+            
+            video_share = VideoShare.query.get(share_id)
+            if not video_share:
+                return jsonify({'success': False, 'message': 'Video compartido no encontrado'}), 404
+            
+            # Verificar que el video compartido pertenece al terapeuta actual
+            if video_share.id_terapeuta != therapist.id:
+                return jsonify({'success': False, 'message': 'No tienes permisos para este video'}), 403
+            
+            # Marcar como leído
+            video_share.leido = True
+            video_share.fecha_leido = datetime.utcnow()
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Video marcado como leído'
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error al marcar video como leído: {str(e)}'}), 500
+
+    @app.route('/api/get-patient-therapists', methods=['GET'])
+    @login_required
+    @role_required('patient')
+    def get_patient_therapists():
+        """Obtener lista de terapeutas asignados al paciente para compartir videos"""
+        try:
+            from app.models import Routine
+            
+            patient = Patient.query.filter_by(id_usuario=current_user.id).first()
+            if not patient:
+                return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
+            
+            # Obtener terapeutas asignados al paciente a través de rutinas
+            therapist_ids = db.session.query(Routine.id_terapeuta)\
+                .filter_by(id_paciente=patient.id)\
+                .distinct().all()
+            
+            therapist_ids = [t[0] for t in therapist_ids]
+            therapists = Therapist.query.filter(Therapist.id.in_(therapist_ids)).all() if therapist_ids else []
+            
+            therapists_list = []
+            for therapist in therapists:
+                therapists_list.append({
+                    'id': therapist.id,
+                    'name': therapist.nombre_completo,
+                    'specialty': therapist.especialidad or 'General'
+                })
+            
+            return jsonify({
+                'success': True,
+                'therapists': therapists_list,
+                'total': len(therapists_list)
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error al obtener terapeutas: {str(e)}'}), 500

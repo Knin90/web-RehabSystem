@@ -28,16 +28,8 @@ def create_app():
 
     login_manager.login_view = 'login'
 
-    # Registrar RUTAS PRINCIPALES (admin, patient, therapist TODO dentro de routes.py)
+    # Registrar RUTAS PRINCIPALES (admin, patient, therapist dentro de routes.py)
     from app.routes import register_routes
     register_routes(app)
-
-    # ❌ ELIMINADO: admin_routes ya NO existe
-    # from app.admin_routes import admin_bp
-    # app.register_blueprint(admin_bp, url_prefix="/admin")
-
-    # ❌ ELIMINADO: therapist_routes tampoco se usa porque también está en routes.py
-    # from app.therapist_routes import therapist_bp
-    # app.register_blueprint(therapist_bp, url_prefix="/therapist")
 
     return app
