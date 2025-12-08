@@ -14,15 +14,21 @@ class Config:
     if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
     
+    # Agregar parámetros SSL a la URL si es PostgreSQL
+    if SQLALCHEMY_DATABASE_URI and 'postgresql://' in SQLALCHEMY_DATABASE_URI:
+        if '?' not in SQLALCHEMY_DATABASE_URI:
+            SQLALCHEMY_DATABASE_URI += '?sslmode=require'
+        elif 'sslmode' not in SQLALCHEMY_DATABASE_URI:
+            SQLALCHEMY_DATABASE_URI += '&sslmode=require'
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Engine options con SSL para PostgreSQL en Render
+    # Engine options para PostgreSQL en Render
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,  # Verificar conexiones antes de usar
         'pool_recycle': 300,    # Reciclar conexiones cada 5 minutos
-        'connect_args': {
-            'sslmode': 'require',  # Requerir SSL para PostgreSQL
-        }
+        'pool_size': 10,
+        'max_overflow': 20,
     }
     
     # CSRF Protection
