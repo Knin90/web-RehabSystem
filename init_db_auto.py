@@ -28,7 +28,7 @@ def init_database():
                 user_count = User.query.count()
                 print(f"Usuarios encontrados: {user_count}")
                 
-                    if user_count == 0:
+                if user_count == 0:
                     print("Base de datos vacía. Creando datos iniciales...")
                     
                     # Crear admin

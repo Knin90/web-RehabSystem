@@ -3,16 +3,18 @@ services:
     name: rehab-system
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app
+    startCommand: bash start.sh
     envVars:
       - key: PYTHON_VERSION
-        value: 3.14.0
+        value: 3.11.0
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
         fromDatabase:
           name: rehab-db
           property: connectionString
+      - key: FLASK_ENV
+        value: production
 
 databases:
   - name: rehab-db
