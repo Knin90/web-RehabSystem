@@ -92,7 +92,7 @@ DATABASE_URL=sqlite:///rehab.db
 ### 5. Inicializar Base de Datos
 
 ```bash
-python setup_complete.py
+python scripts/setup/setup_complete.py
 ```
 
 Este script creará:
@@ -135,28 +135,37 @@ La aplicación estará disponible en: `http://localhost:5000`
 
 ```
 web-RehabSystem/
-├── app/
+├── app/                     # Código principal de la aplicación
 │   ├── __init__.py          # Inicialización de Flask
 │   ├── config.py            # Configuraciones
 │   ├── models.py            # Modelos de base de datos
 │   └── routes.py            # Rutas y API endpoints
-├── static/
+├── static/                  # Archivos estáticos
 │   ├── css/                 # Estilos personalizados
 │   ├── js/                  # Scripts JavaScript
 │   ├── images/              # Imágenes del sistema
 │   └── uploads/             # Videos y capturas
-├── templates/
+├── templates/               # Plantillas HTML
 │   ├── admin/               # Plantillas de administrador
 │   ├── therapist/           # Plantillas de terapeuta
 │   ├── patient/             # Plantillas de paciente
 │   └── base.html            # Plantilla base
-├── instance/
-│   └── rehab.db             # Base de datos SQLite
-├── tests/                   # Tests unitarios
-├── .env                     # Variables de entorno
+├── scripts/                 # Scripts de utilidad
+│   ├── setup/               # Scripts de configuración inicial
+│   ├── migrations/          # Scripts de migración de BD
+│   ├── verification/        # Scripts de verificación
+│   └── git/                 # Scripts de Git
+├── tests/                   # Tests unitarios y de integración
+├── docs/                    # Documentación adicional
+├── instance/                # Base de datos SQLite
+├── .venv/                   # Entorno virtual (no en Git)
+├── .env                     # Variables de entorno (no en Git)
+├── .gitignore               # Archivos ignorados por Git
 ├── requirements.txt         # Dependencias Python
-├── run.py                   # Punto de entrada
-└── setup_complete.py        # Script de inicialización
+├── run.py                   # Punto de entrada de la aplicación
+├── README.md                # Documentación principal
+├── Procfile                 # Configuración para deployment
+└── render.yaml              # Configuración para Render
 
 ```
 
@@ -206,21 +215,30 @@ web-RehabSystem/
 
 ## 🔧 Scripts Útiles
 
-### Configuración y Datos
+### Configuración y Datos (scripts/setup/)
 - `setup_complete.py` - Configuración completa del sistema
 - `init_db.py` - Inicializar base de datos vacía
 - `seed_data.py` - Poblar con datos de prueba
 - `seed_exercises.py` - Agregar ejercicios al catálogo
+- `seed_more_patients.py` - Agregar más pacientes
 
-### Verificación
+### Migraciones (scripts/migrations/)
+- `migrate_add_captures.py` - Agregar tabla de capturas
+- `migrate_add_routines.py` - Agregar tabla de rutinas
+- `migrate_fix_therapist_nullable.py` - Corregir campos nullable
+
+### Verificación (scripts/verification/)
 - `verificar_sistema.py` - Verificar estado del sistema
 - `verificar_pacientes.py` - Verificar pacientes asignados
 - `check_routines.py` - Verificar rutinas en base de datos
+- `debug_api_patients.py` - Debug de API de pacientes
 
-### Git
+### Git (scripts/git/)
 - `git_push_codigo.bat` - Subir solo archivos de código
 - `git_sincronizar.bat` - Sincronizar con GitHub
 - `git_ver_cambios.bat` - Ver cambios pendientes
+
+Ver documentación completa en `scripts/README.md`
 
 ## 🧪 Testing
 
@@ -228,10 +246,18 @@ web-RehabSystem/
 # Ejecutar todos los tests
 pytest
 
-# Test específico
-python test_api_simple.py
-python test_shared_video_playback.py
+# Tests específicos
+python tests/test_api_simple.py
+python tests/test_shared_video_playback.py
+python tests/test_routine_flow.py
 ```
+
+Los tests están organizados en la carpeta `tests/` e incluyen:
+- Tests de API endpoints
+- Tests de autenticación
+- Tests de compartición de videos
+- Tests de rutinas
+- Tests de configuración
 
 ## 🐛 Solución de Problemas
 
@@ -254,7 +280,7 @@ pip install -r requirements.txt
 ### Pacientes no aparecen en selector
 ```bash
 # Ejecutar script de configuración
-python setup_complete.py
+python scripts/setup/setup_complete.py
 
 # Reiniciar servidor
 # Ctrl+C para detener
@@ -264,7 +290,10 @@ python run.py
 ### Error de base de datos
 ```bash
 # Reinicializar base de datos
-python setup_complete.py
+python scripts/setup/setup_complete.py
+
+# Verificar estado
+python scripts/verification/verificar_sistema.py
 ```
 
 ## 📝 Notas Importantes
