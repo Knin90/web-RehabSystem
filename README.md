@@ -1,134 +1,135 @@
-# 🏥 RehabSystem - Sistema Avanzado de Rehabilitación
+# RehabSystem - Sistema de Rehabilitación Física
 
-[![Python](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-3.1.2-green.svg)](https://flask.palletsprojects.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-10%2F10%20Passing-success.svg)](tests/)
+Sistema web integral para la gestión de rehabilitación física que permite a terapeutas y pacientes colaborar en el proceso de recuperación mediante rutinas personalizadas, seguimiento de progreso y compartición de videos de ejercicios.
 
-Sistema web completo para gestión de rehabilitación física con visión artificial, diseñado para administradores, terapeutas y pacientes.
+## 🌟 Características Principales
 
-![RehabSystem Dashboard](static/images/banner-principal.png)
+### Para Terapeutas
+- **Gestión de Pacientes**: Administración completa de pacientes asignados
+- **Creación de Rutinas**: Diseño de rutinas personalizadas con ejercicios específicos
+- **Galería de Videos**: Captura, almacenamiento y compartición de videos de ejercicios
+- **Compartir Videos**: Envío de videos instructivos a pacientes con mensajes personalizados
+- **Seguimiento de Progreso**: Monitoreo del avance de cada paciente
+- **Dashboard Interactivo**: Vista general de pacientes, sesiones y estadísticas
 
-## ✨ Características Principales
+### Para Pacientes
+- **Rutinas Asignadas**: Acceso a rutinas personalizadas creadas por su terapeuta
+- **Galería de Videos**: Visualización de videos propios y compartidos por el terapeuta
+- **Compartir Videos**: Envío de videos de progreso al terapeuta
+- **Reproducción de Videos**: Player integrado con controles de velocidad y pantalla completa
+- **Descarga de Videos**: Descarga de videos para visualización offline
+- **Notificaciones**: Badges de videos no leídos
 
-### 🎯 Módulos Implementados
+### Para Administradores
+- **Gestión de Usuarios**: Administración de terapeutas y pacientes
+- **Configuración del Sistema**: Ajustes globales de la aplicación
+- **Gestión de Ejercicios**: Catálogo de ejercicios disponibles
 
-- **👨‍💼 Panel de Administrador**
-  - Dashboard con estadísticas en tiempo real
-  - Gestión completa de usuarios, terapeutas y pacientes
-  - Sistema de configuración con 6 módulos
-  - Exportación de datos en CSV
-  - Acciones rápidas interactivas (Nuevo usuario, Backup, Logs, Notificaciones)
-  - Gráficas de actividad con Chart.js
+## 🛠️ Tecnologías Utilizadas
 
-- **🧑‍⚕️ Panel de Terapeuta**
-  - Dashboard con métricas de pacientes
-  - Creador de rutinas inteligente con IA
-  - Gestión de sesiones y citas
-  - Biblioteca de 8 ejercicios predefinidos
-  - Estadísticas en tiempo real
-  - **📹 Módulo de Cámara en Tiempo Real** (NUEVO)
-    - Captura de video en vivo
-    - Monitoreo de sesiones de pacientes
-    - Captura de instantáneas
-    - Métricas en tiempo real
+### Backend
+- **Flask 3.1.2**: Framework web principal
+- **SQLAlchemy 2.0.44**: ORM para base de datos
+- **Flask-Login 0.6.3**: Gestión de autenticación
+- **Flask-Bcrypt 1.0.1**: Encriptación de contraseñas
+- **Flask-Migrate 4.0.5**: Migraciones de base de datos
+- **Python-dotenv 1.2.1**: Gestión de variables de entorno
 
-- **🤕 Panel de Paciente**
-  - Dashboard personalizado con progreso
-  - Historial de sesiones
-  - Lista de terapeutas asignados
-  - Inicio de terapia guiada
-  - Sistema de mensajería
+### Frontend
+- **Bootstrap 5**: Framework CSS
+- **JavaScript ES6**: Interactividad del cliente
+- **HTML5 Video API**: Reproducción de videos
+- **Jinja2 3.1.6**: Motor de plantillas
 
-### 🎨 Características de UI/UX
+### Base de Datos
+- **SQLite**: Base de datos en desarrollo
+- Compatible con PostgreSQL para producción
 
-- ✅ **Modo Claro/Oscuro** - Cambio dinámico de tema
-- ✅ **Traducción Bilingüe** - Español/Inglés (150+ traducciones)
-- ✅ **Diseño Responsive** - Optimizado para móviles y tablets
-- ✅ **Animaciones CSS** - Efectos visuales modernos
-- ✅ **Notificaciones Toast** - Feedback visual inmediato
+## 📋 Requisitos Previos
 
-### 🔐 Seguridad
-
-- Autenticación con Flask-Login
-- Encriptación de contraseñas con Bcrypt
-- Control de acceso basado en roles
-- Sesiones seguras
-- Protección CSRF
+- Python 3.8 o superior
+- pip (gestor de paquetes de Python)
+- Navegador web moderno (Chrome, Firefox, Edge)
 
 ## 🚀 Instalación
 
-### Requisitos Previos
+### 1. Clonar el Repositorio
 
-- Python 3.10 o superior
-- pip (gestor de paquetes de Python)
-- Git
-
-### Pasos de Instalación
-
-1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/tu-usuario/rehab-system.git
-cd rehab-system/web-RehabSystem
+git clone https://github.com/Knin90/web-RehabSystem.git
+cd web-RehabSystem
 ```
 
-2. **Crear entorno virtual**
-```bash
-python -m venv .venv
-```
+### 2. Crear Entorno Virtual
 
-3. **Activar entorno virtual**
 ```bash
 # Windows
+python -m venv .venv
 .venv\Scripts\activate
 
 # Linux/Mac
+python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-4. **Instalar dependencias**
+### 3. Instalar Dependencias
+
 ```bash
 pip install -r requirements.txt
 ```
 
-5. **Configurar variables de entorno**
-```bash
-# Copiar archivo de ejemplo
-cp .env.txt .env
+### 4. Configurar Variables de Entorno
 
-# Editar .env con tus configuraciones
+Crear archivo `.env` en la raíz del proyecto:
+
+```env
+FLASK_APP=run.py
+FLASK_ENV=development
+SECRET_KEY=tu_clave_secreta_aqui
+DATABASE_URL=sqlite:///rehab.db
 ```
 
-6. **Inicializar base de datos**
+### 5. Inicializar Base de Datos
+
 ```bash
-python seed_data.py
+python setup_complete.py
 ```
 
-7. **Ejecutar aplicación**
+Este script creará:
+- Base de datos con todas las tablas
+- Usuario administrador
+- Usuario terapeuta (Rafael Lu)
+- 5 pacientes de prueba con rutinas asignadas
+- Catálogo de 8 ejercicios
+- Configuraciones del sistema
+
+### 6. Ejecutar la Aplicación
+
 ```bash
 python run.py
 ```
 
-8. **Acceder a la aplicación**
-```
-http://127.0.0.1:5000
-```
+La aplicación estará disponible en: `http://localhost:5000`
 
-## 🧪 Testing
+## 👥 Credenciales de Acceso
 
-Ejecutar suite de pruebas completa:
+### Administrador
+- **Usuario**: `admin`
+- **Contraseña**: `admin123`
 
-```bash
-pytest tests/ -v
-```
+### Terapeuta
+- **Usuario**: `terapeuta`
+- **Contraseña**: `tera123`
+- **Nombre**: Rafael Lu
 
-Ejecutar con cobertura:
-
-```bash
-pytest tests/ --cov=app --cov-report=html
-```
-
-**Estado actual:** ✅ 10/10 tests pasando (100%)
+### Pacientes
+| Nombre | Usuario | Contraseña | Diagnóstico |
+|--------|---------|------------|-------------|
+| Andrea Luna | `paciente` | `paci123` | Rehabilitación rodilla |
+| María García | `maria_garcia` | `maria123` | Lesión de hombro |
+| Juan Pérez | `juan_perez` | `juan123` | Rehabilitación de cadera |
+| Carlos Rodríguez | `carlos_rodriguez` | `carlos123` | Lesión lumbar |
+| Sofía Martínez | `sofia_martinez` | `sofia123` | Rehabilitación de tobillo |
 
 ## 📁 Estructura del Proyecto
 
@@ -136,127 +137,182 @@ pytest tests/ --cov=app --cov-report=html
 web-RehabSystem/
 ├── app/
 │   ├── __init__.py          # Inicialización de Flask
-│   ├── config.py            # Configuración
-│   ├── models.py            # Modelos SQLAlchemy
-│   ├── routes.py            # Rutas de la aplicación
-│   └── forms.py             # Formularios WTForms
+│   ├── config.py            # Configuraciones
+│   ├── models.py            # Modelos de base de datos
+│   └── routes.py            # Rutas y API endpoints
 ├── static/
-│   ├── css/
-│   │   ├── dashboard.css    # Estilos principales
-│   │   └── themes.css       # Sistema de temas
-│   ├── js/
-│   │   ├── theme-manager.js # Gestor de temas
-│   │   └── routine-builder.js # Constructor de rutinas
-│   └── images/
+│   ├── css/                 # Estilos personalizados
+│   ├── js/                  # Scripts JavaScript
+│   ├── images/              # Imágenes del sistema
+│   └── uploads/             # Videos y capturas
 ├── templates/
-│   ├── admin/               # Vistas de administrador
-│   ├── therapist/           # Vistas de terapeuta
-│   ├── patient/             # Vistas de paciente
-│   ├── index.html           # Landing page
-│   └── login.html           # Página de login
-├── tests/                   # Suite de pruebas
+│   ├── admin/               # Plantillas de administrador
+│   ├── therapist/           # Plantillas de terapeuta
+│   ├── patient/             # Plantillas de paciente
+│   └── base.html            # Plantilla base
 ├── instance/
-│   └── rehab.db            # Base de datos SQLite
-├── run.py                  # Punto de entrada
-├── requirements.txt        # Dependencias
-└── README.md              # Este archivo
+│   └── rehab.db             # Base de datos SQLite
+├── tests/                   # Tests unitarios
+├── .env                     # Variables de entorno
+├── requirements.txt         # Dependencias Python
+├── run.py                   # Punto de entrada
+└── setup_complete.py        # Script de inicialización
+
 ```
 
-## 🔑 Credenciales de Prueba
+## 🔌 API Endpoints Principales
 
-Para acceder al sistema en modo desarrollo:
+### Autenticación
+- `POST /login` - Iniciar sesión
+- `GET /logout` - Cerrar sesión
 
-| Rol | Usuario | Contraseña |
-|-----|---------|------------|
-| Administrador | `admin` | `admin123` |
-| Terapeuta | `terapeuta` | `tera123` |
-| Paciente | `paciente` | `paci123` |
+### Compartir Videos (Terapeuta → Paciente)
+- `POST /api/share-video` - Compartir video con paciente
+- `GET /api/get-patients-for-sharing` - Obtener lista de pacientes
+- `GET /api/get-shared-videos` - Obtener videos compartidos (vista paciente)
+- `POST /api/mark-video-as-read/<share_id>` - Marcar video como leído
 
-⚠️ **Importante:** Cambiar estas credenciales en producción.
+### Compartir Videos (Paciente → Terapeuta)
+- `POST /api/patient-share-video` - Compartir video con terapeuta
+- `GET /api/get-patient-therapists` - Obtener terapeutas del paciente
+- `GET /api/get-therapist-shared-videos` - Obtener videos de pacientes
+- `POST /api/therapist-mark-video-as-read/<share_id>` - Marcar como leído
 
-## 🛠️ Tecnologías Utilizadas
+### Rutinas
+- `GET /api/patient-routines` - Obtener rutinas del paciente
+- `POST /api/create-routine` - Crear nueva rutina
+- `PUT /api/update-routine/<id>` - Actualizar rutina
+- `DELETE /api/delete-routine/<id>` - Eliminar rutina
 
-### Backend
-- **Flask 3.1.2** - Framework web
-- **SQLAlchemy 2.0** - ORM
-- **Flask-Login** - Autenticación
-- **Flask-Bcrypt** - Encriptación
-- **Flask-Migrate** - Migraciones de BD
-- **Pytest** - Testing
+## 🎥 Funcionalidades de Video
 
-### Frontend
-- **Bootstrap 5.3** - Framework CSS
-- **Font Awesome 6.4** - Iconos
-- **Chart.js** - Gráficas
-- **JavaScript ES6+** - Interactividad
+### Reproducción
+- Player HTML5 integrado
+- Controles de velocidad (0.5x, 1x, 1.5x, 2x)
+- Modo pantalla completa
+- Controles nativos (play, pause, volumen, barra de progreso)
+- Autoplay al abrir modal
 
-### Base de Datos
-- **SQLite** (desarrollo)
+### Descarga
+- Descarga directa de archivos
+- Múltiples métodos de fallback
+- Nombres de archivo descriptivos
 
-## 📊 Modelos de Base de Datos
+### Compartición
+- Compartir entre terapeuta y paciente (bidireccional)
+- Mensajes personalizados
+- Notificaciones de videos no leídos
+- Marcado automático como leído al reproducir
 
-- **User** - Usuarios del sistema
-- **Patient** - Pacientes con progreso
-- **Therapist** - Terapeutas con especialidades
-- **Exercise** - Catálogo de ejercicios
-- **Appointment** - Citas programadas
-- **SystemSettings** - Configuración persistente
+## 🔧 Scripts Útiles
 
-## 🎯 Roadmap
+### Configuración y Datos
+- `setup_complete.py` - Configuración completa del sistema
+- `init_db.py` - Inicializar base de datos vacía
+- `seed_data.py` - Poblar con datos de prueba
+- `seed_exercises.py` - Agregar ejercicios al catálogo
 
-### Próximas Funcionalidades
+### Verificación
+- `verificar_sistema.py` - Verificar estado del sistema
+- `verificar_pacientes.py` - Verificar pacientes asignados
+- `check_routines.py` - Verificar rutinas en base de datos
 
-- [ ] Módulo de Visión Artificial (detección de movimientos)
-- [ ] Reportes avanzados con gráficas
-- [ ] Sistema de mensajería en tiempo real
-- [ ] Videollamadas integradas
-- [ ] App móvil (React Native)
-- [ ] API REST completa
-- [ ] Integración con dispositivos wearables
+### Git
+- `git_push_codigo.bat` - Subir solo archivos de código
+- `git_sincronizar.bat` - Sincronizar con GitHub
+- `git_ver_cambios.bat` - Ver cambios pendientes
 
-## 📝 Documentación Adicional
+## 🧪 Testing
 
-- [Guía de Configuración](SETTINGS_GUIDE.md)
-- [Sistema de Traducción](LANGUAGE_GUIDE.md)
-- [Características del Admin](ADMIN_FEATURES.md)
-- [Changelog](CHANGELOG.md)
+```bash
+# Ejecutar todos los tests
+pytest
 
-## 🤝 Contribuir
+# Test específico
+python test_api_simple.py
+python test_shared_video_playback.py
+```
 
-Las contribuciones son bienvenidas! Por favor:
+## 🐛 Solución de Problemas
 
+### El servidor no inicia
+```bash
+# Verificar que el entorno virtual está activado
+# Windows
+.venv\Scripts\activate
+
+# Reinstalar dependencias
+pip install -r requirements.txt
+```
+
+### Videos no se reproducen
+- Verificar que el formato es WebM
+- Limpiar caché del navegador (Ctrl+Shift+R)
+- Usar modo incógnito
+- Verificar que la ruta del archivo es correcta
+
+### Pacientes no aparecen en selector
+```bash
+# Ejecutar script de configuración
+python setup_complete.py
+
+# Reiniciar servidor
+# Ctrl+C para detener
+python run.py
+```
+
+### Error de base de datos
+```bash
+# Reinicializar base de datos
+python setup_complete.py
+```
+
+## 📝 Notas Importantes
+
+- **Formato de Video**: Los videos deben estar en formato WebM para compatibilidad con navegadores modernos
+- **Caché del Navegador**: Después de cambios en el código, limpiar caché con Ctrl+Shift+R
+- **Reinicio del Servidor**: Después de cambios en Python, reiniciar con Ctrl+C y `python run.py`
+- **Modo Incógnito**: Recomendado para pruebas para evitar problemas de caché
+
+## 🚀 Despliegue en Producción
+
+### Variables de Entorno Requeridas
+```env
+FLASK_ENV=production
+SECRET_KEY=clave_secreta_segura
+DATABASE_URL=postgresql://usuario:contraseña@host:puerto/database
+PORT=5000
+```
+
+### Plataformas Compatibles
+- Render
+- Railway
+- PythonAnywhere
+- Heroku
+- AWS/Azure/GCP
+
+## 📄 Licencia
+
+Este proyecto es de código abierto y está disponible bajo la licencia MIT.
+
+## 👨‍💻 Autor
+
+Desarrollado por el equipo de RehabSystem
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
 1. Fork el proyecto
 2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
 3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
-
-## 👨‍💻 Autor
-
-**Kunin Denis** - Desarrollador Principal
-
-## 🙏 Agradecimientos
-
-- Bootstrap por el framework CSS
-- Font Awesome por los iconos
-- Chart.js por las gráficas
-- Flask por el framework web
-
 ## 📞 Soporte
 
-Para preguntas o problemas:
-- Abrir un [Issue](https://github.com/tu-usuario/rehab-system/issues)
-- Revisar la [Documentación](docs/)
-- Ejecutar tests: `pytest tests/ -v`
+Para reportar bugs o solicitar features, por favor abre un issue en GitHub.
 
 ---
 
-**Última actualización:** Diciembre 2024  
-**Versión:** 2.0.0  
-**Estado:** ✅ Producción Ready
-
-⭐ Si te gusta este proyecto, dale una estrella en GitHub!
+**Versión**: 2.0  
+**Última actualización**: Diciembre 2025
