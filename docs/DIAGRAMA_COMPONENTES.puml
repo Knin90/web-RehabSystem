@@ -1,0 +1,310 @@
+@startuml Diagrama de Componentes - Sistema RehabSystem
+
+title Diagrama de Componentes - Sistema de Rehabilitación Física
+
+' ============================================================
+' CAPA DE PRESENTACIÓN
+' ============================================================
+package "CAPA DE PRESENTACIÓN" as presentation {
+    
+    component "Templates\n(Jinja2)" as templates {
+        component "admin/\n- dashboard.html\n- users.html\n- therapists.html\n- patients.html\n- settings.html\n- export_data.html" as admin_templates
+        component "terapeuta/\n- dashboard.html\n- patients.html\n- routines.html\n- start_session.html\n- video_gallery.html\n- appointments.html" as therapist_templates
+        component "paciente/\n- dashboard.html\n- routines.html\n- start_therapy.html\n- video_gallery.html\n- history.html\n- profile.html" as patient_templates
+        component "base.html\nlogin.html\nindex.html" as common_templates
+    }
+    
+    component "Static Files" as static {
+        component "CSS\n- Bootstrap 5\n- Custom styles" as css
+        component "JavaScript\n- Fetch API\n- WebRTC\n- MediaRecorder" as js
+        component "Uploads\n- photos/\n- videos/\n- videos_permanentes/" as uploads
+    }
+    
+    component "Forms\n(Flask-WTF)" as forms {
+        component "LoginForm\n- nombre_usuario\n- contrasena\n- validators" as login_form
+    }
+}
+
+' ============================================================
+' CAPA DE APLICACIÓN
+' ============================================================
+package "CAPA DE APLICACIÓN" as application {
+    
+    component "Flask Application\n(__init__.py)" as flask_app {
+        component "Factory Pattern\n- create_app()\n- Config loading\n- Extensions init" as factory
+    }
+    
+    component "Routes\n(routes.py)" as routes {
+        component "Admin Routes\n- /admin/dashboard\n- /admin/users\n- /admin/therapists\n- /admin/patients\n- /admin/settings\n- /admin/export-data" as admin_routes
+        component "Therapist Routes\n- /therapist/dashboard\n- /therapist/patients\n- /therapist/routines\n- /therapist/create-routine\n- /therapist/assign-routine\n- /therapist/start-session\n- /therapist/video-gallery" as therapist_routes
+        component "Patient Routes\n- /patient/dashboard\n- /patient/routines\n- /patient/start-therapy\n- /patient/video-gallery\n- /patient/history\n- /patient/profile" as patient_routes
+        component "Auth Routes\n- /login\n- /logout\n- /" as auth_routes
+    }
+    
+    component "Config\n(config.py)" as config {
+        component "Environment Variables\n- DATABASE_URL\n- SECRET_KEY\n- FLASK_ENV" as env_vars
+    }
+    
+    component "Decorators" as decorators {
+        component "@role_required\n- admin\n- therapist\n- patient" as role_decorator
+        component "@login_required\n(Flask-Login)" as login_decorator
+    }
+    
+    component "Validators" as validators {
+        component "DataRequired\nLength\nEmail" as wtf_validators
+    }
+}
+
+' ============================================================
+' CAPA DE NEGOCIO
+' ============================================================
+package "CAPA DE NEGOCIO" as business {
+    
+    component "Models\n(SQLAlchemy ORM)" as models {
+        component "User\n- Authentication\n- Roles\n- Password hashing" as user_model
+        component "Patient\n- Profile\n- Progress\n- Sessions" as patient_model
+        component "Therapist\n- Profile\n- Specialty\n- Patients" as therapist_model
+        component "Routine\n- Exercises\n- Assignment\n- Configuration" as routine_model
+        component "RoutineExercise\n- Order\n- Sets/Reps\n- Rest time" as routine_exercise_model
+        component "Exercise\n- Catalog\n- Categories\n- Description" as exercise_model
+        component "SessionCapture\n- Photos\n- Videos\n- Metadata" as session_capture_model
+        component "VideoShare\n- Sharing\n- Messages\n- Read status" as video_share_model
+        component "Appointment\n- Scheduling\n- Status" as appointment_model
+        component "SystemSettings\n- Configuration\n- Key-Value store" as system_settings_model
+    }
+    
+    component "Flask-Login" as flask_login {
+        component "UserMixin\nLoginManager\nUser Loader" as login_manager
+    }
+    
+    component "Flask-Bcrypt" as bcrypt {
+        component "Password Hashing\nPassword Verification" as password_hash
+    }
+}
+
+' ============================================================
+' CAPA DE DATOS
+' ============================================================
+package "CAPA DE DATOS" as data {
+    
+    component "SQLAlchemy\n(ORM)" as sqlalchemy {
+        component "Session Management\nQuery Builder\nRelationships" as orm_features
+    }
+    
+    component "Alembic\n(Migrations)" as alembic {
+        component "Version Control\nSchema Changes\nUpgrade/Downgrade" as migrations
+    }
+    
+    database "PostgreSQL 15" as postgres {
+        component "Tables:\n- user\n- patient\n- therapist\n- routine\n- routine_exercise\n- exercise\n- session_capture\n- video_share\n- appointment\n- system_settings" as tables
+    }
+}
+
+' ============================================================
+' COMPONENTES EXTERNOS
+' ============================================================
+package "COMPONENTES EXTERNOS" as external {
+    
+    component "Render.com\n(PaaS)" as render {
+        component "Web Service\nDatabase Service\nStatic Files" as render_services
+    }
+    
+    component "Gunicorn\n(WSGI Server)" as gunicorn {
+        component "Workers: 4\nThreads: 2\nTimeout: 120s" as gunicorn_config
+    }
+    
+    component "Nginx\n(Reverse Proxy)" as nginx {
+        component "SSL/TLS\nLoad Balancing\nStatic Serving" as nginx_features
+    }
+    
+    component "Browser\n(Client)" as browser {
+        component "HTML5\nCSS3\nJavaScript\nWebRTC" as browser_tech
+    }
+}
+
+' ============================================================
+' SUBSISTEMAS FUNCIONALES
+' ============================================================
+package "SUBSISTEMAS FUNCIONALES" as subsystems {
+    
+    component "Authentication\nSubsystem" as auth_subsystem {
+        component "Login/Logout\nSession Management\nRole Verification" as auth_features
+    }
+    
+    component "User Management\nSubsystem" as user_subsystem {
+        component "CRUD Users\nCRUD Therapists\nCRUD Patients" as user_features
+    }
+    
+    component "Routine Management\nSubsystem" as routine_subsystem {
+        component "Create Routines\nAssign Routines\nManage Exercises" as routine_features
+    }
+    
+    component "Session Capture\nSubsystem" as capture_subsystem {
+        component "Photo Capture\nVideo Recording\nFile Storage" as capture_features
+    }
+    
+    component "Video Sharing\nSubsystem" as sharing_subsystem {
+        component "Share Videos\nView Shared\nMessaging" as sharing_features
+    }
+    
+    component "Reporting\nSubsystem" as reporting_subsystem {
+        component "Export CSV\nStatistics\nProgress Reports" as reporting_features
+    }
+    
+    component "Configuration\nSubsystem" as config_subsystem {
+        component "System Settings\nNotifications\nSecurity" as config_features
+    }
+}
+
+' ============================================================
+' RELACIONES - PRESENTACIÓN
+' ============================================================
+browser --> nginx : "HTTPS Request"
+nginx --> gunicorn : "Proxy Pass"
+gunicorn --> flask_app : "WSGI Call"
+
+flask_app --> templates : "Render"
+flask_app --> static : "Serve"
+flask_app --> forms : "Validate"
+
+templates --> admin_templates
+templates --> therapist_templates
+templates --> patient_templates
+templates --> common_templates
+
+static --> css
+static --> js
+static --> uploads
+
+' ============================================================
+' RELACIONES - APLICACIÓN
+' ============================================================
+flask_app --> routes : "Route Handling"
+flask_app --> config : "Configuration"
+
+routes --> admin_routes
+routes --> therapist_routes
+routes --> patient_routes
+routes --> auth_routes
+
+routes --> decorators : "Apply"
+decorators --> role_decorator
+decorators --> login_decorator
+
+forms --> validators : "Use"
+
+' ============================================================
+' RELACIONES - NEGOCIO
+' ============================================================
+routes --> models : "Business Logic"
+
+models --> user_model
+models --> patient_model
+models --> therapist_model
+models --> routine_model
+models --> routine_exercise_model
+models --> exercise_model
+models --> session_capture_model
+models --> video_share_model
+models --> appointment_model
+models --> system_settings_model
+
+user_model --> flask_login : "Authentication"
+user_model --> bcrypt : "Password Hash"
+
+' ============================================================
+' RELACIONES - DATOS
+' ============================================================
+models --> sqlalchemy : "ORM Operations"
+sqlalchemy --> postgres : "SQL Queries"
+alembic --> postgres : "Schema Migrations"
+
+' ============================================================
+' RELACIONES - SUBSISTEMAS
+' ============================================================
+auth_routes --> auth_subsystem : "Use"
+admin_routes --> user_subsystem : "Use"
+admin_routes --> reporting_subsystem : "Use"
+admin_routes --> config_subsystem : "Use"
+
+therapist_routes --> routine_subsystem : "Use"
+therapist_routes --> capture_subsystem : "Use"
+therapist_routes --> sharing_subsystem : "Use"
+
+patient_routes --> routine_subsystem : "Use"
+patient_routes --> capture_subsystem : "Use"
+patient_routes --> sharing_subsystem : "Use"
+
+auth_subsystem --> user_model : "Access"
+user_subsystem --> user_model : "Access"
+user_subsystem --> patient_model : "Access"
+user_subsystem --> therapist_model : "Access"
+
+routine_subsystem --> routine_model : "Access"
+routine_subsystem --> routine_exercise_model : "Access"
+routine_subsystem --> exercise_model : "Access"
+
+capture_subsystem --> session_capture_model : "Access"
+capture_subsystem --> uploads : "Store Files"
+
+sharing_subsystem --> video_share_model : "Access"
+sharing_subsystem --> session_capture_model : "Access"
+
+reporting_subsystem --> user_model : "Query"
+reporting_subsystem --> patient_model : "Query"
+reporting_subsystem --> therapist_model : "Query"
+
+config_subsystem --> system_settings_model : "Access"
+
+' ============================================================
+' NOTAS
+' ============================================================
+note right of presentation
+  **CAPA DE PRESENTACIÓN**
+  - Interfaz de usuario
+  - Templates HTML
+  - Recursos estáticos
+  - Formularios
+end note
+
+note right of application
+  **CAPA DE APLICACIÓN**
+  - Lógica de controladores
+  - Enrutamiento
+  - Configuración
+  - Decoradores
+end note
+
+note right of business
+  **CAPA DE NEGOCIO**
+  - Modelos de dominio
+  - Lógica de negocio
+  - Autenticación
+  - Validaciones
+end note
+
+note right of data
+  **CAPA DE DATOS**
+  - Persistencia
+  - ORM
+  - Migraciones
+  - Base de datos
+end note
+
+note right of external
+  **COMPONENTES EXTERNOS**
+  - Infraestructura
+  - Servidores
+  - Servicios cloud
+  - Cliente web
+end note
+
+note right of subsystems
+  **SUBSISTEMAS FUNCIONALES**
+  - Módulos especializados
+  - Funcionalidades agrupadas
+  - Reutilizables
+  - Independientes
+end note
+
+@enduml

@@ -1,0 +1,309 @@
+@startuml Diagrama de Navegación - Parte 3: Panel Terapeuta
+
+title Diagrama de Navegación - Parte 3: Panel Terapeuta
+
+' ============================================================
+' DASHBOARD TERAPEUTA
+' ============================================================
+
+state "Dashboard Terapeuta\n/therapist/dashboard" as therapist_dashboard {
+    therapist_dashboard : Resumen de pacientes
+    therapist_dashboard : Sesiones programadas
+    therapist_dashboard : Estadísticas personales
+    therapist_dashboard : Menú de navegación
+}
+
+state "Mis Pacientes\n/therapist/patients" as therapist_patients {
+    therapist_patients : Lista de pacientes asignados
+    therapist_patients : Ver detalles de paciente
+    therapist_patients : Ver progreso
+    therapist_patients : Ver historial de sesiones
+    therapist_patients : Filtros y búsqueda
+}
+
+state "Rutinas\n/therapist/routines" as therapist_routines {
+    therapist_routines : Lista de rutinas creadas
+    therapist_routines : Botón "Crear Nueva Rutina"
+    therapist_routines : Botón "Asignar a Paciente"
+    therapist_routines : Ver ejercicios de rutina
+    therapist_routines : Editar/Eliminar rutina
+}
+
+state "Modal Crear Rutina" as create_routine {
+    create_routine : Nombre de rutina
+    create_routine : Descripción
+    create_routine : Seleccionar ejercicios
+    create_routine : Configurar series
+    create_routine : Configurar repeticiones
+    create_routine : Tiempo de descanso
+    create_routine : Duración total (minutos)
+    create_routine : Dificultad (fácil/media/difícil)
+    create_routine : Botones: Guardar/Cancelar
+}
+
+state "Modal Asignar Rutina" as assign_routine {
+    assign_routine : Seleccionar rutina template
+    assign_routine : Seleccionar paciente
+    assign_routine : Vista previa de rutina
+    assign_routine : Botones: Asignar/Cancelar
+}
+
+state "Iniciar Sesión\n/therapist/start-session" as therapist_session {
+    therapist_session : Seleccionar paciente
+    therapist_session : Acceder a cámara
+    therapist_session : Vista previa de cámara
+    therapist_session : Botón "Capturar Foto"
+    therapist_session : Botón "Grabar Video"
+    therapist_session : Campo de notas
+    therapist_session : Guardar sesión
+}
+
+state "Captura de Foto" as capture_photo {
+    capture_photo : Tomar foto con cámara
+    capture_photo : Vista previa
+    capture_photo : Agregar notas
+    capture_photo : Guardar en servidor
+}
+
+state "Grabación de Video" as record_video {
+    record_video : Iniciar grabación
+    record_video : Grabar con audio
+    record_video : Detener grabación
+    record_video : Vista previa
+    record_video : Agregar notas
+    record_video : Guardar permanente
+}
+
+state "Galería Videos\n/therapist/video-gallery" as therapist_gallery {
+    therapist_gallery : Ver capturas propias
+    therapist_gallery : Ver videos de pacientes
+    therapist_gallery : Filtrar por paciente
+    therapist_gallery : Filtrar por fecha
+    therapist_gallery : Reproducir videos
+    therapist_gallery : Botón "Compartir"
+}
+
+state "Modal Compartir Video" as share_video {
+    share_video : Seleccionar video
+    share_video : Seleccionar paciente
+    share_video : Agregar mensaje
+    share_video : Vista previa
+    share_video : Botones: Enviar/Cancelar
+}
+
+state "Citas\n/therapist/appointments" as therapist_appointments {
+    therapist_appointments : Ver calendario
+    therapist_appointments : Citas programadas
+    therapist_appointments : Botón "Programar Cita"
+    therapist_appointments : Modificar cita
+    therapist_appointments : Cancelar cita
+    therapist_appointments : Ver historial
+}
+
+state "Cerrar Sesión\n/logout" as logout
+
+' ============================================================
+' NAVEGACIÓN
+' ============================================================
+
+[*] --> therapist_dashboard : Acceso desde\nautenticación
+
+therapist_dashboard --> therapist_patients : Click "Pacientes"
+therapist_dashboard --> therapist_routines : Click "Rutinas"
+therapist_dashboard --> therapist_session : Click "Iniciar Sesión"
+therapist_dashboard --> therapist_gallery : Click "Galería"
+therapist_dashboard --> therapist_appointments : Click "Citas"
+therapist_dashboard --> logout : Click "Cerrar Sesión"
+
+therapist_patients --> therapist_dashboard : Volver
+
+therapist_routines --> create_routine : Click "Crear\nNueva Rutina"
+create_routine --> therapist_routines : POST /therapist/create-routine\no Cancelar
+
+therapist_routines --> assign_routine : Click "Asignar\na Paciente"
+assign_routine --> therapist_routines : POST /therapist/assign-routine\no Cancelar
+
+therapist_routines --> therapist_dashboard : Volver
+
+therapist_session --> capture_photo : Click "Capturar\nFoto"
+capture_photo --> therapist_session : Foto guardada
+
+therapist_session --> record_video : Click "Grabar\nVideo"
+record_video --> therapist_session : Video guardado
+
+therapist_session --> therapist_dashboard : Volver
+
+therapist_gallery --> share_video : Click "Compartir"
+share_video --> therapist_gallery : Video compartido\no Cancelar
+
+therapist_gallery --> therapist_dashboard : Volver
+
+therapist_appointments --> therapist_dashboard : Volver
+
+logout --> [*] : Sesión cerrada\nRedirige a /
+
+note right of therapist_dashboard
+  **Dashboard Terapeuta**
+  
+  Ruta: /therapist/dashboard
+  Template: terapeuta/dashboard.html
+  Decorador: @role_required('therapist')
+  
+  Muestra:
+  - Resumen de pacientes asignados
+  - Sesiones programadas hoy
+  - Estadísticas personales
+  - Accesos rápidos
+  
+  Menú lateral:
+  - Pacientes
+  - Rutinas
+  - Iniciar Sesión
+  - Galería
+  - Citas
+end note
+
+note right of therapist_patients
+  **Mis Pacientes**
+  
+  Ruta: /therapist/patients
+  Template: terapeuta/patients.html
+  
+  Muestra pacientes asignados
+  a través de rutinas
+  
+  Información por paciente:
+  - Nombre completo
+  - Diagnóstico
+  - Progreso (%)
+  - Sesiones completadas/totales
+  - Última sesión
+  
+  Acciones:
+  - Ver detalles
+  - Ver historial
+  - Asignar rutina
+end note
+
+note right of therapist_routines
+  **Gestión de Rutinas**
+  
+  Ruta: /therapist/routines
+  Template: terapeuta/routines.html
+  
+  POST: /therapist/create-routine
+  POST: /therapist/assign-routine
+  
+  Funcionalidades:
+  - Ver rutinas creadas
+  - Crear nueva rutina
+  - Asignar rutina a paciente
+  - Editar rutina
+  - Eliminar rutina
+  - Ver ejercicios de rutina
+  
+  Tipos de rutinas:
+  - Template (sin paciente)
+  - Asignada (con paciente)
+  
+  Al crear rutina:
+  1. Seleccionar ejercicios del catálogo
+  2. Configurar series/repeticiones
+  3. Establecer tiempo de descanso
+  4. Definir duración y dificultad
+  5. Guardar en BD
+  
+  Al asignar rutina:
+  1. Seleccionar rutina template
+  2. Seleccionar paciente
+  3. Clonar rutina para paciente
+  4. Copiar todos los ejercicios
+end note
+
+note right of therapist_session
+  **Iniciar Sesión de Terapia**
+  
+  Ruta: /therapist/start-session
+  Template: terapeuta/start_session.html
+  
+  Funcionalidades:
+  - Seleccionar paciente
+  - Acceder a cámara (WebRTC)
+  - Capturar fotos
+  - Grabar videos con audio
+  - Agregar notas
+  
+  Captura de Foto:
+  - POST: /save-snapshot
+  - Convierte imagen a base64
+  - Guarda en static/uploads/photos/
+  - Registra en SessionCapture
+  
+  Grabación de Video:
+  - POST: /save-video-permanent
+  - Guarda en static/uploads/videos_permanentes/
+  - Registra en SessionCapture
+  - es_permanente = True
+  - contiene_audio = True
+  
+  Tecnologías:
+  - MediaRecorder API
+  - getUserMedia API
+  - Canvas API
+end note
+
+note right of therapist_gallery
+  **Galería de Videos**
+  
+  Ruta: /therapist/video-gallery
+  Template: terapeuta/video_gallery.html
+  
+  Muestra:
+  - Capturas propias (fotos/videos)
+  - Videos compartidos por pacientes
+  - Filtros por paciente
+  - Filtros por fecha
+  - Filtros por tipo (photo/video)
+  
+  Acciones:
+  - Reproducir video
+  - Ver foto
+  - Compartir con paciente
+  - Descargar
+  - Eliminar
+  
+  Al compartir video:
+  1. Seleccionar video
+  2. Seleccionar paciente
+  3. Agregar mensaje opcional
+  4. Crear registro en VideoShare
+  5. Paciente recibe notificación
+end note
+
+note right of therapist_appointments
+  **Gestión de Citas**
+  
+  Ruta: /therapist/appointments
+  Template: terapeuta/appointments.html
+  
+  Funcionalidades:
+  - Ver calendario mensual
+  - Citas programadas
+  - Programar nueva cita
+  - Modificar cita existente
+  - Cancelar cita
+  - Ver historial de citas
+  
+  Estados de cita:
+  - programada
+  - completada
+  - cancelada
+  
+  Información por cita:
+  - Paciente
+  - Fecha y hora
+  - Estado
+  - Notas
+end note
+
+@enduml

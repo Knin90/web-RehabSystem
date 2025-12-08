@@ -1,0 +1,351 @@
+@startuml Diagrama ER - Parte 3: Multimedia y Configuración
+
+title Diagrama Entidad-Relación - Parte 3: Multimedia y Configuración
+
+' ============================================================
+' ENTIDADES DE REFERENCIA (simplificadas)
+' ============================================================
+entity "PATIENT" as patient {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre_completo : VARCHAR(200)
+}
+
+entity "THERAPIST" as therapist {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre_completo : VARCHAR(200)
+}
+
+' ============================================================
+' ENTIDAD SESSION_CAPTURE
+' ============================================================
+entity "SESSION_CAPTURE" as session_capture {
+  * **id** : INTEGER <<PK>>
+  --
+  id_terapeuta : INTEGER <<FK>> <<NULLABLE>>
+  id_paciente : INTEGER <<FK>> <<NULLABLE>>
+  * tipo_captura : VARCHAR(20) <<CHECK>>
+  * nombre_archivo : VARCHAR(255)
+  * ruta_archivo : VARCHAR(500)
+  tamano_archivo : INTEGER
+  duracion : INTEGER
+  notas : TEXT
+  fecha_sesion : TIMESTAMP
+  fecha_creacion : TIMESTAMP
+  es_permanente : BOOLEAN
+  contiene_audio : BOOLEAN
+  --
+  CHECK: tipo_captura IN ('photo', 'video')
+  DEFAULT: es_permanente = FALSE
+  DEFAULT: contiene_audio = FALSE
+  --
+  NOTA: Puede ser capturado por terapeuta O paciente
+}
+
+' ============================================================
+' ENTIDAD VIDEO_SHARE
+' ============================================================
+entity "VIDEO_SHARE" as video_share {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_captura : INTEGER <<FK>>
+  * id_terapeuta : INTEGER <<FK>>
+  * id_paciente : INTEGER <<FK>>
+  mensaje : TEXT
+  leido : BOOLEAN
+  fecha_compartido : TIMESTAMP
+  fecha_leido : TIMESTAMP <<NULLABLE>>
+  --
+  DEFAULT: leido = FALSE
+}
+
+' ============================================================
+' ENTIDAD SYSTEM_SETTINGS
+' ============================================================
+entity "SYSTEM_SETTINGS" as system_settings {
+  * **id** : INTEGER <<PK>>
+  --
+  * clave : VARCHAR(100) <<UNIQUE>>
+  valor : VARCHAR(500)
+  fecha_actualizacion : TIMESTAMP
+  --
+  ON UPDATE: fecha_actualizacion = NOW()
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+
+' Therapist - SessionCapture (1:N)
+therapist ||--o{ session_capture : "captura"
+session_capture }o--o| therapist : "id_terapeuta"
+
+' Patient - SessionCapture (1:N)
+patient ||--o{ session_capture : "captura"
+session_capture }o--o| patient : "id_paciente"
+
+' SessionCapture - VideoShare (1:N)
+session_capture ||--o{ video_share : "compartido en"
+video_share }o--|| session_capture : "id_captura"
+
+' Therapist - VideoShare (1:N)
+therapist ||--o{ video_share : "comparte"
+video_share }o--|| therapist : "id_terapeuta"
+
+' Patient - VideoShare (1:N)
+patient ||--o{ video_share : "recibe"
+video_share }o--|| patient : "id_paciente"
+
+' ============================================================
+' NOTAS
+' ============================================================
+
+note right of session_capture
+  **SESSION_CAPTURE - Capturas Multimedia**
+  
+  Almacena fotos y videos de sesiones
+  
+  **Tipos de captura:**
+  - photo: Fotografía estática
+  - video: Video con/sin audio
+  
+  **Origen de captura:**
+  - Terapeuta (id_terapeuta != NULL)
+    * Durante sesión con paciente
+    * Demostraciones de ejercicios
+  
+  - Paciente (id_paciente != NULL)
+    * Ejercicios en casa
+    * Progreso personal
+  
+  **Almacenamiento:**
+  - Temporal: es_permanente = FALSE
+    * Se puede eliminar automáticamente
+    * Para capturas de prueba
+  
+  - Permanente: es_permanente = TRUE
+    * Se mantiene en el sistema
+    * Para seguimiento a largo plazo
+  
+  **Metadata:**
+  - nombre_archivo: Nombre único del archivo
+  - ruta_archivo: Path en servidor
+    * static/uploads/photos/
+    * static/uploads/videos/
+    * static/uploads/videos_permanentes/
+  - tamano_archivo: Tamaño en bytes
+  - duracion: Duración en segundos (solo video)
+  - contiene_audio: Si el video tiene audio
+  - notas: Observaciones de la sesión
+  
+  **Tecnologías:**
+  - WebRTC: Acceso a cámara
+  - MediaRecorder API: Grabación de video
+  - Canvas API: Captura de fotos
+  - Base64: Codificación de imágenes
+  
+  **Relaciones:**
+  - N:1 con Therapist (opcional)
+  - N:1 con Patient (opcional)
+  - 1:N con VideoShare
+  
+  **Índices:**
+  - idx_capture_therapist (id_terapeuta)
+  - idx_capture_patient (id_paciente)
+  - idx_capture_tipo (tipo_captura)
+  - idx_capture_fecha (fecha_sesion)
+end note
+
+note right of video_share
+  **VIDEO_SHARE - Compartir Videos**
+  
+  Sistema de compartición de videos
+  entre terapeutas y pacientes
+  
+  **Flujo de compartición:**
+  
+  1. Usuario captura video
+     (SessionCapture creado)
+  
+  2. Usuario selecciona destinatario
+     - Terapeuta → Paciente
+     - Paciente → Terapeuta
+  
+  3. Usuario agrega mensaje opcional
+     (instrucciones, comentarios)
+  
+  4. Se crea registro VideoShare
+     - id_captura: Video a compartir
+     - id_terapeuta: Terapeuta involucrado
+     - id_paciente: Paciente involucrado
+     - mensaje: Texto del remitente
+     - leido: FALSE (inicial)
+  
+  5. Destinatario recibe notificación
+  
+  6. Destinatario visualiza video
+  
+  7. Sistema marca como leído
+     - leido: TRUE
+     - fecha_leido: Timestamp actual
+  
+  **Direcciones de compartición:**
+  
+  A) Terapeuta → Paciente
+     - Videos demostrativos
+     - Correcciones de técnica
+     - Ejercicios nuevos
+  
+  B) Paciente → Terapeuta
+     - Progreso en casa
+     - Consultas sobre técnica
+     - Evidencia de ejercicios
+  
+  **Tracking:**
+  - Estado: leído/no leído
+  - Fecha de compartido
+  - Fecha de lectura
+  - Mensaje asociado
+  
+  **Relaciones:**
+  - N:1 con SessionCapture
+  - N:1 con Therapist
+  - N:1 con Patient
+  
+  **Índices:**
+  - idx_videoshare_capture (id_captura)
+  - idx_videoshare_therapist (id_terapeuta)
+  - idx_videoshare_patient (id_paciente)
+  - idx_videoshare_leido (leido)
+  
+  **Casos de uso:**
+  - Terapeuta comparte video demostrativo
+  - Paciente envía video de progreso
+  - Seguimiento remoto de terapia
+  - Comunicación asíncrona
+end note
+
+note right of system_settings
+  **SYSTEM_SETTINGS - Configuración**
+  
+  Almacenamiento de configuración del sistema
+  
+  **Patrón:** Key-Value Store
+  
+  **Configuraciones almacenadas:**
+  
+  1. Sesiones
+     - session_duration: Duración (minutos)
+     - sessions_per_week: Sesiones por semana
+     - rest_time: Tiempo de descanso (segundos)
+  
+  2. Notificaciones
+     - email_notifications: on/off
+     - appointment_reminder: on/off
+     - progress_report: on/off
+     - inactive_alert: on/off
+  
+  3. Respaldos
+     - auto_backup: on/off
+     - backup_time: Hora de backup (HH:MM)
+     - backup_retention: Días de retención
+     - auto_cleanup: on/off
+  
+  4. Seguridad
+     - session_timeout: Timeout en minutos
+     - two_factor: on/off
+     - password_expiry: on/off
+     - max_login_attempts: Número de intentos
+  
+  5. Visión Artificial
+     - detection_accuracy: Precisión (%)
+     - realtime_analysis: on/off
+     - posture_correction: on/off
+     - capture_fps: FPS de captura
+  
+  6. Apariencia
+     - theme: light/dark
+     - language: es/en
+     - compact_mode: on/off
+  
+  **Métodos estáticos:**
+  - get_setting(clave, default)
+    * Obtiene valor de configuración
+    * Retorna default si no existe
+  
+  - set_setting(clave, valor)
+    * Crea o actualiza configuración
+    * Auto-actualiza fecha_actualizacion
+  
+  **Auto-actualización:**
+  fecha_actualizacion se actualiza
+  automáticamente en cada UPDATE
+  
+  **Ventajas:**
+  - Flexible: Agregar configs sin migración
+  - Centralizado: Todas las configs en un lugar
+  - Versionado: Fecha de última actualización
+  
+  **Índice:**
+  - idx_settings_clave (clave)
+  
+  **Ejemplo de uso:**
+  ```python
+  # Obtener configuración
+  theme = SystemSettings.get_setting('theme', 'light')
+  
+  # Establecer configuración
+  SystemSettings.set_setting('theme', 'dark')
+  ```
+end note
+
+note bottom of patient
+  **Referencia a PATIENT**
+  
+  Ver: DIAGRAMA_ER_1_USUARIOS.puml
+  
+  Relaciones con multimedia:
+  - Captura fotos/videos (SessionCapture)
+  - Recibe videos compartidos (VideoShare)
+end note
+
+note bottom of therapist
+  **Referencia a THERAPIST**
+  
+  Ver: DIAGRAMA_ER_1_USUARIOS.puml
+  
+  Relaciones con multimedia:
+  - Captura fotos/videos (SessionCapture)
+  - Comparte videos (VideoShare)
+end note
+
+legend right
+  **CARDINALIDADES**
+  
+  ||--|| : Uno a Uno (1:1)
+  ||--o{ : Uno a Muchos (1:N)
+  }o--|| : Muchos a Uno (N:1)
+  }o--o| : Muchos a Uno (opcional)
+  
+  **SÍMBOLOS**
+  
+  * : NOT NULL
+  <<PK>> : Primary Key
+  <<FK>> : Foreign Key
+  <<UNIQUE>> : Valor único
+  <<NULLABLE>> : Permite NULL
+  <<CHECK>> : Restricción
+  
+  **PARTE 3 de 3**
+  Entidades: 3 principales + 2 referencia
+  - SESSION_CAPTURE
+  - VIDEO_SHARE
+  - SYSTEM_SETTINGS
+  - (Patient - referencia)
+  - (Therapist - referencia)
+  
+  **TOTAL SISTEMA: 10 entidades**
+end legend
+
+@enduml

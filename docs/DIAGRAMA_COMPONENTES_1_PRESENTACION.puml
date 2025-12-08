@@ -1,0 +1,74 @@
+@startuml Diagrama de Componentes - Parte 1: Capa de Presentación
+
+title Diagrama de Componentes - Parte 1: Capa de Presentación
+
+' ============================================================
+' CAPA DE PRESENTACIÓN
+' ============================================================
+package "CAPA DE PRESENTACIÓN" {
+    
+    component "Templates (Jinja2)" as templates {
+        component "admin/\n- dashboard.html\n- users.html\n- therapists.html\n- patients.html\n- settings.html\n- export_data.html" as admin_templates
+        component "terapeuta/\n- dashboard.html\n- patients.html\n- routines.html\n- start_session.html\n- video_gallery.html\n- appointments.html" as therapist_templates
+        component "paciente/\n- dashboard.html\n- routines.html\n- start_therapy.html\n- video_gallery.html\n- history.html\n- profile.html" as patient_templates
+        component "base.html\nlogin.html\nindex.html" as common_templates
+    }
+    
+    component "Static Files" as static {
+        component "CSS\n- Bootstrap 5\n- Custom styles" as css
+        component "JavaScript\n- Fetch API\n- WebRTC\n- MediaRecorder" as js
+        component "Uploads\n- photos/\n- videos/\n- videos_permanentes/" as uploads
+    }
+    
+    component "Forms (Flask-WTF)" as forms {
+        component "LoginForm\n- nombre_usuario\n- contrasena\n- validators" as login_form
+    }
+}
+
+' ============================================================
+' COMPONENTES EXTERNOS - CLIENTE
+' ============================================================
+component "Browser (Client)" as browser {
+    component "HTML5\nCSS3\nJavaScript\nWebRTC" as browser_tech
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+browser --> templates : "Request Pages"
+browser --> static : "Load Resources"
+browser --> forms : "Submit Data"
+
+templates --> admin_templates
+templates --> therapist_templates
+templates --> patient_templates
+templates --> common_templates
+
+static --> css
+static --> js
+static --> uploads
+
+forms --> login_form
+
+note right of templates
+  **Templates Jinja2**
+  - Renderizado dinámico
+  - Herencia de plantillas
+  - Separación por roles
+end note
+
+note right of static
+  **Archivos Estáticos**
+  - CSS: Estilos visuales
+  - JS: Interactividad
+  - Uploads: Multimedia
+end note
+
+note right of forms
+  **Formularios**
+  - Validación de datos
+  - Protección CSRF
+  - WTForms integration
+end note
+
+@enduml

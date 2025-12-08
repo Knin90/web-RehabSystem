@@ -267,19 +267,20 @@
     </div>
 </div>
 
-<!-- Modal para compartir video con paciente -->
+<!-- Modal para compartir video/imagen con paciente -->
 <div class="modal fade" id="shareVideoModal" tabindex="-1" aria-labelledby="shareVideoModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="shareVideoModalLabel">
-                    <i class="fas fa-share"></i> Compartir Video con Paciente
+                    <i class="fas fa-share"></i> <span id="shareModalTitle">Compartir con Paciente</span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="shareVideoForm">
                     <input type="hidden" id="shareCaptureId">
+                    <input type="hidden" id="shareCaptureType">
                     
                     <div class="mb-3">
                         <label for="sharePatientSelect" class="form-label">Seleccionar Paciente</label>
@@ -296,14 +297,14 @@
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        El paciente recibirá una notificación y podrá ver este video en su galería.
+                        <span id="shareInfoText">El paciente recibirá una notificación y podrá ver este contenido en su galería.</span>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="confirmShareVideo()">
-                    <i class="fas fa-paper-plane"></i> Compartir Video
+                <button type="button" class="btn btn-primary" onclick="confirmShare()">
+                    <i class="fas fa-paper-plane"></i> <span id="shareButtonText">Compartir</span>
                 </button>
             </div>
         </div>
@@ -418,8 +419,8 @@ function renderGallery(captures) {
                             <i class="fas fa-download"></i> Descargar
                         </button>
                     </div>
-                    ${capture.type === 'video' && capture.therapist_id ? `
-                        <button class="btn btn-warning btn-sm w-100 mt-2" onclick="shareVideoWithPatient(${capture.id})">
+                    ${capture.therapist_id ? `
+                        <button class="btn btn-warning btn-sm w-100 mt-2" onclick="shareWithPatient(${capture.id}, '${capture.type}')">
                             <i class="fas fa-share"></i> Compartir con Paciente
                         </button>
                     ` : ''}
@@ -597,14 +598,36 @@ function formatFileSize(bytes) {
 }
 
 // ============================================================
-// FUNCIONES PARA COMPARTIR VIDEOS
+// FUNCIONES PARA COMPARTIR VIDEOS E IMÁGENES
 // ============================================================
 
-function shareVideoWithPatient(captureId) {
+function shareWithPatient(captureId, captureType) {
     document.getElementById('shareCaptureId').value = captureId;
+    document.getElementById('shareCaptureType').value = captureType;
+    
+    // Actualizar textos del modal según el tipo
+    const modalTitle = document.getElementById('shareModalTitle');
+    const shareButtonText = document.getElementById('shareButtonText');
+    const shareInfoText = document.getElementById('shareInfoText');
+    
+    if (captureType === 'video') {
+        modalTitle.textContent = 'Compartir Video con Paciente';
+        shareButtonText.textContent = 'Compartir Video';
+        shareInfoText.textContent = 'El paciente recibirá una notificación y podrá ver este video en su galería.';
+    } else {
+        modalTitle.textContent = 'Compartir Imagen con Paciente';
+        shareButtonText.textContent = 'Compartir Imagen';
+        shareInfoText.textContent = 'El paciente recibirá una notificación y podrá ver esta imagen en su galería.';
+    }
+    
     loadPatientsForSharing();
     const modal = new bootstrap.Modal(document.getElementById('shareVideoModal'));
     modal.show();
+}
+
+// Mantener compatibilidad con código antiguo
+function shareVideoWithPatient(captureId) {
+    shareWithPatient(captureId, 'video');
 }
 
 function loadPatientsForSharing() {
@@ -658,8 +681,9 @@ function loadPatientsForSharing() {
         });
 }
 
-function confirmShareVideo() {
+function confirmShare() {
     const captureId = document.getElementById('shareCaptureId').value;
+    const captureType = document.getElementById('shareCaptureType').value;
     const patientId = document.getElementById('sharePatientSelect').value;
     const message = document.getElementById('shareMessage').value;
     
@@ -672,6 +696,8 @@ function confirmShareVideo() {
     const btn = event.target;
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Compartiendo...';
+    
+    const contentType = captureType === 'video' ? 'video' : 'imagen';
     
     fetch('/api/share-video', {
         method: 'POST',
@@ -687,21 +713,27 @@ function confirmShareVideo() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showSuccess('Video compartido exitosamente con el paciente');
+            showSuccess(`${contentType.charAt(0).toUpperCase() + contentType.slice(1)} compartido exitosamente con el paciente`);
             bootstrap.Modal.getInstance(document.getElementById('shareVideoModal')).hide();
             document.getElementById('shareVideoForm').reset();
         } else {
-            showError('Error al compartir video: ' + data.message);
+            showError(`Error al compartir ${contentType}: ` + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showError('Error de conexión al compartir video');
+        showError(`Error de conexión al compartir ${contentType}`);
     })
     .finally(() => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Compartir Video';
+        const shareButtonText = document.getElementById('shareButtonText');
+        btn.innerHTML = `<i class="fas fa-paper-plane"></i> ${shareButtonText.textContent}`;
     });
+}
+
+// Mantener compatibilidad con código antiguo
+function confirmShareVideo() {
+    confirmShare();
 }
 
 function showSuccess(message) {
@@ -803,7 +835,7 @@ function renderSharedVideos(videos) {
             <div class="card video-card ${!video.leido ? 'border-primary' : ''}">
                 ${!video.leido ? '<div class="badge bg-primary position-absolute top-0 end-0 m-2">Nuevo</div>' : ''}
                 <div class="video-thumbnail">
-                    <i class="fas fa-video"></i>
+                    <i class="fas fa-${video.type === 'video' ? 'video' : 'camera'}"></i>
                 </div>
                 <div class="video-info">
                     <div class="video-title">${video.filename}</div>
@@ -822,16 +854,26 @@ function renderSharedVideos(videos) {
                         </div>
                     ` : ''}
                     <div class="mt-3 btn-group w-100" role="group">
-                        <button class="btn btn-primary btn-sm" 
-                                data-filepath="${video.file_path}" 
-                                data-filename="${video.filename}" 
-                                data-duration="${video.duration}" 
-                                data-message="${video.message || ''}"
-                                data-shareid="${video.id}"
-                                data-isread="${video.leido}"
-                                onclick="playSharedVideoFromData(this)">
-                            <i class="fas fa-play"></i> Reproducir
-                        </button>
+                        ${video.type === 'video' ? `
+                            <button class="btn btn-primary btn-sm" 
+                                    data-filepath="${video.file_path}" 
+                                    data-filename="${video.filename}" 
+                                    data-duration="${video.duration}" 
+                                    data-message="${video.message || ''}"
+                                    data-shareid="${video.id}"
+                                    data-isread="${video.leido}"
+                                    onclick="playSharedVideoFromData(this)">
+                                <i class="fas fa-play"></i> Reproducir
+                            </button>
+                        ` : `
+                            <button class="btn btn-info btn-sm" 
+                                    data-filepath="${video.file_path}"
+                                    data-shareid="${video.id}"
+                                    data-isread="${video.leido}"
+                                    onclick="viewSharedImageFromData(this)">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                        `}
                         <button class="btn btn-success btn-sm" 
                                 data-filepath="${video.file_path}" 
                                 data-filename="${video.filename}"
@@ -881,6 +923,19 @@ function markVideoAsRead(shareId) {
     .catch(error => {
         console.error('Error al marcar video como leído:', error);
     });
+}
+
+function viewSharedImageFromData(button) {
+    const filePath = button.getAttribute('data-filepath');
+    const shareId = button.getAttribute('data-shareid');
+    const isRead = button.getAttribute('data-isread') === 'true';
+    
+    viewImage(filePath);
+    
+    // Marcar como leído si no lo está
+    if (!isRead) {
+        markVideoAsRead(shareId);
+    }
 }
 
 function updateSharedCounter(total) {

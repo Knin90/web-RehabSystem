@@ -1,0 +1,349 @@
+@startuml Estructura de Datos - Parte 2: Rutinas y Ejercicios
+
+title Diagrama de Estructura de Datos - Parte 2: Rutinas y Ejercicios
+
+' ============================================================
+' REFERENCIAS (simplificadas)
+' ============================================================
+class Patient <<Table>> {
+    + id : INTEGER {PK}
+}
+
+class Therapist <<Table>> {
+    + id : INTEGER {PK}
+}
+
+' ============================================================
+' MODELO DE DATOS: ROUTINE
+' ============================================================
+class Routine <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_terapeuta : INTEGER {FK → Therapist.id, NOT NULL}
+    + id_paciente : INTEGER {FK → Patient.id, NULLABLE}
+    
+    ==Attributes==
+    + nombre : VARCHAR(200) {NOT NULL}
+    + descripcion : TEXT {NULLABLE}
+    + duracion_minutos : INTEGER {DEFAULT 30}
+    + dificultad : VARCHAR(20) {DEFAULT 'media'}
+    + esta_activa : BOOLEAN {DEFAULT TRUE}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (dificultad IN ('facil', 'media', 'dificil'))
+    
+    ==Indexes==
+    INDEX idx_routine_therapist (id_terapeuta)
+    INDEX idx_routine_patient (id_paciente)
+    INDEX idx_routine_active (esta_activa)
+    
+    ==Relationships==
+    terapeuta : Therapist [1]
+    paciente : Patient [0..1]
+    ejercicios : RoutineExercise [0..*]
+    
+    ==Business Logic==
+    NULL id_paciente = Template
+    NOT NULL id_paciente = Assigned
+}
+
+' ============================================================
+' MODELO DE DATOS: ROUTINE_EXERCISE
+' ============================================================
+class RoutineExercise <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_rutina : INTEGER {FK → Routine.id, NOT NULL}
+    + id_ejercicio : INTEGER {FK → Exercise.id, NOT NULL}
+    
+    ==Attributes==
+    + orden : INTEGER {DEFAULT 0}
+    + series : INTEGER {DEFAULT 3}
+    + repeticiones : INTEGER {DEFAULT 10}
+    + segundos_descanso : INTEGER {DEFAULT 30}
+    + notas : TEXT {NULLABLE}
+    
+    ==Constraints==
+    ON DELETE CASCADE (id_rutina)
+    
+    ==Indexes==
+    INDEX idx_routine_exercise_routine (id_rutina)
+    INDEX idx_routine_exercise_exercise (id_ejercicio)
+    INDEX idx_routine_exercise_orden (orden)
+    
+    ==Relationships==
+    rutina : Routine [1]
+    ejercicio : Exercise [1]
+}
+
+' ============================================================
+' MODELO DE DATOS: EXERCISE
+' ============================================================
+class Exercise <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Attributes==
+    + nombre : VARCHAR(200) {NOT NULL}
+    + descripcion : TEXT {NULLABLE}
+    + categoria : VARCHAR(50) {NULLABLE}
+    + repeticiones : VARCHAR(50) {NULLABLE}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Indexes==
+    INDEX idx_exercise_categoria (categoria)
+    INDEX idx_exercise_nombre (nombre)
+    
+    ==Relationships==
+    ejercicios_rutina : RoutineExercise [0..*]
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+
+' Therapist - Routine (1:N)
+Therapist "1" -- "0..*" Routine : id_terapeuta >
+
+' Patient - Routine (1:N)
+Patient "1" -- "0..*" Routine : id_paciente >
+
+' Routine - RoutineExercise (1:N)
+Routine "1" *-- "0..*" RoutineExercise : id_rutina >
+
+' Exercise - RoutineExercise (1:N)
+Exercise "1" -- "0..*" RoutineExercise : id_ejercicio >
+
+' ============================================================
+' NOTAS
+' ============================================================
+
+note top of Routine
+  **ROUTINE - Rutinas de Ejercicios**
+  
+  **Tipos de rutinas:**
+  
+  1. **Template** (id_paciente = NULL)
+     - Rutina base reutilizable
+     - Creada por terapeuta
+     - Puede ser asignada a múltiples pacientes
+     - No se modifica al asignar
+  
+  2. **Asignada** (id_paciente != NULL)
+     - Copia personalizada para paciente específico
+     - Modificable independientemente del template
+     - Vinculada a un paciente
+  
+  **Niveles de dificultad:**
+  - facil: Ejercicios básicos, baja intensidad
+  - media: Ejercicios intermedios, intensidad moderada
+  - dificil: Ejercicios avanzados, alta intensidad
+  
+  **Estado:**
+  - esta_activa = TRUE: Rutina disponible para uso
+  - esta_activa = FALSE: Rutina archivada/desactivada
+  
+  **Proceso de asignación:**
+  ```python
+  # 1. Obtener rutina template
+  rutina_original = Routine.query.get(id_rutina)
+  
+  # 2. Crear copia para paciente
+  nueva_rutina = Routine(
+      nombre=rutina_original.nombre,
+      descripcion=rutina_original.descripcion,
+      id_terapeuta=rutina_original.id_terapeuta,
+      id_paciente=id_paciente,  # Asignar paciente
+      duracion_minutos=rutina_original.duracion_minutos,
+      dificultad=rutina_original.dificultad
+  )
+  db.session.add(nueva_rutina)
+  db.session.flush()
+  
+  # 3. Copiar todos los ejercicios
+  for ex in rutina_original.ejercicios:
+      nuevo_ejercicio = RoutineExercise(
+          id_rutina=nueva_rutina.id,
+          id_ejercicio=ex.id_ejercicio,
+          orden=ex.orden,
+          series=ex.series,
+          repeticiones=ex.repeticiones,
+          segundos_descanso=ex.segundos_descanso,
+          notas=ex.notas
+      )
+      db.session.add(nuevo_ejercicio)
+  
+  db.session.commit()
+  ```
+  
+end note
+
+note bottom of RoutineExercise
+  **ROUTINE_EXERCISE - Tabla de Asociación**
+  
+  **Patrón:** Many-to-Many con atributos adicionales
+  
+  **Configuración por ejercicio:**
+  - orden: Secuencia de ejecución (0, 1, 2, ...)
+  - series: Número de series a realizar
+  - repeticiones: Repeticiones por serie
+  - segundos_descanso: Descanso entre series
+  - notas: Instrucciones específicas para este ejercicio
+  
+  **Cascade Delete:**
+  ```sql
+  DELETE FROM routine_exercise
+  WHERE id_rutina = ?
+  ```
+  Se ejecuta automáticamente al eliminar una rutina.
+  Los ejercicios (Exercise) NO se eliminan, solo la asociación.
+  
+  **Orden de ejecución:**
+  ```sql
+  SELECT * FROM routine_exercise
+  WHERE id_rutina = ?
+  ORDER BY orden ASC
+  ```
+  
+  **Cálculo de duración total:**
+  ```python
+  def calcular_duracion_total(id_rutina):
+      ejercicios = RoutineExercise.query.filter_by(
+          id_rutina=id_rutina
+      ).all()
+      
+      tiempo_total = 0
+      for ej in ejercicios:
+          # Tiempo estimado por repetición: 3 segundos
+          tiempo_ejercicio = ej.series * ej.repeticiones * 3
+          tiempo_descanso = ej.series * ej.segundos_descanso
+          tiempo_total += tiempo_ejercicio + tiempo_descanso
+      
+      return tiempo_total / 60  # Convertir a minutos
+  ```
+  
+  **Índices de optimización:**
+  - idx_routine_exercise_routine: Para obtener ejercicios de una rutina
+  - idx_routine_exercise_orden: Para ordenar ejercicios
+  - Composite index (id_rutina, orden): Para queries ordenadas
+end note
+
+note bottom of Exercise
+  **EXERCISE - Catálogo de Ejercicios**
+  
+  **Biblioteca reutilizable de ejercicios**
+  
+  **Categorías comunes:**
+  - Movilidad: Ejercicios de rango de movimiento
+  - Fuerza: Ejercicios de fortalecimiento muscular
+  - Equilibrio: Ejercicios de estabilidad y balance
+  - Flexibilidad: Ejercicios de estiramiento
+  - Cardio: Ejercicios cardiovasculares
+  - Coordinación: Ejercicios de coordinación motora
+  - Propiocepción: Ejercicios de conciencia corporal
+  
+  **Estructura de descripción:**
+  ```
+  Nombre: "Sentadilla con apoyo"
+  
+  Descripción:
+  1. Posición inicial: De pie frente a una silla
+  2. Ejecución: Flexionar rodillas lentamente
+  3. Descenso: Hasta tocar la silla con glúteos
+  4. Ascenso: Volver a posición inicial
+  5. Respiración: Inhalar al bajar, exhalar al subir
+  
+  Precauciones:
+  - Mantener espalda recta
+  - Rodillas alineadas con pies
+  - No sobrepasar 90 grados de flexión
+  ```
+  
+  **Reutilización:**
+  Un ejercicio puede estar en múltiples rutinas diferentes.
+  Al modificar un Exercise, NO se afectan las rutinas existentes,
+  solo las nuevas rutinas que lo incluyan.
+  
+  **Ejemplos de ejercicios:**
+  ```
+  1. Sentadilla con apoyo (Fuerza)
+  2. Extensión de rodilla (Movilidad)
+  3. Flexión de cadera (Flexibilidad)
+  4. Marcha estática (Cardio)
+  5. Equilibrio en un pie (Equilibrio)
+  6. Rotación de tobillo (Movilidad)
+  7. Puente de glúteos (Fuerza)
+  8. Estiramiento de cuádriceps (Flexibilidad)
+  ```
+  
+  **Queries comunes:**
+  - Por categoría: WHERE categoria = 'Fuerza'
+  - Búsqueda: WHERE nombre ILIKE '%rodilla%'
+  - Más usados: JOIN con RoutineExercise, COUNT, ORDER BY
+  
+  **Índices de optimización:**
+  - idx_exercise_categoria: Para filtrar por categoría
+  - idx_exercise_nombre: Para búsquedas por nombre
+  - Full-text search: Para búsquedas avanzadas
+end note
+
+note left of Patient
+  **PATIENT**
+  
+  Relación con Routine:
+  - Un paciente puede tener múltiples rutinas asignadas
+  - Las rutinas son copias personalizadas (templates clonados)
+  - Cada rutina asignada es independiente
+end note
+
+note left of Therapist
+  **THERAPIST**
+  
+  Relación con Routine:
+  - Un terapeuta crea rutinas (templates y asignadas)
+  - Puede crear templates reutilizables
+  - Asigna rutinas a sus pacientes
+  - Mantiene autoría de todas las rutinas creadas
+end note
+
+legend right
+  **TIPOS DE DATOS PostgreSQL 15**
+  
+  - INTEGER: Entero de 4 bytes
+  - VARCHAR(n): Cadena variable hasta n caracteres
+  - TEXT: Texto sin límite (hasta 1GB)
+  - BOOLEAN: Verdadero/Falso (1 byte)
+  - TIMESTAMP: Fecha y hora (8 bytes)
+  
+  **CARDINALIDADES**
+  
+  1 : Exactamente uno
+  0..1 : Cero o uno (opcional)
+  0..* : Cero o muchos
+  *-- : Composición (cascade delete)
+  
+  **SÍMBOLOS**
+  
+  {PK} : Primary Key
+  {FK} : Foreign Key
+  {NOT NULL} : Obligatorio
+  {NULLABLE} : Opcional
+  {DEFAULT} : Valor por defecto
+  {CHECK} : Restricción de validación
+  {AUTO_INCREMENT} : Autoincremental
+  
+  **PARTE 2 de 3**
+  Tablas: 3 principales + 2 referencia
+  - ROUTINE
+  - ROUTINE_EXERCISE
+  - EXERCISE
+  - (Patient - referencia)
+  - (Therapist - referencia)
+end legend
+
+@enduml

@@ -1,0 +1,265 @@
+@startuml Diagrama_Casos_Uso_Sistema_Rehabilitacion
+
+' ============================================================
+' DIAGRAMA DE CASOS DE USO - SISTEMA DE REHABILITACIÓN
+' ============================================================
+
+title Diagrama de Casos de Uso - Sistema de Rehabilitación
+
+left to right direction
+skinparam packageStyle rectangle
+
+' ============================================================
+' ACTORES
+' ============================================================
+actor "Administrador" as Admin
+actor "Terapeuta" as Therapist
+actor "Paciente" as Patient
+
+' ============================================================
+' SISTEMA
+' ============================================================
+rectangle "Sistema de Rehabilitación" {
+  
+  ' --------------------------------------------------------
+  ' CASOS DE USO COMUNES
+  ' --------------------------------------------------------
+  package "Autenticación" {
+    usecase "CU-001\nIniciar Sesión" as UC001
+    usecase "CU-002\nCerrar Sesión" as UC002
+  }
+  
+  ' --------------------------------------------------------
+  ' CASOS DE USO DEL ADMINISTRADOR
+  ' --------------------------------------------------------
+  package "Gestión Administrativa" {
+    usecase "CU-ADM-001\nGestionar Usuarios" as UCADM001
+    usecase "CU-ADM-002\nGestionar Terapeutas" as UCADM002
+    usecase "CU-ADM-003\nGestionar Pacientes" as UCADM003
+    usecase "CU-ADM-004\nConfigurar Sistema" as UCADM004
+    usecase "CU-ADM-005\nExportar Datos" as UCADM005
+    usecase "CU-ADM-006\nVer Dashboard Admin" as UCADM006
+    
+    ' Sub-casos de uso
+    usecase "Crear Usuario" as UCADM001_1
+    usecase "Editar Usuario" as UCADM001_2
+    usecase "Activar/Desactivar Usuario" as UCADM001_3
+    usecase "Eliminar Usuario" as UCADM001_4
+    
+    usecase "Agregar Terapeuta" as UCADM002_1
+    usecase "Asignar Especialidad" as UCADM002_2
+    usecase "Ver Lista Terapeutas" as UCADM002_3
+    
+    usecase "Agregar Paciente" as UCADM003_1
+    usecase "Asignar Diagnóstico" as UCADM003_2
+    usecase "Configurar Sesiones" as UCADM003_3
+    
+    usecase "Exportar Usuarios" as UCADM005_1
+    usecase "Exportar Pacientes" as UCADM005_2
+    usecase "Exportar Terapeutas" as UCADM005_3
+    usecase "Exportar Ejercicios" as UCADM005_4
+    usecase "Exportar Todo" as UCADM005_5
+  }
+  
+  ' --------------------------------------------------------
+  ' CASOS DE USO DEL TERAPEUTA
+  ' --------------------------------------------------------
+  package "Gestión de Terapia" {
+    usecase "CU-TER-001\nVer Dashboard Terapeuta" as UCTER001
+    usecase "CU-TER-002\nGestionar Pacientes" as UCTER002
+    usecase "CU-TER-003\nCrear Rutina de Ejercicios" as UCTER003
+    usecase "CU-TER-004\nAsignar Rutina a Paciente" as UCTER004
+    usecase "CU-TER-005\nIniciar Sesión de Terapia" as UCTER005
+    usecase "CU-TER-006\nCapturar Foto de Sesión" as UCTER006
+    usecase "CU-TER-007\nGrabar Video de Sesión" as UCTER007
+    usecase "CU-TER-008\nVer Galería de Videos" as UCTER008
+    usecase "CU-TER-009\nCompartir Video con Paciente" as UCTER009
+    usecase "CU-TER-010\nVer Videos Compartidos por Pacientes" as UCTER010
+    usecase "CU-TER-011\nGestionar Citas" as UCTER011
+    usecase "CU-TER-012\nVer Rutinas Creadas" as UCTER012
+    
+    ' Sub-casos de uso
+    usecase "Seleccionar Ejercicios" as UCTER003_1
+    usecase "Configurar Series/Repeticiones" as UCTER003_2
+    usecase "Establecer Tiempo Descanso" as UCTER003_3
+    usecase "Definir Dificultad" as UCTER003_4
+    
+    usecase "Acceder a Cámara" as UCTER006_1
+    usecase "Capturar Imagen" as UCTER006_2
+    usecase "Guardar en BD" as UCTER006_3
+    
+    usecase "Iniciar Grabación" as UCTER007_1
+    usecase "Detener Grabación" as UCTER007_2
+    usecase "Guardar Video Permanente" as UCTER007_3
+    usecase "Agregar Notas" as UCTER007_4
+  }
+  
+  ' --------------------------------------------------------
+  ' CASOS DE USO DEL PACIENTE
+  ' --------------------------------------------------------
+  package "Gestión de Paciente" {
+    usecase "CU-PAC-001\nVer Dashboard Paciente" as UCPAC001
+    usecase "CU-PAC-002\nVer Rutinas Asignadas" as UCPAC002
+    usecase "CU-PAC-003\nIniciar Terapia" as UCPAC003
+    usecase "CU-PAC-004\nCapturar Foto de Ejercicio" as UCPAC004
+    usecase "CU-PAC-005\nGrabar Video de Ejercicio" as UCPAC005
+    usecase "CU-PAC-006\nVer Galería de Videos" as UCPAC006
+    usecase "CU-PAC-007\nCompartir Video con Terapeuta" as UCPAC007
+    usecase "CU-PAC-008\nVer Videos Compartidos por Terapeuta" as UCPAC008
+    usecase "CU-PAC-009\nVer Historial de Sesiones" as UCPAC009
+    usecase "CU-PAC-010\nVer Terapeutas Asignados" as UCPAC010
+    usecase "CU-PAC-011\nVer Perfil" as UCPAC011
+    usecase "CU-PAC-012\nConfigurar Preferencias" as UCPAC012
+    usecase "CU-PAC-013\nEnviar Mensajes" as UCPAC013
+    
+    ' Sub-casos de uso
+    usecase "Seleccionar Rutina" as UCPAC003_1
+    usecase "Seguir Instrucciones" as UCPAC003_2
+    usecase "Capturar Progreso" as UCPAC003_3
+    usecase "Completar Sesión" as UCPAC003_4
+    
+    usecase "Ver Fotos Guardadas" as UCPAC006_1
+    usecase "Ver Videos Guardados" as UCPAC006_2
+    usecase "Reproducir Videos" as UCPAC006_3
+    
+    usecase "Cambiar Contraseña" as UCPAC012_1
+    usecase "Configurar Notificaciones" as UCPAC012_2
+    usecase "Ajustar Privacidad" as UCPAC012_3
+  }
+}
+
+' ============================================================
+' RELACIONES - ACTORES CON CASOS DE USO
+' ============================================================
+
+' Casos de uso comunes
+Admin --> UC001
+Admin --> UC002
+Therapist --> UC001
+Therapist --> UC002
+Patient --> UC001
+Patient --> UC002
+
+' Casos de uso del Administrador
+Admin --> UCADM001
+Admin --> UCADM002
+Admin --> UCADM003
+Admin --> UCADM004
+Admin --> UCADM005
+Admin --> UCADM006
+
+' Relaciones include/extend para Administrador
+UCADM001 ..> UCADM001_1 : <<include>>
+UCADM001 ..> UCADM001_2 : <<include>>
+UCADM001 ..> UCADM001_3 : <<include>>
+UCADM001 ..> UCADM001_4 : <<include>>
+
+UCADM002 ..> UCADM002_1 : <<include>>
+UCADM002 ..> UCADM002_2 : <<include>>
+UCADM002 ..> UCADM002_3 : <<include>>
+
+UCADM003 ..> UCADM003_1 : <<include>>
+UCADM003 ..> UCADM003_2 : <<include>>
+UCADM003 ..> UCADM003_3 : <<include>>
+
+UCADM005 ..> UCADM005_1 : <<include>>
+UCADM005 ..> UCADM005_2 : <<include>>
+UCADM005 ..> UCADM005_3 : <<include>>
+UCADM005 ..> UCADM005_4 : <<include>>
+UCADM005 ..> UCADM005_5 : <<include>>
+
+' Casos de uso del Terapeuta
+Therapist --> UCTER001
+Therapist --> UCTER002
+Therapist --> UCTER003
+Therapist --> UCTER004
+Therapist --> UCTER005
+Therapist --> UCTER006
+Therapist --> UCTER007
+Therapist --> UCTER008
+Therapist --> UCTER009
+Therapist --> UCTER010
+Therapist --> UCTER011
+Therapist --> UCTER012
+
+' Relaciones include/extend para Terapeuta
+UCTER003 ..> UCTER003_1 : <<include>>
+UCTER003 ..> UCTER003_2 : <<include>>
+UCTER003 ..> UCTER003_3 : <<include>>
+UCTER003 ..> UCTER003_4 : <<include>>
+
+UCTER006 ..> UCTER006_1 : <<include>>
+UCTER006 ..> UCTER006_2 : <<include>>
+UCTER006 ..> UCTER006_3 : <<include>>
+
+UCTER007 ..> UCTER007_1 : <<include>>
+UCTER007 ..> UCTER007_2 : <<include>>
+UCTER007 ..> UCTER007_3 : <<include>>
+UCTER007 ..> UCTER007_4 : <<include>>
+
+UCTER005 ..> UCTER006 : <<extend>>
+UCTER005 ..> UCTER007 : <<extend>>
+
+' Casos de uso del Paciente
+Patient --> UCPAC001
+Patient --> UCPAC002
+Patient --> UCPAC003
+Patient --> UCPAC004
+Patient --> UCPAC005
+Patient --> UCPAC006
+Patient --> UCPAC007
+Patient --> UCPAC008
+Patient --> UCPAC009
+Patient --> UCPAC010
+Patient --> UCPAC011
+Patient --> UCPAC012
+Patient --> UCPAC013
+
+' Relaciones include/extend para Paciente
+UCPAC003 ..> UCPAC003_1 : <<include>>
+UCPAC003 ..> UCPAC003_2 : <<include>>
+UCPAC003 ..> UCPAC003_3 : <<include>>
+UCPAC003 ..> UCPAC003_4 : <<include>>
+
+UCPAC006 ..> UCPAC006_1 : <<include>>
+UCPAC006 ..> UCPAC006_2 : <<include>>
+UCPAC006 ..> UCPAC006_3 : <<include>>
+
+UCPAC012 ..> UCPAC012_1 : <<include>>
+UCPAC012 ..> UCPAC012_2 : <<include>>
+UCPAC012 ..> UCPAC012_3 : <<include>>
+
+UCPAC003 ..> UCPAC004 : <<extend>>
+UCPAC003 ..> UCPAC005 : <<extend>>
+
+' ============================================================
+' NOTAS
+' ============================================================
+note right of Admin
+  El Administrador tiene
+  control total del sistema:
+  - Gestiona usuarios
+  - Configura el sistema
+  - Exporta datos
+  - Supervisa operaciones
+end note
+
+note right of Therapist
+  El Terapeuta gestiona
+  la terapia de pacientes:
+  - Crea rutinas
+  - Realiza sesiones
+  - Captura multimedia
+  - Comparte videos
+end note
+
+note right of Patient
+  El Paciente realiza
+  su rehabilitación:
+  - Ve rutinas asignadas
+  - Realiza ejercicios
+  - Captura progreso
+  - Comunica con terapeuta
+end note
+
+@enduml

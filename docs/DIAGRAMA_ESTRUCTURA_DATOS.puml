@@ -1,0 +1,522 @@
+@startuml Diagrama de Estructura de Datos - Sistema RehabSystem
+
+title Diagrama de Estructura de Datos (Data Model) - Sistema de Rehabilitación
+
+' ============================================================
+' CONFIGURACIÓN DE ESTILOS
+' ============================================================
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+' ============================================================
+' MODELO DE DATOS: USER
+' ============================================================
+class User <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Attributes==
+    + nombre_usuario : VARCHAR(80) {NOT NULL, UNIQUE}
+    + correo_electronico : VARCHAR(120) {NOT NULL, UNIQUE}
+    + contrasena_encriptada : VARCHAR(128) {NOT NULL}
+    + rol : VARCHAR(20) {NOT NULL, CHECK}
+    + esta_activo : BOOLEAN {DEFAULT TRUE}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (rol IN ('admin', 'therapist', 'patient'))
+    
+    ==Indexes==
+    INDEX idx_user_username (nombre_usuario)
+    INDEX idx_user_email (correo_electronico)
+    INDEX idx_user_rol (rol)
+    
+    ==Relationships==
+    perfil_paciente : Patient [0..1]
+    perfil_terapeuta : Therapist [0..1]
+}
+
+' ============================================================
+' MODELO DE DATOS: PATIENT
+' ============================================================
+class Patient <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_usuario : INTEGER {FK → User.id, UNIQUE, NOT NULL}
+    
+    ==Attributes==
+    + nombre_completo : VARCHAR(200) {NOT NULL}
+    + diagnostico : TEXT {NULLABLE}
+    + progreso : FLOAT {DEFAULT 0.0}
+    + sesiones_totales : INTEGER {DEFAULT 0}
+    + sesiones_completadas : INTEGER {DEFAULT 0}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (progreso >= 0 AND progreso <= 100)
+    UNIQUE (id_usuario)
+    
+    ==Indexes==
+    INDEX idx_patient_user (id_usuario)
+    INDEX idx_patient_progreso (progreso)
+    
+    ==Relationships==
+    usuario : User [1]
+    rutinas_asignadas : Routine [0..*]
+    capturas : SessionCapture [0..*]
+    videos_recibidos : VideoShare [0..*]
+    citas : Appointment [0..*]
+}
+
+' ============================================================
+' MODELO DE DATOS: THERAPIST
+' ============================================================
+class Therapist <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_usuario : INTEGER {FK → User.id, UNIQUE, NOT NULL}
+    
+    ==Attributes==
+    + nombre_completo : VARCHAR(200) {NOT NULL}
+    + especialidad : VARCHAR(100) {NULLABLE}
+    + total_pacientes : INTEGER {DEFAULT 0}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    UNIQUE (id_usuario)
+    
+    ==Indexes==
+    INDEX idx_therapist_user (id_usuario)
+    INDEX idx_therapist_especialidad (especialidad)
+    
+    ==Relationships==
+    usuario : User [1]
+    rutinas_creadas : Routine [0..*]
+    capturas : SessionCapture [0..*]
+    videos_compartidos : VideoShare [0..*]
+    citas : Appointment [0..*]
+}
+
+' ============================================================
+' MODELO DE DATOS: ROUTINE
+' ============================================================
+class Routine <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_terapeuta : INTEGER {FK → Therapist.id, NOT NULL}
+    + id_paciente : INTEGER {FK → Patient.id, NULLABLE}
+    
+    ==Attributes==
+    + nombre : VARCHAR(200) {NOT NULL}
+    + descripcion : TEXT {NULLABLE}
+    + duracion_minutos : INTEGER {DEFAULT 30}
+    + dificultad : VARCHAR(20) {DEFAULT 'media'}
+    + esta_activa : BOOLEAN {DEFAULT TRUE}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (dificultad IN ('facil', 'media', 'dificil'))
+    
+    ==Indexes==
+    INDEX idx_routine_therapist (id_terapeuta)
+    INDEX idx_routine_patient (id_paciente)
+    INDEX idx_routine_active (esta_activa)
+    
+    ==Relationships==
+    terapeuta : Therapist [1]
+    paciente : Patient [0..1]
+    ejercicios : RoutineExercise [0..*]
+    
+    ==Business Logic==
+    NULL id_paciente = Template
+    NOT NULL id_paciente = Assigned
+}
+
+' ============================================================
+' MODELO DE DATOS: ROUTINE_EXERCISE
+' ============================================================
+class RoutineExercise <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_rutina : INTEGER {FK → Routine.id, NOT NULL}
+    + id_ejercicio : INTEGER {FK → Exercise.id, NOT NULL}
+    
+    ==Attributes==
+    + orden : INTEGER {DEFAULT 0}
+    + series : INTEGER {DEFAULT 3}
+    + repeticiones : INTEGER {DEFAULT 10}
+    + segundos_descanso : INTEGER {DEFAULT 30}
+    + notas : TEXT {NULLABLE}
+    
+    ==Constraints==
+    ON DELETE CASCADE (id_rutina)
+    
+    ==Indexes==
+    INDEX idx_routine_exercise_routine (id_rutina)
+    INDEX idx_routine_exercise_exercise (id_ejercicio)
+    INDEX idx_routine_exercise_orden (orden)
+    
+    ==Relationships==
+    rutina : Routine [1]
+    ejercicio : Exercise [1]
+}
+
+' ============================================================
+' MODELO DE DATOS: EXERCISE
+' ============================================================
+class Exercise <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Attributes==
+    + nombre : VARCHAR(200) {NOT NULL}
+    + descripcion : TEXT {NULLABLE}
+    + categoria : VARCHAR(50) {NULLABLE}
+    + repeticiones : VARCHAR(50) {NULLABLE}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Indexes==
+    INDEX idx_exercise_categoria (categoria)
+    INDEX idx_exercise_nombre (nombre)
+    
+    ==Relationships==
+    ejercicios_rutina : RoutineExercise [0..*]
+}
+
+' ============================================================
+' MODELO DE DATOS: SESSION_CAPTURE
+' ============================================================
+class SessionCapture <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_terapeuta : INTEGER {FK → Therapist.id, NULLABLE}
+    + id_paciente : INTEGER {FK → Patient.id, NULLABLE}
+    
+    ==Attributes==
+    + tipo_captura : VARCHAR(20) {NOT NULL}
+    + nombre_archivo : VARCHAR(255) {NOT NULL}
+    + ruta_archivo : VARCHAR(500) {NOT NULL}
+    + tamano_archivo : INTEGER {NULLABLE}
+    + duracion : INTEGER {NULLABLE}
+    + notas : TEXT {NULLABLE}
+    + fecha_sesion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    + es_permanente : BOOLEAN {DEFAULT FALSE}
+    + contiene_audio : BOOLEAN {DEFAULT FALSE}
+    
+    ==Constraints==
+    CHECK (tipo_captura IN ('photo', 'video'))
+    
+    ==Indexes==
+    INDEX idx_capture_therapist (id_terapeuta)
+    INDEX idx_capture_patient (id_paciente)
+    INDEX idx_capture_tipo (tipo_captura)
+    INDEX idx_capture_fecha (fecha_sesion)
+    
+    ==Relationships==
+    terapeuta : Therapist [0..1]
+    paciente : Patient [0..1]
+    compartidos : VideoShare [0..*]
+}
+
+' ============================================================
+' MODELO DE DATOS: VIDEO_SHARE
+' ============================================================
+class VideoShare <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_captura : INTEGER {FK → SessionCapture.id, NOT NULL}
+    + id_terapeuta : INTEGER {FK → Therapist.id, NOT NULL}
+    + id_paciente : INTEGER {FK → Patient.id, NOT NULL}
+    
+    ==Attributes==
+    + mensaje : TEXT {NULLABLE}
+    + leido : BOOLEAN {DEFAULT FALSE}
+    + fecha_compartido : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    + fecha_leido : TIMESTAMP {NULLABLE}
+    
+    ==Indexes==
+    INDEX idx_videoshare_capture (id_captura)
+    INDEX idx_videoshare_therapist (id_terapeuta)
+    INDEX idx_videoshare_patient (id_paciente)
+    INDEX idx_videoshare_leido (leido)
+    
+    ==Relationships==
+    captura : SessionCapture [1]
+    terapeuta : Therapist [1]
+    paciente : Patient [1]
+}
+
+' ============================================================
+' MODELO DE DATOS: APPOINTMENT
+' ============================================================
+class Appointment <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_paciente : INTEGER {FK → Patient.id}
+    + id_terapeuta : INTEGER {FK → Therapist.id}
+    
+    ==Attributes==
+    + fecha : TIMESTAMP {NOT NULL}
+    + estado : VARCHAR(20) {DEFAULT 'programada'}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (estado IN ('programada', 'completada', 'cancelada'))
+    
+    ==Indexes==
+    INDEX idx_appointment_patient (id_paciente)
+    INDEX idx_appointment_therapist (id_terapeuta)
+    INDEX idx_appointment_fecha (fecha)
+    INDEX idx_appointment_estado (estado)
+    
+    ==Relationships==
+    paciente : Patient [1]
+    terapeuta : Therapist [1]
+}
+
+' ============================================================
+' MODELO DE DATOS: SYSTEM_SETTINGS
+' ============================================================
+class SystemSettings <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Attributes==
+    + clave : VARCHAR(100) {NOT NULL, UNIQUE}
+    + valor : VARCHAR(500) {NULLABLE}
+    + fecha_actualizacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    UNIQUE (clave)
+    ON UPDATE fecha_actualizacion = CURRENT_TIMESTAMP
+    
+    ==Indexes==
+    INDEX idx_settings_clave (clave)
+    
+    ==Static Methods==
+    + get_setting(clave, default) : String
+    + set_setting(clave, valor) : SystemSettings
+}
+
+' ============================================================
+' RELACIONES ENTRE MODELOS
+' ============================================================
+
+' User - Patient (1:1)
+User "1" -- "0..1" Patient : id_usuario >
+
+' User - Therapist (1:1)
+User "1" -- "0..1" Therapist : id_usuario >
+
+' Therapist - Routine (1:N)
+Therapist "1" -- "0..*" Routine : id_terapeuta >
+
+' Patient - Routine (1:N)
+Patient "1" -- "0..*" Routine : id_paciente >
+
+' Routine - RoutineExercise (1:N)
+Routine "1" *-- "0..*" RoutineExercise : id_rutina >
+
+' Exercise - RoutineExercise (1:N)
+Exercise "1" -- "0..*" RoutineExercise : id_ejercicio >
+
+' Therapist - SessionCapture (1:N)
+Therapist "1" -- "0..*" SessionCapture : id_terapeuta >
+
+' Patient - SessionCapture (1:N)
+Patient "1" -- "0..*" SessionCapture : id_paciente >
+
+' SessionCapture - VideoShare (1:N)
+SessionCapture "1" -- "0..*" VideoShare : id_captura >
+
+' Therapist - VideoShare (1:N)
+Therapist "1" -- "0..*" VideoShare : id_terapeuta >
+
+' Patient - VideoShare (1:N)
+Patient "1" -- "0..*" VideoShare : id_paciente >
+
+' Patient - Appointment (N:M)
+Patient "0..*" -- "0..*" Therapist
+(Patient, Therapist) .. Appointment
+
+' ============================================================
+' NOTAS DE ESTRUCTURA DE DATOS
+' ============================================================
+
+note top of User
+  **Tabla Central de Autenticación**
+  
+  Motor: PostgreSQL 15
+  Charset: UTF8
+  Collation: es_ES.UTF-8
+  
+  Tipos de datos:
+  - INTEGER: 4 bytes, rango -2147483648 a 2147483647
+  - VARCHAR(n): Cadena variable hasta n caracteres
+  - BOOLEAN: 1 byte, TRUE/FALSE
+  - TIMESTAMP: 8 bytes, fecha y hora con zona horaria
+  
+  Seguridad:
+  - Contraseñas: Bcrypt hash (60 caracteres)
+  - Índices únicos: Previenen duplicados
+  - Check constraints: Validan datos en BD
+end note
+
+note bottom of Patient
+  **Modelo de Datos de Paciente**
+  
+  Cálculos derivados:
+  - progreso = (sesiones_completadas / sesiones_totales) * 100
+  
+  Validaciones:
+  - progreso: 0.0 <= valor <= 100.0
+  - sesiones_completadas <= sesiones_totales
+  
+  Almacenamiento:
+  - FLOAT: 4 bytes, precisión de 6 decimales
+  - TEXT: Hasta 1GB de texto
+end note
+
+note bottom of Routine
+  **Lógica de Negocio**
+  
+  Template vs Asignada:
+  - Template: id_paciente IS NULL
+    * Reutilizable para múltiples pacientes
+    * Creada por terapeuta
+  
+  - Asignada: id_paciente IS NOT NULL
+    * Copia personalizada
+    * Modificable independientemente
+  
+  Proceso de clonación:
+  1. Copiar registro Routine
+  2. Asignar id_paciente
+  3. Copiar todos RoutineExercise
+  4. Mantener referencias a Exercise
+end note
+
+note bottom of RoutineExercise
+  **Tabla de Asociación**
+  
+  Patrón: Many-to-Many con atributos
+  
+  Cascade Delete:
+  DELETE FROM routine_exercise
+  WHERE id_rutina = ?
+  
+  Se ejecuta automáticamente al
+  eliminar una rutina
+  
+  Orden de ejecución:
+  ORDER BY orden ASC
+end note
+
+note bottom of SessionCapture
+  **Almacenamiento Multimedia**
+  
+  Rutas de archivo:
+  - Fotos: static/uploads/photos/
+  - Videos: static/uploads/videos/
+  - Videos permanentes: static/uploads/videos_permanentes/
+  
+  Formato de nombres:
+  - {timestamp}_{user_id}_{random}.{ext}
+  - Ejemplo: 20251208_143022_a3f9d2.mp4
+  
+  Tamaños típicos:
+  - Foto: 500KB - 2MB
+  - Video: 5MB - 50MB
+  
+  Duración:
+  - Almacenada en segundos
+  - Calculada en cliente (MediaRecorder)
+end note
+
+note bottom of VideoShare
+  **Sistema de Mensajería**
+  
+  Estados:
+  - No leído: leido = FALSE, fecha_leido = NULL
+  - Leído: leido = TRUE, fecha_leido = TIMESTAMP
+  
+  Notificaciones:
+  - Se genera al crear registro
+  - Se marca al visualizar video
+  
+  Queries comunes:
+  - Videos no leídos por paciente
+  - Videos compartidos por terapeuta
+  - Historial de compartidos
+end note
+
+note bottom of SystemSettings
+  **Patrón Key-Value Store**
+  
+  Ventajas:
+  - Sin migraciones para nuevas configs
+  - Flexible y extensible
+  - Versionado con fecha_actualizacion
+  
+  Ejemplos de claves:
+  - session_duration: "45"
+  - theme: "light"
+  - language: "es"
+  - backup_time: "02:00"
+  
+  Acceso:
+  SystemSettings.get_setting('theme', 'light')
+  SystemSettings.set_setting('theme', 'dark')
+end note
+
+legend right
+  **CONVENCIONES DE TIPOS DE DATOS**
+  
+  PostgreSQL 15:
+  - INTEGER: Entero de 4 bytes
+  - VARCHAR(n): Cadena variable
+  - TEXT: Texto sin límite
+  - FLOAT: Número decimal
+  - BOOLEAN: Verdadero/Falso
+  - TIMESTAMP: Fecha y hora
+  
+  **CARDINALIDADES**
+  
+  1 : Exactamente uno
+  0..1 : Cero o uno (opcional)
+  0..* : Cero o muchos
+  1..* : Uno o muchos
+  
+  **SÍMBOLOS**
+  
+  {PK} : Primary Key
+  {FK} : Foreign Key
+  {NOT NULL} : Obligatorio
+  {NULLABLE} : Opcional
+  {UNIQUE} : Valor único
+  {DEFAULT} : Valor por defecto
+  {CHECK} : Restricción de validación
+  {AUTO_INCREMENT} : Autoincremental
+  
+  **TOTAL: 10 Tablas**
+end legend
+
+@enduml

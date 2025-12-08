@@ -1,0 +1,130 @@
+@startuml Diagrama de Componentes - Parte 4: Capa de Datos y Subsistemas
+
+title Diagrama de Componentes - Parte 4: Capa de Datos y Subsistemas
+
+' ============================================================
+' CAPA DE DATOS
+' ============================================================
+package "CAPA DE DATOS" {
+    
+    component "SQLAlchemy (ORM)" as sqlalchemy {
+        component "Session Management\nQuery Builder\nRelationships" as orm_features
+    }
+    
+    component "Alembic (Migrations)" as alembic {
+        component "Version Control\nSchema Changes\nUpgrade/Downgrade" as migrations
+    }
+    
+    database "PostgreSQL 15" as postgres {
+        component "Tables:\n- user\n- patient\n- therapist\n- routine\n- routine_exercise\n- exercise\n- session_capture\n- video_share\n- appointment\n- system_settings" as tables
+    }
+}
+
+' ============================================================
+' SUBSISTEMAS FUNCIONALES
+' ============================================================
+package "SUBSISTEMAS FUNCIONALES" {
+    
+    component "Authentication Subsystem" as auth_subsystem {
+        component "Login/Logout\nSession Management\nRole Verification" as auth_features
+    }
+    
+    component "User Management Subsystem" as user_subsystem {
+        component "CRUD Users\nCRUD Therapists\nCRUD Patients" as user_features
+    }
+    
+    component "Routine Management Subsystem" as routine_subsystem {
+        component "Create Routines\nAssign Routines\nManage Exercises" as routine_features
+    }
+    
+    component "Session Capture Subsystem" as capture_subsystem {
+        component "Photo Capture\nVideo Recording\nFile Storage" as capture_features
+    }
+    
+    component "Video Sharing Subsystem" as sharing_subsystem {
+        component "Share Videos\nView Shared\nMessaging" as sharing_features
+    }
+    
+    component "Reporting Subsystem" as reporting_subsystem {
+        component "Export CSV\nStatistics\nProgress Reports" as reporting_features
+    }
+    
+    component "Configuration Subsystem" as config_subsystem {
+        component "System Settings\nNotifications\nSecurity" as config_features
+    }
+}
+
+' ============================================================
+' COMPONENTE EXTERNO
+' ============================================================
+component "Render.com (PaaS)" as render {
+    component "Web Service\nDatabase Service\nStatic Files" as render_services
+}
+
+' ============================================================
+' RELACIONES - CAPA DE DATOS
+' ============================================================
+sqlalchemy --> postgres : "SQL Queries"
+alembic --> postgres : "Schema Migrations"
+
+sqlalchemy --> orm_features
+alembic --> migrations
+postgres --> tables
+
+' ============================================================
+' RELACIONES - SUBSISTEMAS A DATOS
+' ============================================================
+auth_subsystem --> sqlalchemy : "Query Users"
+user_subsystem --> sqlalchemy : "CRUD Operations"
+routine_subsystem --> sqlalchemy : "Manage Routines"
+capture_subsystem --> sqlalchemy : "Store Captures"
+sharing_subsystem --> sqlalchemy : "Share Videos"
+reporting_subsystem --> sqlalchemy : "Generate Reports"
+config_subsystem --> sqlalchemy : "Settings"
+
+' ============================================================
+' RELACIONES - INFRAESTRUCTURA
+' ============================================================
+render --> postgres : "Managed Database"
+render --> render_services
+
+note right of sqlalchemy
+  **ORM (Object-Relational Mapping)**
+  - Abstracción de base de datos
+  - Query builder
+  - Gestión de relaciones
+  - Session management
+end note
+
+note right of alembic
+  **Migraciones**
+  - Control de versiones de schema
+  - Upgrade/Downgrade
+  - Historial de cambios
+end note
+
+note right of postgres
+  **Base de Datos**
+  - PostgreSQL 15
+  - 10 tablas principales
+  - Relaciones definidas
+  - Índices optimizados
+end note
+
+note bottom of auth_subsystem
+  **Subsistemas Funcionales**
+  - Módulos especializados
+  - Lógica agrupada
+  - Reutilizables
+  - Independientes
+end note
+
+note right of render
+  **Infraestructura Cloud**
+  - PaaS (Platform as a Service)
+  - Managed PostgreSQL
+  - Auto-scaling
+  - SSL/TLS incluido
+end note
+
+@enduml

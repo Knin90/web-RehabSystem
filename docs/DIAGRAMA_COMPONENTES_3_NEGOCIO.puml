@@ -1,0 +1,92 @@
+@startuml Diagrama de Componentes - Parte 3: Capa de Negocio
+
+title Diagrama de Componentes - Parte 3: Capa de Negocio
+
+' ============================================================
+' CAPA DE NEGOCIO
+' ============================================================
+package "CAPA DE NEGOCIO" {
+    
+    component "Models (SQLAlchemy ORM)" as models {
+        component "User\n- Authentication\n- Roles\n- Password hashing" as user_model
+        component "Patient\n- Profile\n- Progress\n- Sessions" as patient_model
+        component "Therapist\n- Profile\n- Specialty\n- Patients" as therapist_model
+        component "Routine\n- Exercises\n- Assignment\n- Configuration" as routine_model
+        component "RoutineExercise\n- Order\n- Sets/Reps\n- Rest time" as routine_exercise_model
+        component "Exercise\n- Catalog\n- Categories\n- Description" as exercise_model
+        component "SessionCapture\n- Photos\n- Videos\n- Metadata" as session_capture_model
+        component "VideoShare\n- Sharing\n- Messages\n- Read status" as video_share_model
+        component "Appointment\n- Scheduling\n- Status" as appointment_model
+        component "SystemSettings\n- Configuration\n- Key-Value store" as system_settings_model
+    }
+    
+    component "Flask-Login" as flask_login {
+        component "UserMixin\nLoginManager\nUser Loader" as login_manager
+    }
+    
+    component "Flask-Bcrypt" as bcrypt {
+        component "Password Hashing\nPassword Verification" as password_hash
+    }
+}
+
+' ============================================================
+' RELACIONES ENTRE MODELOS
+' ============================================================
+user_model --> patient_model : "1:1"
+user_model --> therapist_model : "1:1"
+
+therapist_model --> routine_model : "1:N (creates)"
+patient_model --> routine_model : "1:N (assigned)"
+
+routine_model --> routine_exercise_model : "1:N"
+exercise_model --> routine_exercise_model : "N:1"
+
+therapist_model --> session_capture_model : "1:N"
+patient_model --> session_capture_model : "1:N"
+
+session_capture_model --> video_share_model : "1:N"
+therapist_model --> video_share_model : "1:N"
+patient_model --> video_share_model : "1:N"
+
+patient_model --> appointment_model : "N:M"
+therapist_model --> appointment_model : "N:M"
+
+' ============================================================
+' RELACIONES CON SERVICIOS
+' ============================================================
+user_model --> flask_login : "Uses"
+user_model --> bcrypt : "Uses"
+
+flask_login --> login_manager
+bcrypt --> password_hash
+
+note right of models
+  **Modelos de Dominio**
+  - 10 modelos principales
+  - Relaciones definidas
+  - Lógica de negocio
+  - Validaciones
+end note
+
+note right of flask_login
+  **Autenticación**
+  - Gestión de sesiones
+  - User loader
+  - Login/Logout
+end note
+
+note right of bcrypt
+  **Seguridad**
+  - Hash de contraseñas
+  - Verificación segura
+  - Bcrypt algorithm
+end note
+
+note bottom of user_model
+  **Modelo Central**
+  - Base de autenticación
+  - Roles: admin, therapist, patient
+  - Relación 1:1 con perfiles
+end note
+
+@enduml

@@ -1,0 +1,559 @@
+@startuml Arquitectura_Completa_Sistema_Rehabilitacion
+
+' ============================================================
+' DIAGRAMA DE ARQUITECTURA COMPLETA CON SEGURIDAD
+' Sistema de Rehabilitación - Render.com
+' ============================================================
+
+title Arquitectura Completa del Sistema de Rehabilitación\ncon Capas de Seguridad, Logging y Deployment en Render.com
+
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+' ============================================================
+' CAPA 1: INTERNET Y USUARIOS
+' ============================================================
+
+package "INTERNET" #LightBlue {
+  actor "Usuario\n(Browser)" as User
+  
+  cloud "DNS" as DNS {
+    [Render DNS\nrehabsystem.onrender.com] as RenderDNS
+  }
+  
+  cloud "CDN" as CDN {
+    [Render CDN\nStatic Assets] as RenderCDN
+  }
+}
+
+' ============================================================
+' CAPA 2: SEGURIDAD DE TRANSPORTE (RENDER)
+' ============================================================
+
+package "RENDER.COM - EDGE LAYER" #LightGreen {
+  
+  rectangle "SSL/TLS Termination" #PaleGreen {
+    [Let's Encrypt\nSSL Certificate] as SSL
+    [TLS 1.3\nEncryption] as TLS
+    [Auto-Renewal\nCertificates] as AutoRenew
+    
+    note right of SSL
+      **Certificado SSL Automático**
+      - Emisor: Let's Encrypt
+      - Renovación: Automática cada 90 días
+      - Protocolo: TLS 1.3
+      - Cipher Suites: Strong only
+    end note
+  }
+  
+  rectangle "DDoS Protection" #PaleGreen {
+    [Rate Limiting\nRender Level] as RenderRateLimit
+    [IP Filtering] as IPFilter
+    [Traffic Analysis] as TrafficAnalysis
+  }
+  
+  rectangle "Load Balancer" #PaleGreen {
+    [Render Load Balancer\nAutomatic] as LoadBalancer
+    [Health Checks] as HealthCheck
+    [Auto-Scaling] as AutoScale
+  }
+}
+
+' ============================================================
+' CAPA 3: REVERSE PROXY Y WEB SERVER
+' ============================================================
+
+package "WEB SERVER LAYER" #LightYellow {
+  
+  rectangle "Nginx (Render Managed)" #Wheat {
+    [Nginx\nReverse Proxy] as Nginx
+    
+    rectangle "Nginx Configuration" {
+      [Static Files\nServing] as NginxStatic
+      [Gzip Compression] as Gzip
+      [Caching Headers] as CacheHeaders
+      [Request Buffering] as ReqBuffer
+    }
+    
+    rectangle "Security Headers" #LightCoral {
+      [X-Frame-Options:\nSAMEORIGIN] as XFrame
+      [X-Content-Type-Options:\nnosniff] as XContent
+      [X-XSS-Protection:\n1; mode=block] as XXSS
+      [Strict-Transport-Security:\nmax-age=31536000] as HSTS
+      [Content-Security-Policy] as CSP
+      [Referrer-Policy:\nstrict-origin] as Referrer
+    }
+    
+    note right of Nginx
+      **Nginx Configuration**
+      - Worker Processes: Auto
+      - Connections: 1024
+      - Timeout: 60s
+      - Max Body Size: 50MB
+      - Proxy Buffering: On
+    end note
+  }
+}
+
+' ============================================================
+' CAPA 4: WSGI SERVER
+' ============================================================
+
+package "APPLICATION SERVER" #LightCyan {
+  
+  rectangle "Gunicorn (WSGI)" #SkyBlue {
+    [Gunicorn\nWSGI Server] as Gunicorn
+    
+    rectangle "Gunicorn Config" {
+      [Workers: 4\n(CPU * 2 + 1)] as Workers
+      [Threads: 2\nper worker] as Threads
+      [Timeout: 120s] as Timeout
+      [Graceful Restart] as GracefulRestart
+      [Worker Class:\nsync] as WorkerClass
+    }
+    
+    rectangle "Process Management" {
+      [Master Process] as Master
+      [Worker Process 1] as Worker1
+      [Worker Process 2] as Worker2
+      [Worker Process 3] as Worker3
+      [Worker Process 4] as Worker4
+    }
+    
+    note right of Gunicorn
+      **Gunicorn Configuration**
+      - Bind: 0.0.0.0:10000
+      - Workers: 4
+      - Threads: 2
+      - Timeout: 120s
+      - Max Requests: 1000
+      - Max Requests Jitter: 50
+      - Preload App: True
+    end note
+  }
+}
+
+' ============================================================
+' CAPA 5: APLICACIÓN FLASK
+' ============================================================
+
+package "FLASK APPLICATION" #Lavender {
+  
+  ' --------------------------------------------------------
+  ' CAPA DE SEGURIDAD DE APLICACIÓN
+  ' --------------------------------------------------------
+  rectangle "APPLICATION SECURITY LAYER" #LightPink {
+    
+    rectangle "Authentication & Authorization" {
+      [Flask-Login\nSession Management] as FlaskLogin
+      [Bcrypt\nPassword Hashing] as Bcrypt
+      [@login_required\nDecorator] as LoginRequired
+      [@role_required\nRBAC] as RoleRequired
+    }
+    
+    rectangle "Rate Limiting (App Level)" {
+      [Flask-Limiter] as FlaskLimiter
+      [5 req/min\nLogin Endpoint] as LoginLimit
+      [50 req/hour\nAPI Endpoints] as APILimit
+      [200 req/day\nGlobal Limit] as GlobalLimit
+    }
+    
+    rectangle "CSRF Protection" {
+      [Flask-WTF\nCSRF Tokens] as CSRF
+      [Token Generation] as CSRFGen
+      [Token Validation] as CSRFVal
+    }
+    
+    rectangle "Input Validation" {
+      [WTForms\nValidation] as WTForms
+      [File Upload\nValidation] as FileVal
+      [SQL Injection\nPrevention (ORM)] as SQLPrev
+      [XSS Prevention\n(Jinja2 Escaping)] as XSSPrev
+    }
+    
+    note right of FlaskLogin
+      **Session Security**
+      - Cookie: HttpOnly, Secure, SameSite
+      - Lifetime: 1 hour
+      - Secret Key: Environment Variable
+      - Session Storage: Server-side
+    end note
+  }
+  
+  ' --------------------------------------------------------
+  ' CAPA DE PRESENTACIÓN
+  ' --------------------------------------------------------
+  rectangle "PRESENTATION LAYER" #LightSteelBlue {
+    [Templates\n(Jinja2)] as Templates
+    [Static Files\n(CSS/JS)] as Static
+    [Forms\n(WTForms)] as Forms
+    [WebRTC\n(MediaRecorder)] as WebRTC
+  }
+  
+  ' --------------------------------------------------------
+  ' CAPA DE APLICACIÓN
+  ' --------------------------------------------------------
+  rectangle "APPLICATION LAYER" #LightSteelBlue {
+    [Routes\n(Flask Blueprints)] as Routes
+    [Config\n(Environment)] as Config
+    [Factory Pattern\n(__init__.py)] as Factory
+    [Error Handlers] as ErrorHandlers
+  }
+  
+  ' --------------------------------------------------------
+  ' CAPA DE NEGOCIO
+  ' --------------------------------------------------------
+  rectangle "BUSINESS LAYER" #LightSteelBlue {
+    [Models\n(SQLAlchemy ORM)] as Models
+    [Business Logic] as BusinessLogic
+    [Data Validation] as DataValidation
+  }
+  
+  ' --------------------------------------------------------
+  ' CAPA DE ACCESO A DATOS
+  ' --------------------------------------------------------
+  rectangle "DATA ACCESS LAYER" #LightSteelBlue {
+    [SQLAlchemy\n(ORM)] as SQLAlchemy
+    [Alembic\n(Migrations)] as Alembic
+    [Connection Pool\n(10 connections)] as ConnPool
+    [Query Optimization] as QueryOpt
+  }
+}
+
+' ============================================================
+' CAPA 6: LOGGING Y MONITOREO
+' ============================================================
+
+package "LOGGING & MONITORING" #Thistle {
+  
+  rectangle "Application Logging" #Plum {
+    [Python Logging\nModule] as PyLogging
+    [Rotating File Handler\n10MB per file] as RotatingLog
+    [Log Levels:\nINFO, WARNING, ERROR] as LogLevels
+    
+    rectangle "Log Types" {
+      [Security Logs\n(Login attempts)] as SecurityLog
+      [Error Logs\n(Exceptions)] as ErrorLog
+      [Access Logs\n(Requests)] as AccessLog
+      [Audit Logs\n(Data changes)] as AuditLog
+    }
+  }
+  
+  rectangle "Render Logging" #Plum {
+    [Render Logs\nDashboard] as RenderLogs
+    [Real-time Logs\nStreaming] as RealtimeLogs
+    [Log Retention\n7 days (free tier)] as LogRetention
+    [Log Search\n& Filter] as LogSearch
+  }
+  
+  rectangle "Monitoring" #Plum {
+    [Render Metrics\nDashboard] as RenderMetrics
+    [CPU Usage] as CPUMetrics
+    [Memory Usage] as MemMetrics
+    [Response Time] as ResponseMetrics
+    [Error Rate] as ErrorMetrics
+    [Uptime Monitoring] as UptimeMetrics
+  }
+  
+  note right of PyLogging
+    **Logging Configuration**
+    - Format: Timestamp, Level, Message, Location
+    - Rotation: 10MB per file, 10 backups
+    - Levels: DEBUG (dev), INFO (prod)
+    - Security Events: Always logged
+  end note
+}
+
+' ============================================================
+' CAPA 7: BASE DE DATOS
+' ============================================================
+
+package "DATABASE LAYER (Render Managed)" #LightGoldenRodYellow {
+  
+  rectangle "PostgreSQL Security" #Gold {
+    [SSL/TLS\nEncryption] as DBSSL
+    [Connection String\nEncrypted] as DBConnEncrypt
+    [sslmode=require] as SSLMode
+    [Password Auth] as DBAuth
+  }
+  
+  database "PostgreSQL 15" as PostgreSQL {
+    rectangle "Tables" {
+      [user] as UserTable
+      [patient] as PatientTable
+      [therapist] as TherapistTable
+      [routine] as RoutineTable
+      [routine_exercise] as RoutineExerciseTable
+      [exercise] as ExerciseTable
+      [session_capture] as SessionCaptureTable
+      [video_share] as VideoShareTable
+      [appointment] as AppointmentTable
+      [system_settings] as SystemSettingsTable
+    }
+    
+    rectangle "Database Security" {
+      [Foreign Key\nConstraints] as FKConstraints
+      [Check Constraints] as CheckConstraints
+      [Unique Constraints] as UniqueConstraints
+      [NOT NULL Constraints] as NotNullConstraints
+    }
+    
+    rectangle "Performance" {
+      [Indexes\n(B-tree)] as Indexes
+      [Query Optimization] as DBQueryOpt
+      [Connection Pooling] as DBPool
+      [Automatic Backups\n(Daily)] as DBBackup
+    }
+  }
+  
+  note right of PostgreSQL
+    **PostgreSQL Configuration**
+    - Version: 15
+    - SSL: Required
+    - Max Connections: 100
+    - Shared Buffers: 128MB
+    - Backups: Daily automatic
+    - Retention: 7 days (free tier)
+  end note
+}
+
+' ============================================================
+' CAPA 8: ALMACENAMIENTO DE ARCHIVOS
+' ============================================================
+
+package "FILE STORAGE (Render Disk)" #Honeydew {
+  
+  rectangle "Persistent Storage" #LightGreen {
+    folder "static/uploads/" {
+      [photos/\n(JPEG, PNG)] as Photos
+      [videos/\n(WebM, MP4)] as Videos
+      [videos_permanentes/\n(Archived)] as VideosPerm
+    }
+    
+    rectangle "File Security" {
+      [Max Size: 50MB\nper file] as MaxSize
+      [Allowed Extensions\nValidation] as ExtValidation
+      [MIME Type\nValidation] as MIMEValidation
+      [Filename\nSanitization] as FilenameSanitize
+    }
+  }
+  
+  note right of Photos
+    **File Storage Configuration**
+    - Location: Render Persistent Disk
+    - Max Size: 50MB per file
+    - Total Storage: 1GB (free tier)
+    - Allowed: jpg, jpeg, png, webm, mp4
+    - Validation: Extension + MIME type
+  end note
+}
+
+' ============================================================
+' CAPA 9: VARIABLES DE ENTORNO Y SECRETOS
+' ============================================================
+
+package "ENVIRONMENT & SECRETS" #MistyRose {
+  
+  rectangle "Render Environment Variables" #LightCoral {
+    [SECRET_KEY\n(Flask Sessions)] as SecretKey
+    [DATABASE_URL\n(PostgreSQL)] as DatabaseURL
+    [FLASK_ENV\n(production)] as FlaskEnv
+    [FLASK_APP\n(run.py)] as FlaskApp
+    [PYTHONUNBUFFERED\n(1)] as PythonUnbuf
+    [WEB_CONCURRENCY\n(4)] as WebConcurrency
+  }
+  
+  rectangle "Security Best Practices" {
+    [No Secrets in Code] as NoSecrets
+    [Environment Variables\nOnly] as EnvVarsOnly
+    [Automatic Encryption\nby Render] as RenderEncrypt
+    [Access Control\nTeam Only] as AccessControl
+  }
+  
+  note right of SecretKey
+    **Environment Variables Security**
+    - Stored: Render Dashboard (encrypted)
+    - Access: Team members only
+    - Rotation: Manual (recommended quarterly)
+    - Never in code or repository
+  end note
+}
+
+' ============================================================
+' CAPA 10: DEPLOYMENT Y CI/CD
+' ============================================================
+
+package "DEPLOYMENT & CI/CD" #AliceBlue {
+  
+  rectangle "GitHub Integration" #LightBlue {
+    [GitHub Repository] as GitHub
+    [Automatic Deploys\non Push] as AutoDeploy
+    [Branch: main] as MainBranch
+    [Build Logs] as BuildLogs
+  }
+  
+  rectangle "Build Process" #LightBlue {
+    [1. Git Pull] as GitPull
+    [2. Install Dependencies\n(pip install -r requirements.txt)] as PipInstall
+    [3. Database Migrations\n(flask db upgrade)] as DBMigrate
+    [4. Collect Static Files] as CollectStatic
+    [5. Start Gunicorn] as StartGunicorn
+  }
+  
+  rectangle "Deployment Strategy" #LightBlue {
+    [Zero-Downtime\nDeployment] as ZeroDowntime
+    [Health Checks\nBefore Switch] as HealthCheckDeploy
+    [Rollback on Failure] as Rollback
+    [Deploy Notifications] as DeployNotif
+  }
+  
+  note right of GitHub
+    **CI/CD Pipeline**
+    - Trigger: Push to main branch
+    - Build Time: ~2-3 minutes
+    - Strategy: Rolling deployment
+    - Rollback: Automatic on failure
+    - Notifications: Email on deploy
+  end note
+}
+
+' ============================================================
+' FLUJO DE DATOS Y CONEXIONES
+' ============================================================
+
+' Flujo de Request
+User -down-> DNS : 1. DNS Lookup
+DNS -down-> SSL : 2. HTTPS Request
+SSL -down-> TLS : 3. TLS Handshake
+TLS -down-> RenderRateLimit : 4. DDoS Check
+RenderRateLimit -down-> LoadBalancer : 5. Load Balance
+LoadBalancer -down-> Nginx : 6. Proxy Pass
+
+Nginx -down-> NginxStatic : Static Files
+Nginx -down-> XFrame : Security Headers
+Nginx -down-> Gunicorn : 7. WSGI Call
+
+Gunicorn -down-> Master : 8. Distribute
+Master -down-> Worker1 : Process Request
+Worker1 -down-> FlaskLogin : 9. Authenticate
+
+FlaskLogin -down-> FlaskLimiter : 10. Rate Limit
+FlaskLimiter -down-> CSRF : 11. CSRF Check
+CSRF -down-> Routes : 12. Route Handler
+
+Routes -down-> Models : 13. Business Logic
+Models -down-> SQLAlchemy : 14. ORM Query
+SQLAlchemy -down-> ConnPool : 15. Get Connection
+ConnPool -down-> DBSSL : 16. SSL Connection
+DBSSL -down-> PostgreSQL : 17. SQL Query
+
+' Logging Flow
+Routes -right-> PyLogging : Log Events
+PyLogging -right-> RotatingLog : Write to File
+RotatingLog -right-> RenderLogs : Stream to Render
+RenderLogs -right-> RenderMetrics : Metrics
+
+' File Storage Flow
+Routes -down-> Photos : Save Files
+Routes -down-> Videos : Save Files
+
+' Environment Variables
+Config -up-> SecretKey : Load Secrets
+Config -up-> DatabaseURL : Load DB URL
+
+' Deployment Flow
+GitHub -down-> AutoDeploy : Push Event
+AutoDeploy -down-> GitPull : Start Build
+GitPull -down-> PipInstall : Install
+PipInstall -down-> DBMigrate : Migrate
+DBMigrate -down-> StartGunicorn : Start Server
+
+' Response Flow (simplified)
+PostgreSQL -up-> SQLAlchemy : Query Results
+SQLAlchemy -up-> Models : Python Objects
+Models -up-> Routes : Data
+Routes -up-> Templates : Render HTML
+Templates -up-> Gunicorn : HTML Response
+Gunicorn -up-> Nginx : HTTP Response
+Nginx -up-> LoadBalancer : Response
+LoadBalancer -up-> TLS : Encrypt
+TLS -up-> User : HTTPS Response
+
+' ============================================================
+' LEYENDAS Y NOTAS
+' ============================================================
+
+legend right
+  **LEYENDA DE COLORES**
+  
+  |= Color |= Capa |
+  | <#LightBlue> | Internet & DNS |
+  | <#LightGreen> | Seguridad de Transporte |
+  | <#LightYellow> | Web Server |
+  | <#LightCyan> | Application Server |
+  | <#Lavender> | Flask Application |
+  | <#LightPink> | Security Layer |
+  | <#Thistle> | Logging & Monitoring |
+  | <#LightGoldenRodYellow> | Database |
+  | <#Honeydew> | File Storage |
+  | <#MistyRose> | Environment & Secrets |
+  | <#AliceBlue> | Deployment & CI/CD |
+  
+  **STACK TECNOLÓGICO**
+  - Frontend: HTML5, CSS3, JavaScript, Bootstrap 5
+  - Backend: Python 3.11, Flask 3.0.0
+  - Database: PostgreSQL 15
+  - WSGI: Gunicorn 21.2.0
+  - Proxy: Nginx (Render Managed)
+  - Hosting: Render.com (PaaS)
+  - SSL: Let's Encrypt (Automatic)
+  - Logging: Python Logging + Render Logs
+  - Monitoring: Render Metrics Dashboard
+  
+  **CARACTERÍSTICAS DE SEGURIDAD**
+  ✓ HTTPS/TLS 1.3 Encryption
+  ✓ SSL Certificate Auto-Renewal
+  ✓ DDoS Protection (Render Level)
+  ✓ Rate Limiting (App + Render)
+  ✓ Security Headers (HSTS, CSP, etc.)
+  ✓ CSRF Protection (Flask-WTF)
+  ✓ Password Hashing (Bcrypt)
+  ✓ Session Security (HttpOnly, Secure)
+  ✓ SQL Injection Prevention (ORM)
+  ✓ XSS Prevention (Jinja2 Escaping)
+  ✓ File Upload Validation
+  ✓ RBAC (Role-Based Access Control)
+  ✓ Logging & Monitoring
+  ✓ Automatic Backups
+  ✓ Zero-Downtime Deployment
+end legend
+
+note bottom
+  **ARQUITECTURA DEL SISTEMA DE REHABILITACIÓN**
+  
+  Este diagrama muestra la arquitectura completa del sistema desplegado en Render.com,
+  incluyendo todas las capas de seguridad, logging, monitoreo y deployment.
+  
+  **Flujo de Request Completo:**
+  1. Usuario → DNS → SSL/TLS → DDoS Protection → Load Balancer
+  2. Nginx → Security Headers → Gunicorn → Flask Application
+  3. Authentication → Rate Limiting → CSRF Check → Route Handler
+  4. Business Logic → ORM → Connection Pool → PostgreSQL
+  5. Response: PostgreSQL → ORM → Templates → Nginx → Usuario
+  
+  **Características Principales:**
+  - Deployment automático desde GitHub
+  - SSL/TLS automático con Let's Encrypt
+  - Logging en tiempo real con Render
+  - Monitoreo de métricas (CPU, RAM, Response Time)
+  - Backups automáticos diarios
+  - Zero-downtime deployment
+  - Escalado automático (según plan)
+  
+  **Versión:** 1.0
+  **Fecha:** 2025-12-08
+  **Plataforma:** Render.com
+end note
+
+@enduml

@@ -1,0 +1,223 @@
+@startuml Diagrama ER - Parte 1: Usuarios y Perfiles
+
+title Diagrama Entidad-Relación - Parte 1: Usuarios y Perfiles
+
+' ============================================================
+' ENTIDAD USER
+' ============================================================
+entity "USER" as user {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre_usuario : VARCHAR(80) <<UNIQUE>>
+  * correo_electronico : VARCHAR(120) <<UNIQUE>>
+  * contrasena_encriptada : VARCHAR(128)
+  * rol : VARCHAR(20) <<CHECK>>
+  * esta_activo : BOOLEAN
+  * fecha_creacion : TIMESTAMP
+  --
+  CHECK: rol IN ('admin', 'therapist', 'patient')
+}
+
+' ============================================================
+' ENTIDAD PATIENT
+' ============================================================
+entity "PATIENT" as patient {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_usuario : INTEGER <<FK>> <<UNIQUE>>
+  * nombre_completo : VARCHAR(200)
+  diagnostico : TEXT
+  progreso : FLOAT
+  sesiones_totales : INTEGER
+  sesiones_completadas : INTEGER
+  fecha_creacion : TIMESTAMP
+  --
+  CHECK: progreso >= 0 AND progreso <= 100
+  DEFAULT: progreso = 0.0
+  DEFAULT: sesiones_totales = 0
+  DEFAULT: sesiones_completadas = 0
+}
+
+' ============================================================
+' ENTIDAD THERAPIST
+' ============================================================
+entity "THERAPIST" as therapist {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_usuario : INTEGER <<FK>> <<UNIQUE>>
+  * nombre_completo : VARCHAR(200)
+  especialidad : VARCHAR(100)
+  total_pacientes : INTEGER
+  fecha_creacion : TIMESTAMP
+  --
+  DEFAULT: total_pacientes = 0
+}
+
+' ============================================================
+' ENTIDAD APPOINTMENT
+' ============================================================
+entity "APPOINTMENT" as appointment {
+  * **id** : INTEGER <<PK>>
+  --
+  id_paciente : INTEGER <<FK>>
+  id_terapeuta : INTEGER <<FK>>
+  * fecha : TIMESTAMP
+  estado : VARCHAR(20) <<CHECK>>
+  fecha_creacion : TIMESTAMP
+  --
+  CHECK: estado IN ('programada', 'completada', 'cancelada')
+  DEFAULT: estado = 'programada'
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+
+' User - Patient (1:1)
+user ||--o| patient : "tiene perfil"
+patient }o--|| user : "id_usuario"
+
+' User - Therapist (1:1)
+user ||--o| therapist : "tiene perfil"
+therapist }o--|| user : "id_usuario"
+
+' Patient - Appointment (1:N)
+patient ||--o{ appointment : "tiene citas"
+appointment }o--|| patient : "id_paciente"
+
+' Therapist - Appointment (1:N)
+therapist ||--o{ appointment : "tiene citas"
+appointment }o--|| therapist : "id_terapeuta"
+
+' ============================================================
+' NOTAS
+' ============================================================
+
+note right of user
+  **USER - Tabla Central**
+  
+  Autenticación y control de acceso
+  
+  **Roles:**
+  - admin: Administrador del sistema
+  - therapist: Terapeuta/Fisioterapeuta
+  - patient: Paciente
+  
+  **Seguridad:**
+  - Contraseñas hasheadas (Bcrypt)
+  - Usuario y email únicos
+  - Control de estado activo/inactivo
+  
+  **Relaciones:**
+  - 1:1 con Patient (si rol = 'patient')
+  - 1:1 con Therapist (si rol = 'therapist')
+  
+  **Índices:**
+  - idx_user_username (nombre_usuario)
+  - idx_user_email (correo_electronico)
+  - idx_user_rol (rol)
+  
+  **Hereda de:**
+  - UserMixin (Flask-Login)
+  - db.Model (SQLAlchemy)
+end note
+
+note right of patient
+  **PATIENT - Perfil de Paciente**
+  
+  Relación 1:1 con User
+  (id_usuario UNIQUE)
+  
+  **Seguimiento:**
+  - Progreso: 0-100%
+  - Sesiones completadas/totales
+  - Diagnóstico médico
+  
+  **Relaciones:**
+  - 1:1 con User
+  - 1:N con Routine (asignadas)
+  - 1:N con SessionCapture
+  - 1:N con VideoShare (recibe)
+  - N:M con Therapist (via Appointment)
+  
+  **Índices:**
+  - idx_patient_user (id_usuario)
+  - idx_patient_progreso (progreso)
+  
+  **Cálculos:**
+  - Progreso = (sesiones_completadas / sesiones_totales) * 100
+end note
+
+note right of therapist
+  **THERAPIST - Perfil de Terapeuta**
+  
+  Relación 1:1 con User
+  (id_usuario UNIQUE)
+  
+  **Información:**
+  - Especialidad médica
+  - Total de pacientes asignados
+  
+  **Relaciones:**
+  - 1:1 con User
+  - 1:N con Routine (crea)
+  - 1:N con SessionCapture
+  - 1:N con VideoShare (comparte)
+  - N:M con Patient (via Appointment)
+  
+  **Índices:**
+  - idx_therapist_user (id_usuario)
+  - idx_therapist_especialidad (especialidad)
+  
+  **Propiedad calculada:**
+  - pacientes_asignados: Obtiene pacientes
+    únicos a través de rutinas asignadas
+end note
+
+note right of appointment
+  **APPOINTMENT - Citas Médicas**
+  
+  Relación N:M entre Patient y Therapist
+  
+  **Estados:**
+  - programada: Cita agendada
+  - completada: Cita realizada
+  - cancelada: Cita cancelada
+  
+  **Funcionalidades:**
+  - Programar cita
+  - Modificar cita
+  - Cancelar cita
+  - Ver historial
+  
+  **Índices:**
+  - idx_appointment_patient (id_paciente)
+  - idx_appointment_therapist (id_terapeuta)
+  - idx_appointment_fecha (fecha)
+  - idx_appointment_estado (estado)
+end note
+
+legend right
+  **CARDINALIDADES**
+  
+  ||--|| : Uno a Uno (1:1)
+  ||--o{ : Uno a Muchos (1:N)
+  }o--|| : Muchos a Uno (N:1)
+  
+  **SÍMBOLOS**
+  
+  * : NOT NULL
+  <<PK>> : Primary Key
+  <<FK>> : Foreign Key
+  <<UNIQUE>> : Valor único
+  <<CHECK>> : Restricción
+  
+  **PARTE 1 de 3**
+  Entidades: 4
+  - USER
+  - PATIENT
+  - THERAPIST
+  - APPOINTMENT
+end legend
+
+@enduml

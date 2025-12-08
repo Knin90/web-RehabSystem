@@ -1,0 +1,267 @@
+@startuml Diagrama de Navegación - Parte 2: Panel Administrador
+
+title Diagrama de Navegación - Parte 2: Panel Administrador
+
+' ============================================================
+' DASHBOARD ADMINISTRADOR
+' ============================================================
+
+state "Dashboard Admin\n/admin/dashboard" as admin_dashboard {
+    admin_dashboard : Estadísticas generales
+    admin_dashboard : Total usuarios
+    admin_dashboard : Total pacientes activos
+    admin_dashboard : Total terapeutas
+    admin_dashboard : Menú de navegación
+}
+
+state "Gestión Usuarios\n/admin/users" as admin_users {
+    admin_users : Lista completa de usuarios
+    admin_users : Filtros por rol
+    admin_users : Botón "Agregar Usuario"
+    admin_users : Acciones: Editar/Eliminar
+    admin_users : Activar/Desactivar cuenta
+}
+
+state "Gestión Terapeutas\n/admin/therapists" as admin_therapists {
+    admin_therapists : Lista de terapeutas
+    admin_therapists : Botón "Agregar Terapeuta"
+    admin_therapists : Ver especialidades
+    admin_therapists : Ver pacientes asignados
+    admin_therapists : Total pacientes por terapeuta
+}
+
+state "Modal Agregar\nTerapeuta" as add_therapist_modal {
+    add_therapist_modal : Nombre completo
+    add_therapist_modal : Usuario
+    add_therapist_modal : Email
+    add_therapist_modal : Contraseña
+    add_therapist_modal : Especialidad
+    add_therapist_modal : Botones: Guardar/Cancelar
+}
+
+state "Gestión Pacientes\n/admin/patients" as admin_patients {
+    admin_patients : Lista de pacientes
+    admin_patients : Botón "Agregar Paciente"
+    admin_patients : Ver progreso
+    admin_patients : Ver diagnóstico
+    admin_patients : Sesiones completadas/totales
+    admin_patients : Estado: Activo/Inactivo
+}
+
+state "Modal Agregar\nPaciente" as add_patient_modal {
+    add_patient_modal : Nombre completo
+    add_patient_modal : Usuario
+    add_patient_modal : Email
+    add_patient_modal : Contraseña
+    add_patient_modal : Diagnóstico
+    add_patient_modal : Sesiones totales
+    add_patient_modal : Botones: Guardar/Cancelar
+}
+
+state "Configuración\n/admin/settings" as admin_settings {
+    admin_settings : Duración de sesiones
+    admin_settings : Sesiones por semana
+    admin_settings : Tiempo de descanso
+    admin_settings : Notificaciones
+    admin_settings : Respaldos automáticos
+    admin_settings : Seguridad (2FA, timeout)
+    admin_settings : Visión artificial (IA)
+    admin_settings : Apariencia (tema, idioma)
+}
+
+state "Exportar Datos\n/admin/export-data" as admin_export {
+    admin_export : Exportar usuarios (CSV)
+    admin_export : Exportar pacientes (CSV)
+    admin_export : Exportar terapeutas (CSV)
+    admin_export : Exportar ejercicios (CSV)
+    admin_export : Exportar todo (CSV)
+    admin_export : Estadísticas de exportación
+}
+
+state "Cerrar Sesión\n/logout" as logout
+
+' ============================================================
+' NAVEGACIÓN
+' ============================================================
+
+[*] --> admin_dashboard : Acceso desde\nautenticación
+
+admin_dashboard --> admin_users : Click "Usuarios"
+admin_dashboard --> admin_therapists : Click "Terapeutas"
+admin_dashboard --> admin_patients : Click "Pacientes"
+admin_dashboard --> admin_settings : Click "Configuración"
+admin_dashboard --> admin_export : Click "Exportar Datos"
+admin_dashboard --> logout : Click "Cerrar Sesión"
+
+admin_users --> admin_dashboard : Click "Dashboard"\no breadcrumb
+
+admin_therapists --> add_therapist_modal : Click "Agregar\nTerapeuta"
+add_therapist_modal --> admin_therapists : Guardar (POST)\no Cancelar
+
+admin_therapists --> admin_dashboard : Click "Dashboard"\no breadcrumb
+
+admin_patients --> add_patient_modal : Click "Agregar\nPaciente"
+add_patient_modal --> admin_patients : Guardar (POST)\no Cancelar
+
+admin_patients --> admin_dashboard : Click "Dashboard"\no breadcrumb
+
+admin_settings --> admin_dashboard : Click "Dashboard"\no breadcrumb
+
+admin_export --> admin_dashboard : Click "Dashboard"\no breadcrumb
+
+logout --> [*] : Sesión cerrada\nRedirige a /
+
+note right of admin_dashboard
+  **Dashboard Administrador**
+  
+  Ruta: /admin/dashboard
+  Template: admin/dashboard.html
+  Decorador: @role_required('admin')
+  
+  Muestra:
+  - Total de usuarios
+  - Total de pacientes activos
+  - Total de terapeutas
+  - Gráficos estadísticos
+  
+  Menú lateral con acceso a:
+  - Usuarios
+  - Terapeutas
+  - Pacientes
+  - Configuración
+  - Exportar datos
+end note
+
+note right of admin_users
+  **Gestión de Usuarios**
+  
+  Ruta: /admin/users
+  Template: admin/users.html
+  
+  Funcionalidades:
+  - Ver todos los usuarios
+  - Filtrar por rol
+  - Crear nuevo usuario
+  - Editar usuario existente
+  - Activar/Desactivar cuenta
+  - Eliminar usuario
+  
+  Tabla con columnas:
+  - ID, Usuario, Email, Rol
+  - Estado, Fecha creación
+  - Acciones
+end note
+
+note right of admin_therapists
+  **Gestión de Terapeutas**
+  
+  Ruta: /admin/therapists
+  Template: admin/therapists.html
+  
+  POST: /admin/add-therapist
+  
+  Funcionalidades:
+  - Ver lista de terapeutas
+  - Agregar nuevo terapeuta
+  - Ver especialidad
+  - Ver total de pacientes
+  - Ver estado (activo/inactivo)
+  
+  Al agregar terapeuta:
+  1. Crea usuario con rol 'therapist'
+  2. Crea perfil de terapeuta
+  3. Hashea contraseña (Bcrypt)
+end note
+
+note right of admin_patients
+  **Gestión de Pacientes**
+  
+  Ruta: /admin/patients
+  Template: admin/patients.html
+  
+  POST: /admin/add-patient
+  
+  Funcionalidades:
+  - Ver lista de pacientes
+  - Agregar nuevo paciente
+  - Ver diagnóstico
+  - Ver progreso (%)
+  - Ver sesiones completadas/totales
+  - Ver estado (activo/inactivo)
+  
+  Al agregar paciente:
+  1. Crea usuario con rol 'patient'
+  2. Crea perfil de paciente
+  3. Hashea contraseña (Bcrypt)
+  4. Inicializa progreso en 0%
+end note
+
+note right of admin_settings
+  **Configuración del Sistema**
+  
+  Ruta: /admin/settings
+  Template: admin/settings.html
+  
+  POST: /admin/settings
+  
+  Secciones configurables:
+  
+  1. Duración de Sesiones
+     - Minutos por sesión
+     - Sesiones por semana
+     - Tiempo de descanso
+  
+  2. Notificaciones
+     - Email notifications
+     - Recordatorios de citas
+     - Reportes de progreso
+  
+  3. Respaldos
+     - Backup automático
+     - Hora de backup
+     - Retención de días
+  
+  4. Seguridad
+     - Timeout de sesión
+     - Two-factor auth
+     - Intentos de login
+  
+  5. Visión Artificial
+     - Precisión de detección
+     - Análisis en tiempo real
+     - FPS de captura
+  
+  6. Apariencia
+     - Tema (light/dark)
+     - Idioma (es/en)
+     - Modo compacto
+  
+  Usa SystemSettings model
+  (Key-Value store)
+end note
+
+note right of admin_export
+  **Exportar Datos**
+  
+  Ruta: /admin/export-data
+  Template: admin/export_data.html
+  
+  GET: /admin/export/<tipo>
+  
+  Tipos de exportación:
+  - users: Todos los usuarios
+  - patients: Todos los pacientes
+  - therapists: Todos los terapeutas
+  - exercises: Catálogo de ejercicios
+  - all: Exportación completa
+  
+  Formato: CSV
+  
+  Genera archivo con timestamp:
+  - usuarios_20251208_143022.csv
+  - pacientes_20251208_143022.csv
+  
+  Descarga automática del archivo
+end note
+
+@enduml

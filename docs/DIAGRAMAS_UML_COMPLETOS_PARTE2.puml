@@ -1,0 +1,777 @@
+@startuml Diagrama_07_Estructura_Datos
+
+' ============================================================
+' DIAGRAMA 7: DIAGRAMA DE ESTRUCTURA DE DATOS
+' Modelo detallado con tipos de datos, constraints e índices
+' ============================================================
+
+title Diagrama de Estructura de Datos - Sistema de Rehabilitación
+
+package "DATABASE SCHEMA" {
+  
+  class USER <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    nombre_usuario : VARCHAR(80) {NOT NULL, UNIQUE}
+    correo_electronico : VARCHAR(120) {NOT NULL, UNIQUE}
+    contrasena_encriptada : VARCHAR(128) {NOT NULL}
+    rol : VARCHAR(20) {NOT NULL}
+    esta_activo : BOOLEAN {DEFAULT TRUE}
+    fecha_creacion : TIMESTAMP {DEFAULT NOW()}
+    --
+    **CONSTRAINTS:**
+    CHECK (rol IN ('admin', 'therapist', 'patient'))
+    --
+    **INDEXES:**
+    idx_user_username (nombre_usuario)
+    idx_user_email (correo_electronico)
+    idx_user_rol (rol)
+  }
+  
+  class PATIENT <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    id_usuario : INTEGER {FK → USER.id, UNIQUE, NOT NULL}
+    nombre_completo : VARCHAR(200) {NOT NULL}
+    diagnostico : TEXT
+    progreso : FLOAT {DEFAULT 0.0}
+    sesiones_totales : INTEGER {DEFAULT 0}
+    sesiones_completadas : INTEGER {DEFAULT 0}
+    fecha_creacion : TIMESTAMP {DEFAULT NOW()}
+    --
+    **CONSTRAINTS:**
+    CHECK (progreso >= 0 AND progreso <= 100)
+    CHECK (sesiones_completadas <= sesiones_totales)
+    --
+    **INDEXES:**
+    idx_patient_user (id_usuario)
+    idx_patient_progreso (progreso)
+  }
+  
+  class THERAPIST <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    id_usuario : INTEGER {FK → USER.id, UNIQUE, NOT NULL}
+    nombre_completo : VARCHAR(200) {NOT NULL}
+    especialidad : VARCHAR(100)
+    total_pacientes : INTEGER {DEFAULT 0}
+    fecha_creacion : TIMESTAMP {DEFAULT NOW()}
+    --
+    **CONSTRAINTS:**
+    CHECK (total_pacientes >= 0)
+    --
+    **INDEXES:**
+    idx_therapist_user (id_usuario)
+    idx_therapist_especialidad (especialidad)
+  }
+  
+  class EXERCISE <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    nombre : VARCHAR(200) {NOT NULL}
+    descripcion : TEXT
+    categoria : VARCHAR(50)
+    repeticiones : VARCHAR(50)
+    fecha_creacion : TIMESTAMP {DEFAULT NOW()}
+    --
+    **INDEXES:**
+    idx_exercise_categoria (categoria)
+    idx_exercise_nombre (nombre)
+  }
+  
+  class ROUTINE <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    nombre : VARCHAR(200) {NOT NULL}
+    descripcion : TEXT
+    id_terapeuta : INTEGER {FK → THERAPIST.id, NOT NULL}
+    id_paciente : INTEGER {FK → PATIENT.id, NULLABLE}
+    duracion_minutos : INTEGER {DEFAULT 30}
+    dificultad : VARCHAR(20) {DEFAULT 'media'}
+    esta_activa : BOOLEAN {DEFAULT TRUE}
+    fecha_creacion : TIMESTAMP {DEFAULT NOW()}
+    --
+    **CONSTRAINTS:**
+    CHECK (dificultad IN ('facil', 'media', 'dificil'))
+    CHECK (duracion_minutos > 0)
+    --
+    **INDEXES:**
+    idx_routine_therapist (id_terapeuta)
+    idx_routine_patient (id_paciente)
+    idx_routine_active (esta_activa)
+    --
+    **NOTES:**
+    id_paciente NULL = rutina template
+    id_paciente NOT NULL = rutina asignada
+  }
+  
+  class ROUTINE_EXERCISE <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    id_rutina : INTEGER {FK → ROUTINE.id, NOT NULL}
+    id_ejercicio : INTEGER {FK → EXERCISE.id, NOT NULL}
+    orden : INTEGER {DEFAULT 0}
+    series : INTEGER {DEFAULT 3}
+    repeticiones : INTEGER {DEFAULT 10}
+    segundos_descanso : INTEGER {DEFAULT 30}
+    notas : TEXT
+    --
+    **CONSTRAINTS:**
+    CHECK (series > 0)
+    CHECK (repeticiones > 0)
+    CHECK (segundos_descanso >= 0)
+    --
+    **INDEXES:**
+    idx_routine_exercise_routine (id_rutina)
+    idx_routine_exercise_exercise (id_ejercicio)
+    idx_routine_exercise_orden (orden)
+    --
+    **CASCADE:**
+    ON DELETE CASCADE (cuando se elimina ROUTINE)
+  }
+  
+  class SESSION_CAPTURE <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    id_terapeuta : INTEGER {FK → THERAPIST.id, NULLABLE}
+    id_paciente : INTEGER {FK → PATIENT.id, NULLABLE}
+    tipo_captura : VARCHAR(20) {NOT NULL}
+    nombre_archivo : VARCHAR(255) {NOT NULL}
+    ruta_archivo : VARCHAR(500) {NOT NULL}
+    tamano_archivo : INTEGER
+    duracion : INTEGER
+    notas : TEXT
+    fecha_sesion : TIMESTAMP {DEFAULT NOW()}
+    fecha_creacion : TIMESTAMP {DEFAULT NOW()}
+    es_permanente : BOOLEAN {DEFAULT FALSE}
+    contiene_audio : BOOLEAN {DEFAULT FALSE}
+    --
+    **CONSTRAINTS:**
+    CHECK (tipo_captura IN ('photo', 'video'))
+    CHECK (tamano_archivo > 0)
+    CHECK (duracion >= 0)
+    CHECK (id_terapeuta IS NOT NULL OR id_paciente IS NOT NULL)
+    --
+    **INDEXES:**
+    idx_capture_therapist (id_terapeuta)
+    idx_capture_patient (id_paciente)
+    idx_capture_tipo (tipo_captura)
+    idx_capture_fecha (fecha_sesion)
+  }
+  
+  class VIDEO_SHARE <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    id_captura : INTEGER {FK → SESSION_CAPTURE.id, NOT NULL}
+    id_terapeuta : INTEGER {FK → THERAPIST.id, NOT NULL}
+    id_paciente : INTEGER {FK → PATIENT.id, NOT NULL}
+    mensaje : TEXT
+    leido : BOOLEAN {DEFAULT FALSE}
+    fecha_compartido : TIMESTAMP {DEFAULT NOW()}
+    fecha_leido : TIMESTAMP {NULLABLE}
+    --
+    **INDEXES:**
+    idx_videoshare_capture (id_captura)
+    idx_videoshare_therapist (id_terapeuta)
+    idx_videoshare_patient (id_paciente)
+    idx_videoshare_leido (leido)
+  }
+  
+  class APPOINTMENT <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    id_paciente : INTEGER {FK → PATIENT.id}
+    id_terapeuta : INTEGER {FK → THERAPIST.id}
+    fecha : TIMESTAMP {NOT NULL}
+    estado : VARCHAR(20) {DEFAULT 'programada'}
+    fecha_creacion : TIMESTAMP {DEFAULT NOW()}
+    --
+    **CONSTRAINTS:**
+    CHECK (estado IN ('programada', 'completada', 'cancelada'))
+    CHECK (fecha > NOW())
+    --
+    **INDEXES:**
+    idx_appointment_patient (id_paciente)
+    idx_appointment_therapist (id_terapeuta)
+    idx_appointment_fecha (fecha)
+    idx_appointment_estado (estado)
+  }
+  
+  class SYSTEM_SETTINGS <<table>> {
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    --
+    clave : VARCHAR(100) {UNIQUE, NOT NULL}
+    valor : VARCHAR(500)
+    fecha_actualizacion : TIMESTAMP {DEFAULT NOW(), ON UPDATE NOW()}
+    --
+    **INDEXES:**
+    idx_settings_clave (clave)
+  }
+}
+
+' Relaciones con Foreign Keys
+USER "1" -- "1" PATIENT : id_usuario
+USER "1" -- "1" THERAPIST : id_usuario
+THERAPIST "1" -- "N" ROUTINE : id_terapeuta
+PATIENT "1" -- "N" ROUTINE : id_paciente
+ROUTINE "1" -- "N" ROUTINE_EXERCISE : id_rutina
+EXERCISE "1" -- "N" ROUTINE_EXERCISE : id_ejercicio
+THERAPIST "1" -- "N" SESSION_CAPTURE : id_terapeuta
+PATIENT "1" -- "N" SESSION_CAPTURE : id_paciente
+SESSION_CAPTURE "1" -- "N" VIDEO_SHARE : id_captura
+THERAPIST "1" -- "N" VIDEO_SHARE : id_terapeuta
+PATIENT "1" -- "N" VIDEO_SHARE : id_paciente
+PATIENT "N" -- "N" THERAPIST : via APPOINTMENT
+
+note top of USER
+  **Tabla principal de usuarios**
+  Almacena credenciales y rol
+  Bcrypt para hash de contraseñas
+end note
+
+note top of ROUTINE
+  **Rutinas de ejercicios**
+  Template cuando id_paciente = NULL
+  Asignada cuando id_paciente != NULL
+end note
+
+note top of SESSION_CAPTURE
+  **Capturas multimedia**
+  Fotos y videos de sesiones
+  Almacenamiento en file system
+end note
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_08_Arquitectura
+
+' ============================================================
+' DIAGRAMA 8: DIAGRAMA DE ARQUITECTURA
+' Arquitectura completa del sistema con stack tecnológico
+' ============================================================
+
+title Diagrama de Arquitectura - Sistema de Rehabilitación
+
+!define RECTANGLE class
+
+skinparam componentStyle rectangle
+
+package "INTERNET" {
+  [Cliente Web\nBrowser] as Client
+}
+
+package "RENDER.COM (PaaS)" {
+  
+  package "REVERSE PROXY" {
+    [Nginx] as Nginx
+    note right of Nginx
+      - SSL/TLS Termination
+      - Load Balancing
+      - Static Files Serving
+      - Gzip Compression
+    end note
+  }
+  
+  package "WSGI SERVER" {
+    [Gunicorn] as Gunicorn
+    note right of Gunicorn
+      - Workers: 4
+      - Threads: 2
+      - Timeout: 120s
+      - Graceful Restart
+    end note
+  }
+  
+  package "FLASK APPLICATION" {
+    
+    rectangle "PRESENTATION LAYER" {
+      [Templates\n(Jinja2)] as Templates
+      [Static Files\n(CSS/JS/Images)] as Static
+      [Forms\n(WTForms)] as Forms
+      [WebRTC\n(MediaRecorder)] as WebRTC
+    }
+    
+    rectangle "APPLICATION LAYER" {
+      [Routes\n(Flask Blueprints)] as Routes
+      [Config\n(Environment)] as Config
+      [Factory Pattern\n(__init__.py)] as Factory
+      [Decorators\n(@role_required)] as Decorators
+      [Validators] as Validators
+    }
+    
+    rectangle "BUSINESS LAYER" {
+      [Models\n(SQLAlchemy ORM)] as Models
+      [Bcrypt\n(Password Hash)] as Bcrypt
+      [Flask-Login\n(Session Management)] as FlaskLogin
+      [Business Logic] as BusinessLogic
+    }
+    
+    rectangle "DATA ACCESS LAYER" {
+      [SQLAlchemy\n(ORM)] as SQLAlchemy
+      [Alembic\n(Migrations)] as Alembic
+      [Connection Pool] as Pool
+    }
+  }
+  
+  package "FILE SYSTEM" {
+    folder "static/uploads/" {
+      [photos/] as Photos
+      [videos/] as Videos
+      [videos_permanentes/] as VideosPerm
+    }
+  }
+}
+
+package "DATABASE (Render Managed)" {
+  database "PostgreSQL 15" as PostgreSQL {
+    [user]
+    [patient]
+    [therapist]
+    [routine]
+    [routine_exercise]
+    [exercise]
+    [session_capture]
+    [video_share]
+    [appointment]
+    [system_settings]
+  }
+}
+
+package "EXTERNAL SERVICES" {
+  [Let's Encrypt\n(SSL Certificates)] as LetsEncrypt
+  [GitHub\n(Version Control)] as GitHub
+}
+
+' Flujo de datos
+Client -down-> Nginx : HTTPS Request
+Nginx -down-> Gunicorn : Proxy Pass
+Gunicorn -down-> Routes : WSGI Call
+
+Routes -down-> Templates : Render
+Routes -down-> Forms : Validate
+Routes -down-> Decorators : Authorize
+Routes -down-> Models : Query/Update
+
+Models -down-> Bcrypt : Hash Password
+Models -down-> FlaskLogin : Authenticate
+Models -down-> SQLAlchemy : ORM Operations
+
+SQLAlchemy -down-> Pool : Connection
+Pool -down-> PostgreSQL : SQL Queries
+
+Routes -down-> Photos : Save/Load
+Routes -down-> Videos : Save/Load
+Routes -down-> VideosPerm : Save/Load
+
+LetsEncrypt -down-> Nginx : SSL/TLS
+GitHub -down-> Factory : Deploy
+
+' Respuesta
+PostgreSQL -up-> Pool : Query Results
+Pool -up-> SQLAlchemy : Data
+SQLAlchemy -up-> Models : Objects
+Models -up-> Routes : Data
+Routes -up-> Templates : Context
+Templates -up-> Gunicorn : HTML
+Gunicorn -up-> Nginx : Response
+Nginx -up-> Client : HTTPS Response
+
+note right of Client
+  **Frontend Technologies:**
+  - HTML5
+  - CSS3 (Bootstrap 5)
+  - JavaScript (Vanilla)
+  - WebRTC API
+  - Fetch API
+end note
+
+note right of Routes
+  **Backend Framework:**
+  - Python 3.11
+  - Flask 3.0.0
+  - RESTful API Design
+  - MVC Pattern
+end note
+
+note right of PostgreSQL
+  **Database:**
+  - PostgreSQL 15
+  - ACID Compliance
+  - Indexes for Performance
+  - Foreign Key Constraints
+end note
+
+note bottom of Factory
+  **Environment Variables:**
+  - DATABASE_URL
+  - SECRET_KEY
+  - FLASK_ENV
+  - FLASK_APP
+end note
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_Stack_Tecnologico
+
+' ============================================================
+' DIAGRAMA ADICIONAL: STACK TECNOLÓGICO DETALLADO
+' ============================================================
+
+title Stack Tecnológico - Sistema de Rehabilitación
+
+package "FRONTEND" {
+  component [HTML5] as HTML5
+  component [CSS3\nBootstrap 5] as CSS3
+  component [JavaScript\nVanilla] as JS
+  component [Jinja2\nTemplating] as Jinja2
+  component [WebRTC\nMediaRecorder API] as WebRTC
+  component [Fetch API] as FetchAPI
+}
+
+package "BACKEND" {
+  component [Python 3.11] as Python
+  component [Flask 3.0.0] as Flask
+  component [Flask-Login\nAuthentication] as FlaskLogin
+  component [Flask-Bcrypt\nPassword Hashing] as FlaskBcrypt
+  component [Flask-WTF\nForms & CSRF] as FlaskWTF
+  component [SQLAlchemy 2.0\nORM] as SQLAlchemy
+  component [Alembic\nMigrations] as Alembic
+  component [Gunicorn\nWSGI Server] as Gunicorn
+}
+
+package "DATABASE" {
+  component [PostgreSQL 15] as PostgreSQL
+  component [psycopg2-binary\nDriver] as psycopg2
+}
+
+package "DEPLOYMENT" {
+  component [Render.com\nPaaS] as Render
+  component [Nginx\nReverse Proxy] as Nginx
+  component [Let's Encrypt\nSSL/TLS] as SSL
+  component [Git\nVersion Control] as Git
+  component [GitHub\nRepository] as GitHub
+}
+
+package "SECURITY" {
+  component [HTTPS/SSL\nEncryption] as HTTPS
+  component [Bcrypt\nPassword Hash] as Bcrypt
+  component [Session Management\nFlask-Login] as Session
+  component [CSRF Protection\nFlask-WTF] as CSRF
+  component [Role-Based Access\n@role_required] as RBAC
+  component [SQL Injection Prevention\nSQLAlchemy ORM] as SQLInjection
+}
+
+package "FILE STORAGE" {
+  component [File System\nPersistent Storage] as FileSystem
+  component [static/uploads/photos/] as Photos
+  component [static/uploads/videos/] as Videos
+  component [static/uploads/videos_permanentes/] as VideosPerm
+}
+
+' Relaciones
+HTML5 --> Jinja2
+CSS3 --> Jinja2
+JS --> FetchAPI
+JS --> WebRTC
+
+Jinja2 --> Flask
+FetchAPI --> Flask
+
+Flask --> FlaskLogin
+Flask --> FlaskBcrypt
+Flask --> FlaskWTF
+Flask --> SQLAlchemy
+
+SQLAlchemy --> Alembic
+SQLAlchemy --> psycopg2
+psycopg2 --> PostgreSQL
+
+Flask --> Gunicorn
+Gunicorn --> Nginx
+Nginx --> Render
+
+Nginx --> SSL
+Render --> Git
+Git --> GitHub
+
+FlaskLogin --> Session
+FlaskBcrypt --> Bcrypt
+FlaskWTF --> CSRF
+Flask --> RBAC
+SQLAlchemy --> SQLInjection
+
+Flask --> FileSystem
+FileSystem --> Photos
+FileSystem --> Videos
+FileSystem --> VideosPerm
+
+note right of Python
+  **Python Version:** 3.11
+  **Package Manager:** pip
+  **Virtual Environment:** venv
+end note
+
+note right of Flask
+  **Framework:** Flask 3.0.0
+  **Pattern:** MVC
+  **Architecture:** Layered
+  **API Style:** RESTful
+end note
+
+note right of PostgreSQL
+  **Version:** 15
+  **Type:** Relational
+  **ACID:** Compliant
+  **Managed by:** Render
+end note
+
+note right of Render
+  **Platform:** PaaS
+  **Region:** US
+  **Auto-Deploy:** GitHub
+  **SSL:** Automatic
+end note
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_Flujo_Datos
+
+' ============================================================
+' DIAGRAMA ADICIONAL: FLUJO DE DATOS DEL SISTEMA
+' ============================================================
+
+title Flujo de Datos - Sistema de Rehabilitación
+
+actor "Usuario" as User
+participant "Browser" as Browser
+participant "Nginx" as Nginx
+participant "Gunicorn" as Gunicorn
+participant "Flask Routes" as Routes
+participant "Models (ORM)" as Models
+participant "PostgreSQL" as DB
+participant "File System" as FS
+
+== Flujo de Request ==
+
+User -> Browser: Interacción
+activate Browser
+
+Browser -> Nginx: HTTPS Request
+activate Nginx
+note right: SSL/TLS Termination
+
+Nginx -> Gunicorn: Proxy Pass
+activate Gunicorn
+note right: WSGI Protocol
+
+Gunicorn -> Routes: WSGI Call
+activate Routes
+note right: Flask Application
+
+Routes -> Routes: Authenticate\n(@login_required)
+Routes -> Routes: Authorize\n(@role_required)
+
+Routes -> Models: Query/Update
+activate Models
+note right: SQLAlchemy ORM
+
+Models -> DB: SQL Query
+activate DB
+note right: PostgreSQL
+
+DB --> Models: Query Results
+deactivate DB
+
+Models --> Routes: Python Objects
+deactivate Models
+
+alt Operación con archivos
+    Routes -> FS: Save/Load File
+    activate FS
+    FS --> Routes: File Path
+    deactivate FS
+end
+
+Routes -> Routes: Render Template\n(Jinja2)
+
+Routes --> Gunicorn: HTML Response
+deactivate Routes
+
+Gunicorn --> Nginx: HTTP Response
+deactivate Gunicorn
+
+Nginx --> Browser: HTTPS Response
+deactivate Nginx
+
+Browser --> User: Página Renderizada
+deactivate Browser
+
+== Flujo de Captura Multimedia ==
+
+User -> Browser: Capturar Foto/Video
+activate Browser
+
+Browser -> Browser: Access Camera\n(WebRTC)
+Browser -> Browser: Capture Media\n(MediaRecorder)
+
+Browser -> Nginx: POST /save-snapshot\n(base64 image)
+activate Nginx
+
+Nginx -> Gunicorn: Proxy
+activate Gunicorn
+
+Gunicorn -> Routes: WSGI Call
+activate Routes
+
+Routes -> Routes: Decode base64
+
+Routes -> FS: Save File
+activate FS
+FS --> Routes: File Path
+deactivate FS
+
+Routes -> Models: INSERT SessionCapture
+activate Models
+
+Models -> DB: SQL INSERT
+activate DB
+DB --> Models: capture_id
+deactivate DB
+
+Models --> Routes: Success
+deactivate Models
+
+Routes --> Gunicorn: JSON Response
+deactivate Routes
+
+Gunicorn --> Nginx: Response
+deactivate Gunicorn
+
+Nginx --> Browser: JSON Response
+deactivate Nginx
+
+Browser --> User: Confirmación
+deactivate Browser
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_Seguridad
+
+' ============================================================
+' DIAGRAMA ADICIONAL: ARQUITECTURA DE SEGURIDAD
+' ============================================================
+
+title Arquitectura de Seguridad - Sistema de Rehabilitación
+
+package "CAPA DE TRANSPORTE" {
+  [HTTPS/TLS 1.3] as HTTPS
+  [SSL Certificate\n(Let's Encrypt)] as SSL
+  [Nginx SSL Termination] as NginxSSL
+}
+
+package "CAPA DE AUTENTICACIÓN" {
+  [Flask-Login\nSession Management] as FlaskLogin
+  [Bcrypt\nPassword Hashing] as Bcrypt
+  [Session Cookies\n(HttpOnly, Secure)] as Cookies
+  [Login Rate Limiting] as RateLimit
+}
+
+package "CAPA DE AUTORIZACIÓN" {
+  [@role_required\nDecorator] as RoleRequired
+  [Role-Based Access Control\n(RBAC)] as RBAC
+  [User.rol\n(admin, therapist, patient)] as Roles
+}
+
+package "CAPA DE VALIDACIÓN" {
+  [Flask-WTF\nCSRF Protection] as CSRF
+  [WTForms\nInput Validation] as WTForms
+  [SQLAlchemy\nSQL Injection Prevention] as SQLAlchemy
+  [File Upload Validation] as FileValidation
+}
+
+package "CAPA DE DATOS" {
+  [PostgreSQL\nEncrypted Connection] as PostgreSQL
+  [Database Credentials\n(Environment Variables)] as DBCreds
+  [Foreign Key Constraints] as FKConstraints
+  [Check Constraints] as CheckConstraints
+}
+
+package "CAPA DE APLICACIÓN" {
+  [Environment Variables\n(.env)] as EnvVars
+  [SECRET_KEY\n(Flask Sessions)] as SecretKey
+  [Error Handling\n(No Stack Traces)] as ErrorHandling
+  [Logging\n(Audit Trail)] as Logging
+}
+
+' Flujo de seguridad
+HTTPS --> NginxSSL
+SSL --> NginxSSL
+NginxSSL --> FlaskLogin
+
+FlaskLogin --> Bcrypt
+FlaskLogin --> Cookies
+FlaskLogin --> RateLimit
+
+FlaskLogin --> RoleRequired
+RoleRequired --> RBAC
+RBAC --> Roles
+
+RoleRequired --> CSRF
+CSRF --> WTForms
+WTForms --> SQLAlchemy
+WTForms --> FileValidation
+
+SQLAlchemy --> PostgreSQL
+PostgreSQL --> DBCreds
+PostgreSQL --> FKConstraints
+PostgreSQL --> CheckConstraints
+
+EnvVars --> SecretKey
+EnvVars --> DBCreds
+EnvVars --> ErrorHandling
+ErrorHandling --> Logging
+
+note right of HTTPS
+  **Transport Security:**
+  - TLS 1.3
+  - Strong Ciphers
+  - HSTS Enabled
+end note
+
+note right of Bcrypt
+  **Password Security:**
+  - Bcrypt Algorithm
+  - Salt Rounds: 12
+  - No Plain Text Storage
+end note
+
+note right of RBAC
+  **Access Control:**
+  - Admin: Full Access
+  - Therapist: Patient Management
+  - Patient: Own Data Only
+end note
+
+note right of CSRF
+  **CSRF Protection:**
+  - Token per Session
+  - Token per Form
+  - Automatic Validation
+end note
+
+note right of PostgreSQL
+  **Database Security:**
+  - Encrypted Connection
+  - Parameterized Queries
+  - Least Privilege Access
+end note
+
+@enduml

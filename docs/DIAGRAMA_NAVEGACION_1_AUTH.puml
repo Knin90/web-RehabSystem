@@ -1,0 +1,170 @@
+@startuml Diagrama de Navegación - Parte 1: Autenticación
+
+title Diagrama de Navegación - Parte 1: Autenticación y Acceso Inicial
+
+' ============================================================
+' PÁGINA DE INICIO Y AUTENTICACIÓN
+' ============================================================
+
+state "Página Principal\n/" as index {
+    index : Información del sistema
+    index : Descripción de funcionalidades
+    index : Botón "Iniciar Sesión"
+}
+
+state "Login\n/login" as login {
+    login : Formulario de autenticación
+    login : Campo: Usuario
+    login : Campo: Contraseña
+    login : Botón "Entrar"
+    login : Validación con Flask-WTF
+}
+
+state "Verificación\nde Credenciales" as auth_check <<choice>>
+
+state "Dashboard Admin\n/admin/dashboard" as admin_dashboard {
+    admin_dashboard : Panel de administración
+    admin_dashboard : Estadísticas generales
+    admin_dashboard : Gestión completa
+}
+
+state "Dashboard Terapeuta\n/therapist/dashboard" as therapist_dashboard {
+    therapist_dashboard : Panel de terapeuta
+    therapist_dashboard : Resumen de pacientes
+    therapist_dashboard : Sesiones programadas
+}
+
+state "Dashboard Paciente\n/patient/dashboard" as patient_dashboard {
+    patient_dashboard : Panel de paciente
+    patient_dashboard : Progreso personal
+    patient_dashboard : Rutinas asignadas
+}
+
+state "Error de Login" as login_error {
+    login_error : Credenciales incorrectas
+    login_error : Mensaje de error
+    login_error : Volver a intentar
+}
+
+' ============================================================
+' NAVEGACIÓN
+' ============================================================
+
+[*] --> index : Usuario accede\nal sistema
+
+index --> login : Click\n"Iniciar Sesión"
+
+login --> auth_check : Submit\nformulario
+
+auth_check --> login_error : Credenciales\ninválidas
+login_error --> login : Reintentar
+
+auth_check --> admin_dashboard : Rol: admin\n(Flask-Login)
+auth_check --> therapist_dashboard : Rol: therapist\n(Flask-Login)
+auth_check --> patient_dashboard : Rol: patient\n(Flask-Login)
+
+note right of index
+  **Página Principal**
+  
+  Ruta: /
+  Template: index.html
+  
+  Acceso: Público
+  
+  Contenido:
+  - Información del sistema
+  - Descripción de servicios
+  - Botón de acceso
+end note
+
+note right of login
+  **Página de Login**
+  
+  Ruta: /login
+  Template: login.html
+  Form: LoginForm (Flask-WTF)
+  
+  Validaciones:
+  - Usuario requerido
+  - Contraseña requerida
+  - Protección CSRF
+  
+  Proceso:
+  1. Validar formulario
+  2. Buscar usuario en BD
+  3. Verificar contraseña (Bcrypt)
+  4. Crear sesión (Flask-Login)
+  5. Redirigir según rol
+end note
+
+note right of auth_check
+  **Verificación de Rol**
+  
+  Decorador: @role_required
+  
+  El sistema verifica el rol
+  del usuario autenticado:
+  
+  - admin → /admin/dashboard
+  - therapist → /therapist/dashboard
+  - patient → /patient/dashboard
+  
+  Si las credenciales son inválidas:
+  - Flash message: "Credenciales incorrectas"
+  - Regresa a /login
+  
+  Seguridad:
+  - Contraseñas hasheadas (Bcrypt)
+  - Sesiones seguras (Flask-Login)
+  - Protección CSRF
+end note
+
+note bottom of admin_dashboard
+  **Dashboard Administrador**
+  
+  Ruta: /admin/dashboard
+  Rol requerido: admin
+  
+  Desde aquí el admin puede:
+  - Gestionar usuarios
+  - Gestionar terapeutas
+  - Gestionar pacientes
+  - Configurar sistema
+  - Exportar datos
+  
+  
+end note
+
+note bottom of therapist_dashboard
+  **Dashboard Terapeuta**
+  
+  Ruta: /therapist/dashboard
+  Rol requerido: therapist
+  
+  Desde aquí el terapeuta puede:
+  - Ver pacientes
+  - Crear rutinas
+  - Iniciar sesiones
+  - Ver galería
+  - Gestionar citas
+  
+  
+end note
+
+note bottom of patient_dashboard
+  **Dashboard Paciente**
+  
+  Ruta: /patient/dashboard
+  Rol requerido: patient
+  
+  Desde aquí el paciente puede:
+  - Ver rutinas
+  - Iniciar terapia
+  - Ver galería
+  - Ver historial
+  - Ver perfil
+  
+ 
+end note
+
+@enduml

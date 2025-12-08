@@ -1,0 +1,431 @@
+@startuml Diagrama de Clases - Sistema RehabSystem
+
+title Diagrama de Clases - Sistema de Rehabilitación Física
+
+' ============================================================
+' CLASE USER
+' ============================================================
+class User {
+    ' Atributos
+    - id : Integer <<PK>>
+    - nombre_usuario : String(80) <<unique>>
+    - correo_electronico : String(120) <<unique>>
+    - contrasena_encriptada : String(128)
+    - rol : String(20)
+    - esta_activo : Boolean
+    - fecha_creacion : DateTime
+    
+    ' Relaciones
+    - perfil_paciente : Patient
+    - perfil_terapeuta : Therapist
+    
+    ' Métodos
+    + set_password(password : String) : void
+    + check_password(password : String) : Boolean
+    + is_authenticated() : Boolean
+    + is_active() : Boolean
+    + get_id() : Integer
+}
+
+note right of User
+  **Clase Central de Autenticación**
+  
+  Roles disponibles:
+  - admin: Administrador del sistema
+  - therapist: Terapeuta/Fisioterapeuta
+  - patient: Paciente
+  
+  Hereda de:
+  - UserMixin (Flask-Login)
+  - db.Model (SQLAlchemy)
+  
+  Seguridad:
+  - Contraseñas hasheadas con Bcrypt
+  - Validación de roles
+end note
+
+' ============================================================
+' CLASE PATIENT
+' ============================================================
+class Patient {
+    ' Atributos
+    - id : Integer <<PK>>
+    - id_usuario : Integer <<FK>> <<unique>>
+    - nombre_completo : String(200)
+    - diagnostico : Text
+    - progreso : Float
+    - sesiones_totales : Integer
+    - sesiones_completadas : Integer
+    - fecha_creacion : DateTime
+    
+    ' Relaciones
+    - usuario : User
+    - rutinas_asignadas : List<Routine>
+    - capturas : List<SessionCapture>
+    - videos_recibidos : List<VideoShare>
+    - citas : List<Appointment>
+    
+    ' Métodos
+    + calcular_progreso() : Float
+    + incrementar_sesiones() : void
+    + obtener_rutinas_activas() : List<Routine>
+}
+
+note right of Patient
+  **Perfil de Paciente**
+  
+  Funcionalidades:
+  - Seguimiento de progreso (0-100%)
+  - Control de sesiones completadas
+  - Diagnóstico médico
+  - Rutinas asignadas por terapeuta
+  
+  Relación 1:1 con User
+end note
+
+' ============================================================
+' CLASE THERAPIST
+' ============================================================
+class Therapist {
+    ' Atributos
+    - id : Integer <<PK>>
+    - id_usuario : Integer <<FK>> <<unique>>
+    - nombre_completo : String(200)
+    - especialidad : String(100)
+    - total_pacientes : Integer
+    - fecha_creacion : DateTime
+    
+    ' Relaciones
+    - usuario : User
+    - rutinas_creadas : List<Routine>
+    - capturas : List<SessionCapture>
+    - videos_compartidos : List<VideoShare>
+    - citas : List<Appointment>
+    
+    ' Métodos
+    + pacientes_asignados() : List<Patient>
+    + crear_rutina(datos) : Routine
+    + asignar_rutina(rutina, paciente) : void
+    + compartir_video(video, paciente) : VideoShare
+}
+
+note right of Therapist
+  **Perfil de Terapeuta**
+  
+  Funcionalidades:
+  - Crear y asignar rutinas
+  - Gestionar pacientes
+  - Capturar sesiones (foto/video)
+  - Compartir videos con pacientes
+  - Programar citas
+  
+  Relación 1:1 con User
+end note
+
+' ============================================================
+' CLASE ROUTINE
+' ============================================================
+class Routine {
+    ' Atributos
+    - id : Integer <<PK>>
+    - nombre : String(200)
+    - descripcion : Text
+    - id_terapeuta : Integer <<FK>>
+    - id_paciente : Integer <<FK>> <<nullable>>
+    - duracion_minutos : Integer
+    - dificultad : String(20)
+    - esta_activa : Boolean
+    - fecha_creacion : DateTime
+    
+    ' Relaciones
+    - terapeuta : Therapist
+    - paciente : Patient
+    - ejercicios : List<RoutineExercise>
+    
+    ' Métodos
+    + agregar_ejercicio(ejercicio, config) : RoutineExercise
+    + eliminar_ejercicio(ejercicio_id) : void
+    + clonar_para_paciente(paciente) : Routine
+    + obtener_duracion_total() : Integer
+}
+
+note right of Routine
+  **Rutina de Ejercicios**
+  
+  Tipos:
+  - Template: id_paciente = NULL
+  - Asignada: id_paciente != NULL
+  
+  Dificultad:
+  - facil
+  - media
+  - dificil
+  
+  Una rutina puede ser clonada
+  para múltiples pacientes
+end note
+
+' ============================================================
+' CLASE ROUTINE_EXERCISE
+' ============================================================
+class RoutineExercise {
+    ' Atributos
+    - id : Integer <<PK>>
+    - id_rutina : Integer <<FK>>
+    - id_ejercicio : Integer <<FK>>
+    - orden : Integer
+    - series : Integer
+    - repeticiones : Integer
+    - segundos_descanso : Integer
+    - notas : Text
+    
+    ' Relaciones
+    - rutina : Routine
+    - ejercicio : Exercise
+    
+    ' Métodos
+    + calcular_tiempo_total() : Integer
+    + actualizar_configuracion(config) : void
+}
+
+note right of RoutineExercise
+  **Tabla Intermedia**
+  
+  Relaciona Routine con Exercise
+  
+  Configuración por ejercicio:
+  - Orden de ejecución
+  - Series y repeticiones
+  - Tiempo de descanso
+  - Notas específicas
+  
+  Cascade delete: Si se elimina
+  la rutina, se eliminan sus
+  ejercicios asociados
+end note
+
+' ============================================================
+' CLASE EXERCISE
+' ============================================================
+class Exercise {
+    ' Atributos
+    - id : Integer <<PK>>
+    - nombre : String(200)
+    - descripcion : Text
+    - categoria : String(50)
+    - repeticiones : String(50)
+    - fecha_creacion : DateTime
+    
+    ' Relaciones
+    - ejercicios_rutina : List<RoutineExercise>
+    
+    ' Métodos
+    + obtener_por_categoria(categoria) : List<Exercise>
+    + buscar(termino) : List<Exercise>
+}
+
+note right of Exercise
+  **Catálogo de Ejercicios**
+  
+  Categorías comunes:
+  - Movilidad
+  - Fuerza
+  - Equilibrio
+  - Flexibilidad
+  - Cardio
+  
+  Ejercicios reutilizables
+  en múltiples rutinas
+end note
+
+' ============================================================
+' CLASE SESSION_CAPTURE
+' ============================================================
+class SessionCapture {
+    ' Atributos
+    - id : Integer <<PK>>
+    - id_terapeuta : Integer <<FK>> <<nullable>>
+    - id_paciente : Integer <<FK>> <<nullable>>
+    - tipo_captura : String(20)
+    - nombre_archivo : String(255)
+    - ruta_archivo : String(500)
+    - tamano_archivo : Integer
+    - duracion : Integer
+    - notas : Text
+    - fecha_sesion : DateTime
+    - fecha_creacion : DateTime
+    - es_permanente : Boolean
+    - contiene_audio : Boolean
+    
+    ' Relaciones
+    - terapeuta : Therapist
+    - paciente : Patient
+    - compartidos : List<VideoShare>
+    
+    ' Métodos
+    + guardar_archivo(archivo) : String
+    + eliminar_archivo() : void
+    + compartir_con(usuario, mensaje) : VideoShare
+}
+
+note right of SessionCapture
+  **Captura de Sesiones**
+  
+  Tipos de captura:
+  - photo: Fotografía
+  - video: Video con/sin audio
+  
+  Almacenamiento:
+  - Temporal: es_permanente = False
+  - Permanente: es_permanente = True
+  
+  Puede ser capturado por:
+  - Terapeuta (durante sesión)
+  - Paciente (ejercicios en casa)
+end note
+
+' ============================================================
+' CLASE VIDEO_SHARE
+' ============================================================
+class VideoShare {
+    ' Atributos
+    - id : Integer <<PK>>
+    - id_captura : Integer <<FK>>
+    - id_terapeuta : Integer <<FK>>
+    - id_paciente : Integer <<FK>>
+    - mensaje : Text
+    - leido : Boolean
+    - fecha_compartido : DateTime
+    - fecha_leido : DateTime
+    
+    ' Relaciones
+    - captura : SessionCapture
+    - terapeuta : Therapist
+    - paciente : Patient
+    
+    ' Métodos
+    + marcar_como_leido() : void
+    + obtener_no_leidos(usuario) : List<VideoShare>
+}
+
+note right of VideoShare
+  **Compartir Videos**
+  
+  Flujo:
+  1. Terapeuta captura video
+  2. Terapeuta comparte con paciente
+  3. Paciente recibe notificación
+  4. Paciente visualiza video
+  5. Se marca como leído
+  
+  También funciona en sentido inverso:
+  Paciente → Terapeuta
+end note
+
+' ============================================================
+' CLASE APPOINTMENT
+' ============================================================
+class Appointment {
+    ' Atributos
+    - id : Integer <<PK>>
+    - id_paciente : Integer <<FK>>
+    - id_terapeuta : Integer <<FK>>
+    - fecha : DateTime
+    - estado : String(20)
+    - fecha_creacion : DateTime
+    
+    ' Relaciones
+    - paciente : Patient
+    - terapeuta : Therapist
+    
+    ' Métodos
+    + programar(fecha) : void
+    + cancelar() : void
+    + completar() : void
+    + reprogramar(nueva_fecha) : void
+}
+
+note right of Appointment
+  **Citas Médicas**
+  
+  Estados:
+  - programada: Cita agendada
+  - completada: Cita realizada
+  - cancelada: Cita cancelada
+  
+  Relación N:M entre
+  Patient y Therapist
+end note
+
+' ============================================================
+' CLASE SYSTEM_SETTINGS
+' ============================================================
+class SystemSettings {
+    ' Atributos
+    - id : Integer <<PK>>
+    - clave : String(100) <<unique>>
+    - valor : String(500)
+    - fecha_actualizacion : DateTime
+    
+    ' Métodos estáticos
+    + {static} get_setting(clave, default) : String
+    + {static} set_setting(clave, valor) : SystemSettings
+    + {static} obtener_todas() : Dict
+}
+
+note right of SystemSettings
+  **Configuración del Sistema**
+  
+  Configuraciones almacenadas:
+  - session_duration
+  - sessions_per_week
+  - rest_time
+  - email_notifications
+  - theme (light/dark)
+  - language (es/en)
+  - backup settings
+  - security settings
+  
+  Patrón Key-Value Store
+end note
+
+' ============================================================
+' RELACIONES ENTRE CLASES
+' ============================================================
+
+' User - Patient/Therapist (1:1)
+User "1" -- "0..1" Patient : tiene perfil >
+User "1" -- "0..1" Therapist : tiene perfil >
+
+' Therapist - Routine (1:N)
+Therapist "1" -- "0..*" Routine : crea >
+
+' Patient - Routine (1:N)
+Patient "1" -- "0..*" Routine : tiene asignadas >
+
+' Routine - RoutineExercise (1:N)
+Routine "1" *-- "0..*" RoutineExercise : contiene >
+
+' Exercise - RoutineExercise (1:N)
+Exercise "1" -- "0..*" RoutineExercise : usado en >
+
+' Therapist - SessionCapture (1:N)
+Therapist "1" -- "0..*" SessionCapture : captura >
+
+' Patient - SessionCapture (1:N)
+Patient "1" -- "0..*" SessionCapture : captura >
+
+' SessionCapture - VideoShare (1:N)
+SessionCapture "1" -- "0..*" VideoShare : compartido en >
+
+' Therapist - VideoShare (1:N)
+Therapist "1" -- "0..*" VideoShare : comparte >
+
+' Patient - VideoShare (1:N)
+Patient "1" -- "0..*" VideoShare : recibe >
+
+' Patient - Appointment (N:M)
+Patient "0..*" -- "0..*" Therapist : tiene citas con >
+(Patient, Therapist) .. Appointment
+
+@enduml

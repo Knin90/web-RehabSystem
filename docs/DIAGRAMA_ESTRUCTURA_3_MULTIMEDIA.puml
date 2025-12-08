@@ -1,0 +1,425 @@
+@startuml Estructura de Datos - Parte 3: Multimedia y Configuración
+
+title Diagrama de Estructura de Datos - Parte 3: Multimedia y Configuración
+
+' ============================================================
+' REFERENCIAS (simplificadas)
+' ============================================================
+class Patient <<Table>> {
+    + id : INTEGER {PK}
+}
+
+class Therapist <<Table>> {
+    + id : INTEGER {PK}
+}
+
+' ============================================================
+' MODELO DE DATOS: SESSION_CAPTURE
+' ============================================================
+class SessionCapture <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_terapeuta : INTEGER {FK → Therapist.id, NULLABLE}
+    + id_paciente : INTEGER {FK → Patient.id, NULLABLE}
+    
+    ==Attributes==
+    + tipo_captura : VARCHAR(20) {NOT NULL}
+    + nombre_archivo : VARCHAR(255) {NOT NULL}
+    + ruta_archivo : VARCHAR(500) {NOT NULL}
+    + tamano_archivo : INTEGER {NULLABLE}
+    + duracion : INTEGER {NULLABLE}
+    + notas : TEXT {NULLABLE}
+    + fecha_sesion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    + es_permanente : BOOLEAN {DEFAULT FALSE}
+    + contiene_audio : BOOLEAN {DEFAULT FALSE}
+    
+    ==Constraints==
+    CHECK (tipo_captura IN ('photo', 'video'))
+    
+    ==Indexes==
+    INDEX idx_capture_therapist (id_terapeuta)
+    INDEX idx_capture_patient (id_paciente)
+    INDEX idx_capture_tipo (tipo_captura)
+    INDEX idx_capture_fecha (fecha_sesion)
+    
+    ==Relationships==
+    terapeuta : Therapist [0..1]
+    paciente : Patient [0..1]
+    compartidos : VideoShare [0..*]
+}
+
+' ============================================================
+' MODELO DE DATOS: VIDEO_SHARE
+' ============================================================
+class VideoShare <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_captura : INTEGER {FK → SessionCapture.id, NOT NULL}
+    + id_terapeuta : INTEGER {FK → Therapist.id, NOT NULL}
+    + id_paciente : INTEGER {FK → Patient.id, NOT NULL}
+    
+    ==Attributes==
+    + mensaje : TEXT {NULLABLE}
+    + leido : BOOLEAN {DEFAULT FALSE}
+    + fecha_compartido : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    + fecha_leido : TIMESTAMP {NULLABLE}
+    
+    ==Indexes==
+    INDEX idx_videoshare_capture (id_captura)
+    INDEX idx_videoshare_therapist (id_terapeuta)
+    INDEX idx_videoshare_patient (id_paciente)
+    INDEX idx_videoshare_leido (leido)
+    
+    ==Relationships==
+    captura : SessionCapture [1]
+    terapeuta : Therapist [1]
+    paciente : Patient [1]
+}
+
+' ============================================================
+' MODELO DE DATOS: SYSTEM_SETTINGS
+' ============================================================
+class SystemSettings <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Attributes==
+    + clave : VARCHAR(100) {NOT NULL, UNIQUE}
+    + valor : VARCHAR(500) {NULLABLE}
+    + fecha_actualizacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    UNIQUE (clave)
+    ON UPDATE fecha_actualizacion = CURRENT_TIMESTAMP
+    
+    ==Indexes==
+    INDEX idx_settings_clave (clave)
+    
+    ==Static Methods==
+    + get_setting(clave, default) : String
+    + set_setting(clave, valor) : SystemSettings
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+
+' Therapist - SessionCapture (1:N)
+Therapist "1" -- "0..*" SessionCapture : id_terapeuta >
+
+' Patient - SessionCapture (1:N)
+Patient "1" -- "0..*" SessionCapture : id_paciente >
+
+' SessionCapture - VideoShare (1:N)
+SessionCapture "1" -- "0..*" VideoShare : id_captura >
+
+' Therapist - VideoShare (1:N)
+Therapist "1" -- "0..*" VideoShare : id_terapeuta >
+
+' Patient - VideoShare (1:N)
+Patient "1" -- "0..*" VideoShare : id_paciente >
+
+' ============================================================
+' NOTAS
+' ============================================================
+
+note top of SessionCapture
+  **SESSION_CAPTURE - Capturas Multimedia**
+  
+  **Almacena fotos y videos de sesiones de terapia**
+  
+  **Tipos de captura:**
+  - photo: Fotografía estática (JPG, PNG)
+  - video: Video con/sin audio (MP4, WEBM)
+  
+  **Origen de captura:**
+  
+  A) **Terapeuta** (id_terapeuta != NULL, id_paciente = NULL)
+     - Durante sesión presencial con paciente
+     - Videos demostrativos de ejercicios
+     - Capturas de técnica correcta
+  
+  B) **Paciente** (id_paciente != NULL, id_terapeuta = NULL)
+     - Ejercicios realizados en casa
+     - Progreso personal
+     - Consultas sobre técnica
+  
+  **Almacenamiento:**
+  
+  1. **Temporal** (es_permanente = FALSE)
+     - Se puede eliminar automáticamente
+     - Para capturas de prueba
+     - Limpieza periódica
+  
+  2. **Permanente** (es_permanente = TRUE)
+     - Se mantiene en el sistema indefinidamente
+     - Para seguimiento a largo plazo
+     - Evidencia de progreso
+  
+  **Formato de nombres:**
+  - Patrón: {timestamp}_{user_id}_{random}.{ext}
+  - Extensiones: jpg, png, mp4, webm
+  
+  **Metadata:**
+  - nombre_archivo: Nombre único del archivo
+  - ruta_archivo: Path completo en servidor
+  - tamano_archivo: Tamaño en bytes
+  - duracion: Duración en segundos (solo video)
+  - contiene_audio: Si el video tiene audio
+  - notas: Observaciones de la sesión
+  
+  **Tamaños típicos:**
+  - Foto: 500KB - 2MB
+  - Video corto (30s): 5MB - 15MB
+  - Video largo (2min): 20MB - 50MB
+  
+  **Tecnologías de captura:**
+  - WebRTC: getUserMedia() para acceso a cámara
+  - MediaRecorder API: Grabación de video
+  - Canvas API: Captura de fotos
+  - Base64: Codificación de imágenes
+  
+end note
+
+note bottom of VideoShare
+  **VIDEO_SHARE - Sistema de Compartición**
+  
+  **Permite compartir videos entre terapeutas y pacientes**
+  
+  **Flujo de compartición:**
+  
+  1. **Captura**
+     Usuario captura video (SessionCapture creado)
+  
+  2. **Selección**
+     Usuario selecciona video a compartir
+     Usuario selecciona destinatario
+  
+  3. **Mensaje**
+     Usuario agrega mensaje opcional
+     (instrucciones, comentarios, preguntas)
+  
+  4. **Compartir**
+     Se crea registro VideoShare
+     - id_captura: Video a compartir
+     - id_terapeuta: Terapeuta involucrado
+     - id_paciente: Paciente involucrado
+     - mensaje: Texto del remitente
+     - leido: FALSE (inicial)
+     - fecha_compartido: Timestamp actual
+  
+  5. **Notificación**
+     Destinatario recibe notificación
+     (email, push, in-app)
+  
+  6. **Visualización**
+     Destinatario abre y visualiza video
+  
+  7. **Marcado**
+     Sistema marca como leído
+     - leido: TRUE
+     - fecha_leido: Timestamp actual
+  
+  **Direcciones de compartición:**
+  
+  A) **Terapeuta → Paciente**
+     - Videos demostrativos de ejercicios
+     - Correcciones de técnica
+     - Ejercicios nuevos asignados
+     - Motivación y seguimiento
+  
+  B) **Paciente → Terapeuta**
+     - Progreso en ejercicios en casa
+     - Consultas sobre técnica
+     - Evidencia de ejercicios realizados
+     - Dudas o dificultades
+  
+  **Estados de lectura:**
+  ```
+  No leído:
+  leido = FALSE
+  fecha_leido = NULL
+  
+  Leído:
+  leido = TRUE
+  fecha_leido = 2025-12-08 15:30:00
+  ```
+  
+  **Queries comunes:**
+  ```sql
+  -- Videos no leídos por paciente
+  SELECT * FROM video_share
+  WHERE id_paciente = ? AND leido = FALSE
+  ORDER BY fecha_compartido DESC
+  
+  -- Videos compartidos por terapeuta
+  SELECT * FROM video_share
+  WHERE id_terapeuta = ?
+  ORDER BY fecha_compartido DESC
+  
+  -- Historial de compartidos
+  SELECT * FROM video_share
+  WHERE (id_terapeuta = ? OR id_paciente = ?)
+  ORDER BY fecha_compartido DESC
+  ```
+  
+  **Casos de uso:**
+  - Seguimiento remoto de terapia
+  - Comunicación asíncrona
+  - Evidencia de progreso
+  - Consultas técnicas
+  - Motivación y apoyo
+end note
+
+note bottom of SystemSettings
+  **SYSTEM_SETTINGS - Configuración del Sistema**
+  
+  **Patrón:** Key-Value Store
+  
+  **Ventajas:**
+  - Flexible: Agregar configs sin migración de BD
+  - Centralizado: Todas las configs en un lugar
+  - Versionado: Fecha de última actualización
+  - Dinámico: Cambios sin reiniciar aplicación
+  
+  **Categorías de configuración:**
+  
+  1. **Sesiones**
+     - session_duration: "45" (minutos)
+     - sessions_per_week: "3"
+     - rest_time: "30" (segundos)
+  
+  2. **Notificaciones**
+     - email_notifications: "on"
+     - appointment_reminder: "on"
+     - progress_report: "on"
+     - inactive_alert: "off"
+  
+  3. **Respaldos**
+     - auto_backup: "on"
+     - backup_time: "02:00"
+     - backup_retention: "30" (días)
+     - auto_cleanup: "off"
+  
+  4. **Seguridad**
+     - session_timeout: "60" (minutos)
+     - two_factor: "off"
+     - password_expiry: "off"
+     - max_login_attempts: "5"
+  
+  5. **Visión Artificial**
+     - detection_accuracy: "85" (%)
+     - realtime_analysis: "on"
+     - posture_correction: "on"
+     - capture_fps: "30"
+  
+  6. **Apariencia**
+     - theme: "light" | "dark"
+     - language: "es" | "en"
+     - compact_mode: "on" | "off"
+  
+  **Métodos estáticos:**
+  ```python
+  @staticmethod
+  def get_setting(clave, valor_predeterminado=None):
+      configuracion = SystemSettings.query.filter_by(
+          clave=clave
+      ).first()
+      return configuracion.valor if configuracion else valor_predeterminado
+  
+  @staticmethod
+  def set_setting(clave, valor):
+      configuracion = SystemSettings.query.filter_by(
+          clave=clave
+      ).first()
+      if configuracion:
+          configuracion.valor = valor
+          configuracion.fecha_actualizacion = datetime.utcnow()
+      else:
+          configuracion = SystemSettings(clave=clave, valor=valor)
+          db.session.add(configuracion)
+      db.session.commit()
+      return configuracion
+  ```
+  
+  **Uso en código:**
+  ```python
+  # Obtener configuración
+  theme = SystemSettings.get_setting('theme', 'light')
+  timeout = int(SystemSettings.get_setting('session_timeout', '60'))
+  
+  # Establecer configuración
+  SystemSettings.set_setting('theme', 'dark')
+  SystemSettings.set_setting('language', 'en')
+  ```
+  
+  **Auto-actualización:**
+  El campo fecha_actualizacion se actualiza automáticamente
+  en cada UPDATE mediante trigger de PostgreSQL:
+  ```sql
+  ON UPDATE fecha_actualizacion = CURRENT_TIMESTAMP
+  ```
+  
+end note
+
+note left of Patient
+  **PATIENT**
+  
+  Relaciones con multimedia:
+  - Captura fotos/videos (SessionCapture)
+  - Recibe videos compartidos (VideoShare)
+  - Comparte videos con terapeuta
+end note
+
+note left of Therapist
+  **THERAPIST**
+  
+  Relaciones con multimedia:
+  - Captura fotos/videos (SessionCapture)
+  - Comparte videos con pacientes (VideoShare)
+  - Recibe videos de pacientes
+end note
+
+legend right
+  **TIPOS DE DATOS PostgreSQL 15**
+  
+  - INTEGER: Entero de 4 bytes
+  - VARCHAR(n): Cadena variable hasta n caracteres
+  - TEXT: Texto sin límite (hasta 1GB)
+  - BOOLEAN: Verdadero/Falso (1 byte)
+  - TIMESTAMP: Fecha y hora (8 bytes)
+  
+  **CARDINALIDADES**
+  
+  1 : Exactamente uno
+  0..1 : Cero o uno (opcional)
+  0..* : Cero o muchos
+  
+  **SÍMBOLOS**
+  
+  {PK} : Primary Key
+  {FK} : Foreign Key
+  {NOT NULL} : Obligatorio
+  {NULLABLE} : Opcional
+  {UNIQUE} : Valor único
+  {DEFAULT} : Valor por defecto
+  {CHECK} : Restricción de validación
+  {AUTO_INCREMENT} : Autoincremental
+  
+  **PARTE 3 de 3**
+  Tablas: 3 principales + 2 referencia
+  - SESSION_CAPTURE
+  - VIDEO_SHARE
+  - SYSTEM_SETTINGS
+  - (Patient - referencia)
+  - (Therapist - referencia)
+  
+  **TOTAL SISTEMA: 10 tablas**
+end legend
+
+@enduml

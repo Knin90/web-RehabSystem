@@ -103,7 +103,7 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="shared-videos-tab" data-bs-toggle="tab" data-bs-target="#shared-videos" 
                     type="button" role="tab" aria-controls="shared-videos" aria-selected="false">
-                <i class="fas fa-share-alt"></i> Videos Compartidos
+                <i class="fas fa-share-alt"></i> Contenido Compartido
                 <span class="badge bg-danger" id="unreadBadge" style="display: none;">0</span>
             </button>
         </li>
@@ -190,13 +190,13 @@
     </div>
         </div>
 
-        <!-- Pestaña: Videos Compartidos -->
+        <!-- Pestaña: Contenido Compartido -->
         <div class="tab-pane fade" id="shared-videos" role="tabpanel" aria-labelledby="shared-videos-tab">
             <div class="row mb-3">
                 <div class="col-12">
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        <span id="sharedCount">Cargando videos compartidos...</span>
+                        <span id="sharedCount">Cargando contenido compartido...</span>
                     </div>
                 </div>
             </div>
@@ -206,19 +206,19 @@
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Cargando...</span>
                 </div>
-                <p class="mt-2">Cargando videos compartidos...</p>
+                <p class="mt-2">Cargando contenido compartido...</p>
             </div>
 
-            <!-- Galería de videos compartidos -->
+            <!-- Galería de contenido compartido -->
             <div class="row" id="sharedVideoGallery">
-                <!-- Los videos compartidos se cargarán aquí -->
+                <!-- El contenido compartido se cargará aquí -->
             </div>
 
             <!-- Estado vacío -->
             <div class="empty-state" id="sharedEmptyState" style="display: none;">
                 <i class="fas fa-inbox"></i>
-                <h3>No hay videos compartidos</h3>
-                <p>Tu terapeuta aún no ha compartido videos contigo.</p>
+                <h3>No hay contenido compartido</h3>
+                <p>Tu terapeuta aún no ha compartido videos o imágenes contigo.</p>
             </div>
         </div>
     </div>
@@ -641,7 +641,7 @@ function renderSharedVideos(videos) {
             <div class="card video-card ${!video.leido ? 'border-primary' : ''}">
                 ${!video.leido ? '<div class="badge bg-primary position-absolute top-0 end-0 m-2">Nuevo</div>' : ''}
                 <div class="video-thumbnail">
-                    <i class="fas fa-video"></i>
+                    <i class="fas fa-${video.type === 'video' ? 'video' : 'camera'}"></i>
                 </div>
                 <div class="video-info">
                     <div class="video-title">${video.filename}</div>
@@ -660,16 +660,26 @@ function renderSharedVideos(videos) {
                         </div>
                     ` : ''}
                     <div class="mt-3 btn-group w-100" role="group">
-                        <button class="btn btn-primary btn-sm" 
-                                data-filepath="${video.file_path}" 
-                                data-filename="${video.filename}" 
-                                data-duration="${video.duration}" 
-                                data-message="${video.message || ''}"
-                                data-shareid="${video.id}"
-                                data-isread="${video.leido}"
-                                onclick="playSharedVideoFromData(this)">
-                            <i class="fas fa-play"></i> Reproducir
-                        </button>
+                        ${video.type === 'video' ? `
+                            <button class="btn btn-primary btn-sm" 
+                                    data-filepath="${video.file_path}" 
+                                    data-filename="${video.filename}" 
+                                    data-duration="${video.duration}" 
+                                    data-message="${video.message || ''}"
+                                    data-shareid="${video.id}"
+                                    data-isread="${video.leido}"
+                                    onclick="playSharedVideoFromData(this)">
+                                <i class="fas fa-play"></i> Reproducir
+                            </button>
+                        ` : `
+                            <button class="btn btn-info btn-sm" 
+                                    data-filepath="${video.file_path}"
+                                    data-shareid="${video.id}"
+                                    data-isread="${video.leido}"
+                                    onclick="viewSharedImageFromData(this)">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                        `}
                         <button class="btn btn-success btn-sm" 
                                 data-filepath="${video.file_path}" 
                                 data-filename="${video.filename}"
@@ -711,6 +721,19 @@ function playSharedVideo(filePath, filename, duration, message, shareId, isRead)
     }
 }
 
+function viewSharedImageFromData(button) {
+    const filePath = button.getAttribute('data-filepath');
+    const shareId = button.getAttribute('data-shareid');
+    const isRead = button.getAttribute('data-isread') === 'true';
+    
+    viewImage(filePath);
+    
+    // Marcar como leído si no lo está
+    if (!isRead) {
+        markVideoAsRead(shareId);
+    }
+}
+
 function markVideoAsRead(shareId) {
     fetch(`/api/mark-video-as-read/${shareId}`, {
         method: 'POST',
@@ -733,7 +756,7 @@ function markVideoAsRead(shareId) {
 function updateSharedCounter(total) {
     const countElement = document.getElementById('sharedCount');
     if (countElement) {
-        countElement.textContent = `Total de videos compartidos: ${total}`;
+        countElement.textContent = `Total de contenido compartido: ${total}`;
     }
 }
 

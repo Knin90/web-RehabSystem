@@ -1,0 +1,382 @@
+@startuml Diagrama de Navegación - Sistema RehabSystem
+
+title Diagrama de Navegación - Sistema de Rehabilitación Física
+
+' ============================================================
+' PÁGINA DE INICIO Y AUTENTICACIÓN
+' ============================================================
+
+state "Página Principal\n/" as index {
+    index : Información del sistema
+    index : Botón "Iniciar Sesión"
+}
+
+state "Login\n/login" as login {
+    login : Formulario de autenticación
+    login : - Usuario
+    login : - Contraseña
+    login : - Botón "Entrar"
+}
+
+state "Verificación\nde Credenciales" as auth_check <<choice>>
+
+' ============================================================
+' DASHBOARD ADMINISTRADOR
+' ============================================================
+
+state "PANEL ADMINISTRADOR" as admin_panel {
+    
+    state "Dashboard Admin\n/admin/dashboard" as admin_dashboard {
+        admin_dashboard : Estadísticas generales
+        admin_dashboard : Total usuarios
+        admin_dashboard : Total pacientes
+        admin_dashboard : Total terapeutas
+    }
+    
+    state "Gestión Usuarios\n/admin/users" as admin_users {
+        admin_users : Lista de usuarios
+        admin_users : Crear/Editar/Eliminar
+        admin_users : Activar/Desactivar
+    }
+    
+    state "Gestión Terapeutas\n/admin/therapists" as admin_therapists {
+        admin_therapists : Lista de terapeutas
+        admin_therapists : Agregar terapeuta
+        admin_therapists : Ver especialidades
+        admin_therapists : Ver pacientes asignados
+    }
+    
+    state "Gestión Pacientes\n/admin/patients" as admin_patients {
+        admin_patients : Lista de pacientes
+        admin_patients : Agregar paciente
+        admin_patients : Ver progreso
+        admin_patients : Ver diagnóstico
+    }
+    
+    state "Configuración\n/admin/settings" as admin_settings {
+        admin_settings : Duración de sesiones
+        admin_settings : Notificaciones
+        admin_settings : Respaldos automáticos
+        admin_settings : Seguridad (2FA, timeout)
+        admin_settings : Visión artificial
+        admin_settings : Apariencia (tema, idioma)
+    }
+    
+    state "Exportar Datos\n/admin/export-data" as admin_export {
+        admin_export : Exportar usuarios (CSV)
+        admin_export : Exportar pacientes (CSV)
+        admin_export : Exportar terapeutas (CSV)
+        admin_export : Exportar ejercicios (CSV)
+        admin_export : Exportar todo
+    }
+}
+
+' ============================================================
+' DASHBOARD TERAPEUTA
+' ============================================================
+
+state "PANEL TERAPEUTA" as therapist_panel {
+    
+    state "Dashboard Terapeuta\n/therapist/dashboard" as therapist_dashboard {
+        therapist_dashboard : Resumen de pacientes
+        therapist_dashboard : Sesiones programadas
+        therapist_dashboard : Estadísticas
+    }
+    
+    state "Mis Pacientes\n/therapist/patients" as therapist_patients {
+        therapist_patients : Lista de pacientes
+        therapist_patients : Ver detalles
+        therapist_patients : Ver progreso
+        therapist_patients : Ver historial
+    }
+    
+    state "Rutinas\n/therapist/routines" as therapist_routines {
+        therapist_routines : Lista de rutinas creadas
+        therapist_routines : Crear nueva rutina
+        therapist_routines : Asignar a paciente
+        therapist_routines : Editar/Eliminar
+    }
+    
+    state "Crear Rutina\nModal" as create_routine {
+        create_routine : Nombre de rutina
+        create_routine : Seleccionar ejercicios
+        create_routine : Configurar series/reps
+        create_routine : Establecer duración
+        create_routine : Definir dificultad
+    }
+    
+    state "Asignar Rutina\nModal" as assign_routine {
+        assign_routine : Seleccionar rutina
+        assign_routine : Seleccionar paciente
+        assign_routine : Confirmar asignación
+    }
+    
+    state "Iniciar Sesión\n/therapist/start-session" as therapist_session {
+        therapist_session : Seleccionar paciente
+        therapist_session : Acceder a cámara
+        therapist_session : Capturar foto
+        therapist_session : Grabar video
+        therapist_session : Agregar notas
+    }
+    
+    state "Galería Videos\n/therapist/video-gallery" as therapist_gallery {
+        therapist_gallery : Ver capturas propias
+        therapist_gallery : Ver videos de pacientes
+        therapist_gallery : Reproducir videos
+        therapist_gallery : Compartir con paciente
+    }
+    
+    state "Compartir Video\nModal" as share_video_therapist {
+        share_video_therapist : Seleccionar video
+        share_video_therapist : Seleccionar paciente
+        share_video_therapist : Agregar mensaje
+        share_video_therapist : Enviar
+    }
+    
+    state "Citas\n/therapist/appointments" as therapist_appointments {
+        therapist_appointments : Ver calendario
+        therapist_appointments : Programar cita
+        therapist_appointments : Modificar cita
+        therapist_appointments : Cancelar cita
+    }
+}
+
+' ============================================================
+' DASHBOARD PACIENTE
+' ============================================================
+
+state "PANEL PACIENTE" as patient_panel {
+    
+    state "Dashboard Paciente\n/patient/dashboard" as patient_dashboard {
+        patient_dashboard : Progreso general
+        patient_dashboard : Sesiones completadas/totales
+        patient_dashboard : Diagnóstico
+        patient_dashboard : Próximas sesiones
+    }
+    
+    state "Mis Rutinas\n/patient/routines" as patient_routines {
+        patient_routines : Rutinas asignadas
+        patient_routines : Ver detalles
+        patient_routines : Ver ejercicios
+        patient_routines : Series/repeticiones
+    }
+    
+    state "Detalles Rutina\nModal" as routine_details {
+        routine_details : Nombre y descripción
+        routine_details : Lista de ejercicios
+        routine_details : Configuración
+        routine_details : Duración total
+    }
+    
+    state "Iniciar Terapia\n/patient/start-therapy" as patient_therapy {
+        patient_therapy : Seleccionar rutina
+        patient_therapy : Seguir instrucciones
+        patient_therapy : Capturar foto
+        patient_therapy : Grabar video
+        patient_therapy : Completar sesión
+    }
+    
+    state "Galería Videos\n/patient/video-gallery" as patient_gallery {
+        patient_gallery : Ver mis capturas
+        patient_gallery : Ver videos del terapeuta
+        patient_gallery : Reproducir videos
+        patient_gallery : Compartir con terapeuta
+    }
+    
+    state "Compartir Video\nModal" as share_video_patient {
+        share_video_patient : Seleccionar video
+        share_video_patient : Seleccionar terapeuta
+        share_video_patient : Agregar mensaje
+        share_video_patient : Enviar
+    }
+    
+    state "Historial\n/patient/history" as patient_history {
+        patient_history : Sesiones completadas
+        patient_history : Fechas de sesiones
+        patient_history : Progreso por sesión
+    }
+    
+    state "Mis Terapeutas\n/patient/therapists" as patient_therapists {
+        patient_therapists : Lista de terapeutas
+        patient_therapists : Ver especialidad
+        patient_therapists : Información de contacto
+    }
+    
+    state "Mensajes\n/patient/messages" as patient_messages {
+        patient_messages : Ver mensajes recibidos
+        patient_messages : Enviar mensajes
+        patient_messages : Notificaciones
+    }
+    
+    state "Perfil\n/patient/profile" as patient_profile {
+        patient_profile : Datos personales
+        patient_profile : Diagnóstico
+        patient_profile : Progreso
+        patient_profile : Editar información
+    }
+    
+    state "Configuración\n/patient/settings" as patient_settings {
+        patient_settings : Cambiar contraseña
+        patient_settings : Notificaciones
+        patient_settings : Privacidad
+    }
+}
+
+' ============================================================
+' ESTADO FINAL
+' ============================================================
+
+state "Cerrar Sesión\n/logout" as logout
+
+' ============================================================
+' NAVEGACIÓN INICIAL
+' ============================================================
+
+[*] --> index : Usuario accede
+
+index --> login : Click "Iniciar Sesión"
+
+login --> auth_check : Submit formulario
+
+auth_check --> login : Credenciales\ninválidas
+auth_check --> admin_dashboard : Rol: admin
+auth_check --> therapist_dashboard : Rol: therapist
+auth_check --> patient_dashboard : Rol: patient
+
+' ============================================================
+' NAVEGACIÓN ADMINISTRADOR
+' ============================================================
+
+admin_dashboard --> admin_users : Click "Usuarios"
+admin_dashboard --> admin_therapists : Click "Terapeutas"
+admin_dashboard --> admin_patients : Click "Pacientes"
+admin_dashboard --> admin_settings : Click "Configuración"
+admin_dashboard --> admin_export : Click "Exportar Datos"
+
+admin_users --> admin_dashboard : Volver
+admin_therapists --> admin_dashboard : Volver
+admin_patients --> admin_dashboard : Volver
+admin_settings --> admin_dashboard : Volver
+admin_export --> admin_dashboard : Volver
+
+admin_panel --> logout : Click "Cerrar Sesión"
+
+' ============================================================
+' NAVEGACIÓN TERAPEUTA
+' ============================================================
+
+therapist_dashboard --> therapist_patients : Click "Pacientes"
+therapist_dashboard --> therapist_routines : Click "Rutinas"
+therapist_dashboard --> therapist_session : Click "Iniciar Sesión"
+therapist_dashboard --> therapist_gallery : Click "Galería"
+therapist_dashboard --> therapist_appointments : Click "Citas"
+
+therapist_routines --> create_routine : Click "Crear Rutina"
+create_routine --> therapist_routines : Guardar/Cancelar
+
+therapist_routines --> assign_routine : Click "Asignar"
+assign_routine --> therapist_routines : Confirmar/Cancelar
+
+therapist_gallery --> share_video_therapist : Click "Compartir"
+share_video_therapist --> therapist_gallery : Enviar/Cancelar
+
+therapist_patients --> therapist_dashboard : Volver
+therapist_routines --> therapist_dashboard : Volver
+therapist_session --> therapist_dashboard : Volver
+therapist_gallery --> therapist_dashboard : Volver
+therapist_appointments --> therapist_dashboard : Volver
+
+therapist_panel --> logout : Click "Cerrar Sesión"
+
+' ============================================================
+' NAVEGACIÓN PACIENTE
+' ============================================================
+
+patient_dashboard --> patient_routines : Click "Mis Rutinas"
+patient_dashboard --> patient_therapy : Click "Iniciar Terapia"
+patient_dashboard --> patient_gallery : Click "Galería"
+patient_dashboard --> patient_history : Click "Historial"
+patient_dashboard --> patient_therapists : Click "Terapeutas"
+patient_dashboard --> patient_messages : Click "Mensajes"
+patient_dashboard --> patient_profile : Click "Perfil"
+patient_dashboard --> patient_settings : Click "Configuración"
+
+patient_routines --> routine_details : Click en rutina
+routine_details --> patient_routines : Cerrar
+
+patient_gallery --> share_video_patient : Click "Compartir"
+share_video_patient --> patient_gallery : Enviar/Cancelar
+
+patient_routines --> patient_dashboard : Volver
+patient_therapy --> patient_dashboard : Volver
+patient_gallery --> patient_dashboard : Volver
+patient_history --> patient_dashboard : Volver
+patient_therapists --> patient_dashboard : Volver
+patient_messages --> patient_dashboard : Volver
+patient_profile --> patient_dashboard : Volver
+patient_settings --> patient_dashboard : Volver
+
+patient_panel --> logout : Click "Cerrar Sesión"
+
+' ============================================================
+' SALIDA
+' ============================================================
+
+logout --> index : Sesión cerrada
+
+' ============================================================
+' NOTAS
+' ============================================================
+
+note right of auth_check
+  **Verificación de Rol**
+  
+  El sistema redirige según el rol:
+  - admin → Panel Administrador
+  - therapist → Panel Terapeuta
+  - patient → Panel Paciente
+  
+  Si las credenciales son inválidas,
+  regresa al login con mensaje de error
+end note
+
+note bottom of admin_panel
+  **Panel Administrador**
+  
+  Funcionalidades:
+  - Gestión completa de usuarios
+  - Configuración del sistema
+  - Exportación de datos
+  - Estadísticas globales
+  
+  Acceso exclusivo para rol "admin"
+end note
+
+note bottom of therapist_panel
+  **Panel Terapeuta**
+  
+  Funcionalidades:
+  - Gestionar pacientes
+  - Crear y asignar rutinas
+  - Capturar sesiones (foto/video)
+  - Compartir videos
+  - Programar citas
+  
+  Acceso exclusivo para rol "therapist"
+end note
+
+note bottom of patient_panel
+  **Panel Paciente**
+  
+  Funcionalidades:
+  - Ver rutinas asignadas
+  - Realizar ejercicios
+  - Capturar progreso
+  - Ver videos del terapeuta
+  - Compartir videos
+  - Consultar historial
+  
+  Acceso exclusivo para rol "patient"
+end note
+
+@enduml

@@ -1,0 +1,91 @@
+@startuml Diagrama de Componentes - Parte 2: Capa de Aplicación
+
+title Diagrama de Componentes - Parte 2: Capa de Aplicación
+
+' ============================================================
+' CAPA DE APLICACIÓN
+' ============================================================
+package "CAPA DE APLICACIÓN" {
+    
+    component "Flask Application\n(__init__.py)" as flask_app {
+        component "Factory Pattern\n- create_app()\n- Config loading\n- Extensions init" as factory
+    }
+    
+    component "Routes (routes.py)" as routes {
+        component "Admin Routes\n- /admin/dashboard\n- /admin/users\n- /admin/therapists\n- /admin/patients\n- /admin/settings\n- /admin/export-data" as admin_routes
+        component "Therapist Routes\n- /therapist/dashboard\n- /therapist/patients\n- /therapist/routines\n- /therapist/create-routine\n- /therapist/assign-routine\n- /therapist/start-session\n- /therapist/video-gallery" as therapist_routes
+        component "Patient Routes\n- /patient/dashboard\n- /patient/routines\n- /patient/start-therapy\n- /patient/video-gallery\n- /patient/history\n- /patient/profile" as patient_routes
+        component "Auth Routes\n- /login\n- /logout\n- /" as auth_routes
+    }
+    
+    component "Config (config.py)" as config {
+        component "Environment Variables\n- DATABASE_URL\n- SECRET_KEY\n- FLASK_ENV" as env_vars
+    }
+    
+    component "Decorators" as decorators {
+        component "@role_required\n- admin\n- therapist\n- patient" as role_decorator
+        component "@login_required\n(Flask-Login)" as login_decorator
+    }
+    
+    component "Validators" as validators {
+        component "DataRequired\nLength\nEmail" as wtf_validators
+    }
+}
+
+' ============================================================
+' COMPONENTES EXTERNOS - SERVIDOR
+' ============================================================
+component "Gunicorn (WSGI Server)" as gunicorn {
+    component "Workers: 4\nThreads: 2\nTimeout: 120s" as gunicorn_config
+}
+
+component "Nginx (Reverse Proxy)" as nginx {
+    component "SSL/TLS\nLoad Balancing\nStatic Serving" as nginx_features
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+nginx --> gunicorn : "Proxy Pass"
+gunicorn --> flask_app : "WSGI Call"
+
+flask_app --> routes : "Route Handling"
+flask_app --> config : "Load Configuration"
+flask_app --> factory
+
+routes --> admin_routes
+routes --> therapist_routes
+routes --> patient_routes
+routes --> auth_routes
+
+routes --> decorators : "Apply Decorators"
+decorators --> role_decorator
+decorators --> login_decorator
+
+routes --> validators : "Validate Input"
+validators --> wtf_validators
+
+config --> env_vars
+
+note right of flask_app
+  **Flask Application**
+  - Factory Pattern
+  - Extensiones inicializadas
+  - Configuración centralizada
+end note
+
+note right of routes
+  **Sistema de Rutas**
+  - Separación por roles
+  - RESTful endpoints
+  - Controladores HTTP
+end note
+
+note right of decorators
+  **Decoradores**
+  - Control de acceso
+  - Autenticación
+  - Autorización por rol
+end note
+
+@enduml

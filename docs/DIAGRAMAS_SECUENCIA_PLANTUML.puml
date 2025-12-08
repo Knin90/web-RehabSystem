@@ -1,0 +1,826 @@
+@startuml Secuencia_01_Autenticacion
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 1: AUTENTICACIÓN DE USUARIO
+' ============================================================
+
+title Diagrama de Secuencia - Autenticación de Usuario
+
+actor Usuario
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+
+Usuario -> Web: GET /login
+activate Web
+Web --> Usuario: Formulario Login
+deactivate Web
+
+Usuario -> Web: POST /login\n(usuario, password)
+activate Web
+Web -> Routes: login()
+activate Routes
+
+Routes -> DB: Query User\n(username)
+activate DB
+DB --> Routes: User Data
+deactivate DB
+
+Routes -> Routes: Verify Password\n(bcrypt)
+
+alt Credenciales válidas
+    Routes -> Routes: login_user()\n(Flask-Login)
+    Routes --> Web: Redirect (dashboard)
+    Web --> Usuario: Dashboard\n(según rol)
+else Credenciales inválidas
+    Routes --> Web: Error
+    Web --> Usuario: Mensaje de error
+end
+
+deactivate Routes
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_02_Crear_Asignar_Rutina
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 2: CREAR Y ASIGNAR RUTINA (TERAPEUTA)
+' ============================================================
+
+title Diagrama de Secuencia - Crear y Asignar Rutina (Terapeuta)
+
+actor Terapeuta
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+
+Terapeuta -> Web: GET /therapist/routines
+activate Web
+Web -> Routes: therapist_routines()
+activate Routes
+
+Routes -> DB: Query Routines
+activate DB
+DB --> Routes: Routines Data
+deactivate DB
+
+Routes -> DB: Query Exercises
+activate DB
+DB --> Routes: Exercises Data
+deactivate DB
+
+Routes -> DB: Query Patients
+activate DB
+DB --> Routes: Patients Data
+deactivate DB
+
+Routes --> Web: Página Rutinas
+deactivate Routes
+Web --> Terapeuta: Interfaz Rutinas
+deactivate Web
+
+== Crear Nueva Rutina ==
+
+Terapeuta -> Web: Crear Nueva Rutina\n(nombre, ejercicios, config)
+activate Web
+Web -> Routes: POST /therapist/create-routine
+activate Routes
+
+Routes -> DB: INSERT Routine
+activate DB
+DB --> Routes: routine_id
+deactivate DB
+
+loop Para cada ejercicio
+    Routes -> DB: INSERT RoutineExercise
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+end
+
+Routes -> DB: COMMIT
+activate DB
+DB --> Routes: Success
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Terapeuta: "Rutina creada"
+deactivate Web
+
+== Asignar Rutina a Paciente ==
+
+Terapeuta -> Web: Asignar a Paciente\n(routine_id, patient_id)
+activate Web
+Web -> Routes: POST /therapist/assign-routine
+activate Routes
+
+Routes -> DB: Query Routine Original
+activate DB
+DB --> Routes: Routine Data
+deactivate DB
+
+Routes -> DB: INSERT Nueva Rutina\n(copia para paciente)
+activate DB
+DB --> Routes: new_routine_id
+deactivate DB
+
+loop Para cada ejercicio
+    Routes -> DB: INSERT RoutineExercise\n(copiar todos)
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+end
+
+Routes -> DB: COMMIT
+activate DB
+DB --> Routes: Success
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Terapeuta: "Rutina asignada"
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_03_Sesion_Terapia_Captura
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 3: REALIZAR SESIÓN DE TERAPIA CON CAPTURA
+' ============================================================
+
+title Diagrama de Secuencia - Sesión de Terapia con Captura (Terapeuta)
+
+actor Terapeuta
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+participant "Sistema Archivos" as Files
+
+Terapeuta -> Web: GET /therapist/start-session
+activate Web
+Web --> Terapeuta: Página Sesión\n(con cámara)
+deactivate Web
+
+Terapeuta -> Web: Seleccionar Paciente
+Terapeuta -> Web: Iniciar Cámara
+activate Web
+Web --> Terapeuta: Stream Video
+deactivate Web
+
+== Capturar Foto ==
+
+Terapeuta -> Web: Capturar Foto\n(imagen base64)
+activate Web
+Web -> Routes: POST /save-snapshot
+activate Routes
+
+Routes -> Routes: Decode base64
+
+Routes -> Files: Save File\n(static/uploads/photos/)
+activate Files
+Files --> Routes: File Path
+deactivate Files
+
+Routes -> DB: INSERT SessionCapture\n(tipo: photo)
+activate DB
+DB --> Routes: capture_id
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Terapeuta: "Foto guardada"
+deactivate Web
+
+== Grabar Video ==
+
+Terapeuta -> Web: Grabar Video\n(iniciar)
+activate Web
+Web --> Terapeuta: Grabando...
+deactivate Web
+
+Terapeuta -> Web: Detener Grabación\n(video blob)
+activate Web
+Web -> Routes: POST /save-video-permanent
+activate Routes
+
+Routes -> Files: Save File\n(static/uploads/videos_permanentes/)
+activate Files
+Files --> Routes: File Path
+deactivate Files
+
+Routes -> DB: INSERT SessionCapture\n(tipo: video, permanente, con audio)
+activate DB
+DB --> Routes: capture_id
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Terapeuta: "Video guardado"
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_04_Compartir_Video_Paciente
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 4: COMPARTIR VIDEO CON PACIENTE
+' ============================================================
+
+title Diagrama de Secuencia - Compartir Video con Paciente (Terapeuta)
+
+actor Terapeuta
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+
+Terapeuta -> Web: GET /therapist/video-gallery
+activate Web
+Web -> Routes: therapist_video_gallery()
+activate Routes
+
+Routes -> DB: Query SessionCapture\n(terapeuta)
+activate DB
+DB --> Routes: Captures
+deactivate DB
+
+Routes --> Web: Galería Videos
+deactivate Routes
+Web --> Terapeuta: Lista de Videos
+deactivate Web
+
+Terapeuta -> Web: Seleccionar Video
+Terapeuta -> Web: Seleccionar Paciente
+Terapeuta -> Web: Agregar Mensaje
+Terapeuta -> Web: Compartir
+
+activate Web
+Web -> Routes: POST /share-video
+activate Routes
+
+Routes -> DB: Verify Capture Ownership
+activate DB
+DB --> Routes: Valid
+deactivate DB
+
+Routes -> DB: Verify Patient Assignment
+activate DB
+DB --> Routes: Valid
+deactivate DB
+
+Routes -> DB: INSERT VideoShare\n(capture_id, patient_id, mensaje)
+activate DB
+DB --> Routes: share_id
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Terapeuta: "Video compartido"
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_05_Ver_Realizar_Rutina_Paciente
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 5: VER Y REALIZAR RUTINA (PACIENTE)
+' ============================================================
+
+title Diagrama de Secuencia - Ver y Realizar Rutina (Paciente)
+
+actor Paciente
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+
+Paciente -> Web: GET /patient/routines
+activate Web
+Web -> Routes: patient_routines()
+activate Routes
+
+Routes -> DB: Query Patient\n(id_usuario)
+activate DB
+DB --> Routes: Patient Data
+deactivate DB
+
+Routes -> DB: Query Routines\n(id_paciente)
+activate DB
+DB --> Routes: Routines
+deactivate DB
+
+Routes --> Web: Lista Rutinas
+deactivate Routes
+Web --> Paciente: Rutinas Asignadas
+deactivate Web
+
+== Ver Detalles de Rutina ==
+
+Paciente -> Web: Ver Detalles Rutina\n(routine_id)
+activate Web
+Web -> Routes: get_routine_details()
+activate Routes
+
+Routes -> DB: Query Routine\nRoutineExercise\nExercise
+activate DB
+DB --> Routes: Full Data
+deactivate DB
+
+Routes --> Web: Detalles Rutina
+deactivate Routes
+Web --> Paciente: Ejercicios, series,\nrepeticiones, descanso
+deactivate Web
+
+== Realizar Rutina ==
+
+Paciente -> Web: Iniciar Rutina
+activate Web
+Web --> Paciente: Instrucciones\nEjercicio 1
+deactivate Web
+
+loop Para cada ejercicio
+    Paciente -> Web: Completar Ejercicio
+    activate Web
+    Web --> Paciente: Siguiente Ejercicio
+    deactivate Web
+end
+
+Paciente -> Web: Completar Rutina
+activate Web
+Web -> Routes: complete_routine()
+activate Routes
+
+Routes -> DB: UPDATE Patient\n(progreso, sesiones)
+activate DB
+DB --> Routes: Success
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Paciente: "Rutina completada"
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_06_Capturar_Compartir_Video_Paciente
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 6: CAPTURAR Y COMPARTIR VIDEO (PACIENTE)
+' ============================================================
+
+title Diagrama de Secuencia - Capturar y Compartir Video (Paciente)
+
+actor Paciente
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+participant "Sistema Archivos" as Files
+
+Paciente -> Web: GET /patient/start-therapy
+activate Web
+Web --> Paciente: Página Terapia\n(con cámara)
+deactivate Web
+
+Paciente -> Web: Iniciar Cámara
+activate Web
+Web --> Paciente: Stream Video
+deactivate Web
+
+== Grabar Video ==
+
+Paciente -> Web: Grabar Video\n(iniciar)
+activate Web
+Web --> Paciente: Grabando...
+deactivate Web
+
+Paciente -> Web: Detener Grabación\n(video blob, notas)
+activate Web
+Web -> Routes: POST /save-patient-video
+activate Routes
+
+Routes -> Files: Save File\n(static/uploads/videos/)
+activate Files
+Files --> Routes: File Path
+deactivate Files
+
+Routes -> DB: INSERT SessionCapture\n(id_paciente, tipo: video)
+activate DB
+DB --> Routes: capture_id
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Paciente: "Video guardado"
+deactivate Web
+
+== Ver Galería ==
+
+Paciente -> Web: GET /patient/video-gallery
+activate Web
+Web -> Routes: patient_video_gallery()
+activate Routes
+
+Routes -> DB: Query SessionCapture\n(id_paciente)
+activate DB
+DB --> Routes: Captures
+deactivate DB
+
+Routes --> Web: Galería Videos
+deactivate Routes
+Web --> Paciente: Lista de Videos
+deactivate Web
+
+== Compartir Video con Terapeuta ==
+
+Paciente -> Web: Compartir Video con Terapeuta\n(capture_id, therapist_id, mensaje)
+activate Web
+Web -> Routes: POST /patient-share-video
+activate Routes
+
+Routes -> DB: Verify Capture Ownership
+activate DB
+DB --> Routes: Valid
+deactivate DB
+
+Routes -> DB: Verify Therapist Assignment\n(via Routine)
+activate DB
+DB --> Routes: Valid
+deactivate DB
+
+Routes -> DB: INSERT VideoShare
+activate DB
+DB --> Routes: share_id
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Paciente: "Video compartido"
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_07_Gestionar_Usuarios_Admin
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 7: GESTIONAR USUARIOS (ADMINISTRADOR)
+' ============================================================
+
+title Diagrama de Secuencia - Gestionar Usuarios (Administrador)
+
+actor Admin
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+
+Admin -> Web: GET /admin/users
+activate Web
+Web -> Routes: admin_users()
+activate Routes
+
+Routes -> DB: Query All Users
+activate DB
+DB --> Routes: Users List
+deactivate DB
+
+Routes --> Web: Lista Usuarios
+deactivate Routes
+Web --> Admin: Interfaz Usuarios
+deactivate Web
+
+== Agregar Terapeuta ==
+
+Admin -> Web: Agregar Terapeuta\n(nombre, usuario, email,\npassword, especialidad)
+activate Web
+Web -> Routes: POST /admin/add-therapist
+activate Routes
+
+Routes -> DB: Validate Username\nEmail
+activate DB
+DB --> Routes: Valid
+deactivate DB
+
+Routes -> DB: INSERT User\n(rol: therapist)
+activate DB
+DB --> Routes: user_id
+deactivate DB
+
+Routes -> DB: INSERT Therapist\n(id_usuario, especialidad)
+activate DB
+DB --> Routes: Success
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Admin: "Terapeuta creado"
+deactivate Web
+
+== Agregar Paciente ==
+
+Admin -> Web: Agregar Paciente\n(nombre, usuario, email,\npassword, diagnóstico)
+activate Web
+Web -> Routes: POST /admin/add-patient
+activate Routes
+
+Routes -> DB: Validate Username\nEmail
+activate DB
+DB --> Routes: Valid
+deactivate DB
+
+Routes -> DB: INSERT User\n(rol: patient)
+activate DB
+DB --> Routes: user_id
+deactivate DB
+
+Routes -> DB: INSERT Patient\n(id_usuario, diagnóstico)
+activate DB
+DB --> Routes: Success
+deactivate DB
+
+Routes --> Web: Confirmación
+deactivate Routes
+Web --> Admin: "Paciente creado"
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_08_Configurar_Sistema_Admin
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 8: CONFIGURAR SISTEMA (ADMINISTRADOR)
+' ============================================================
+
+title Diagrama de Secuencia - Configurar Sistema (Administrador)
+
+actor Admin
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+
+Admin -> Web: GET /admin/settings
+activate Web
+Web -> Routes: admin_settings()
+activate Routes
+
+Routes -> DB: Query All SystemSettings
+activate DB
+DB --> Routes: Settings
+deactivate DB
+
+Routes --> Web: Página Configuración
+deactivate Routes
+Web --> Admin: Formularios de configuración
+deactivate Web
+
+== Actualizar Configuración ==
+
+Admin -> Web: Actualizar Configuración\n(setting_type, valores)
+activate Web
+Web -> Routes: POST /admin/settings
+activate Routes
+
+alt setting_type = session_duration
+    Routes -> DB: UPDATE/INSERT\nsession_duration\nsessions_per_week\nrest_time
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+    Routes --> Web: "Duración actualizada"
+    
+else setting_type = notifications
+    Routes -> DB: UPDATE/INSERT\nemail_notifications\nappointment_reminder\nprogress_report\ninactive_alert
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+    Routes --> Web: "Notificaciones actualizadas"
+    
+else setting_type = backup
+    Routes -> DB: UPDATE/INSERT\nauto_backup\nbackup_time\nbackup_retention\nauto_cleanup
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+    Routes --> Web: "Respaldo configurado"
+    
+else setting_type = security
+    Routes -> DB: UPDATE/INSERT\nsession_timeout\ntwo_factor\npassword_expiry\nmax_login_attempts
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+    Routes --> Web: "Seguridad actualizada"
+    
+else setting_type = ai_vision
+    Routes -> DB: UPDATE/INSERT\ndetection_accuracy\nrealtime_analysis\nposture_correction\ncapture_fps
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+    Routes --> Web: "IA actualizada"
+    
+else setting_type = appearance
+    Routes -> DB: UPDATE/INSERT\ntheme\nlanguage\ncompact_mode
+    activate DB
+    DB --> Routes: Success
+    deactivate DB
+    Routes --> Web: "Apariencia actualizada"
+end
+
+deactivate Routes
+Web --> Admin: Confirmación
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_09_Exportar_Datos_Admin
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 9: EXPORTAR DATOS (ADMINISTRADOR)
+' ============================================================
+
+title Diagrama de Secuencia - Exportar Datos (Administrador)
+
+actor Admin
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+participant "CSV Generator" as CSV
+
+Admin -> Web: GET /admin/export-data
+activate Web
+Web -> Routes: admin_export_data()
+activate Routes
+
+Routes -> DB: Count Users
+activate DB
+DB --> Routes: total_users
+deactivate DB
+
+Routes -> DB: Count Patients
+activate DB
+DB --> Routes: total_patients
+deactivate DB
+
+Routes -> DB: Count Therapists
+activate DB
+DB --> Routes: total_therapists
+deactivate DB
+
+Routes -> DB: Count Exercises
+activate DB
+DB --> Routes: total_exercises
+deactivate DB
+
+Routes --> Web: Página Export\n(con estadísticas)
+deactivate Routes
+Web --> Admin: Interfaz de exportación
+deactivate Web
+
+== Exportar Datos ==
+
+Admin -> Web: Exportar\n(data_type)
+activate Web
+Web -> Routes: GET /admin/export/<data_type>
+activate Routes
+
+alt data_type = users
+    Routes -> DB: Query All Users
+    activate DB
+    DB --> Routes: Users Data
+    deactivate DB
+    Routes -> CSV: Generate CSV\n(usuarios)
+    
+else data_type = patients
+    Routes -> DB: Query All Patients
+    activate DB
+    DB --> Routes: Patients Data
+    deactivate DB
+    Routes -> CSV: Generate CSV\n(pacientes)
+    
+else data_type = therapists
+    Routes -> DB: Query All Therapists
+    activate DB
+    DB --> Routes: Therapists Data
+    deactivate DB
+    Routes -> CSV: Generate CSV\n(terapeutas)
+    
+else data_type = exercises
+    Routes -> DB: Query All Exercises
+    activate DB
+    DB --> Routes: Exercises Data
+    deactivate DB
+    Routes -> CSV: Generate CSV\n(ejercicios)
+    
+else data_type = all
+    Routes -> DB: Query All Data
+    activate DB
+    DB --> Routes: Complete Data
+    deactivate DB
+    Routes -> CSV: Generate CSV\n(completo)
+end
+
+activate CSV
+CSV --> Routes: CSV File
+deactivate CSV
+
+Routes --> Web: Download CSV
+deactivate Routes
+Web --> Admin: Archivo CSV descargado
+deactivate Web
+
+@enduml
+
+' ============================================================
+
+@startuml Secuencia_10_Ver_Videos_Compartidos
+
+' ============================================================
+' DIAGRAMA DE SECUENCIA 10: VER VIDEOS COMPARTIDOS
+' ============================================================
+
+title Diagrama de Secuencia - Ver Videos Compartidos
+
+actor Usuario as "Terapeuta/Paciente"
+participant "Sistema Web" as Web
+participant "Flask Routes" as Routes
+database "Base de Datos" as DB
+
+== Terapeuta ve videos de Pacientes ==
+
+Usuario -> Web: GET /therapist/shared-videos
+activate Web
+Web -> Routes: get_shared_videos()
+activate Routes
+
+Routes -> DB: Query VideoShare\n(id_terapeuta, leido=false)
+activate DB
+DB --> Routes: Shared Videos
+deactivate DB
+
+Routes -> DB: Query SessionCapture\n(join)
+activate DB
+DB --> Routes: Captures Data
+deactivate DB
+
+Routes --> Web: Lista Videos Compartidos
+deactivate Routes
+Web --> Usuario: Videos recibidos de pacientes
+deactivate Web
+
+== Paciente ve videos del Terapeuta ==
+
+Usuario -> Web: GET /patient/shared-videos
+activate Web
+Web -> Routes: get_shared_videos()
+activate Routes
+
+Routes -> DB: Query VideoShare\n(id_paciente, leido=false)
+activate DB
+DB --> Routes: Shared Videos
+deactivate DB
+
+Routes -> DB: Query SessionCapture\n(join)
+activate DB
+DB --> Routes: Captures Data
+deactivate DB
+
+Routes --> Web: Lista Videos Compartidos
+deactivate Routes
+Web --> Usuario: Videos recibidos del terapeuta
+deactivate Web
+
+== Reproducir Video ==
+
+Usuario -> Web: Reproducir Video\n(share_id)
+activate Web
+Web -> Routes: play_shared_video()
+activate Routes
+
+Routes -> DB: Query VideoShare
+activate DB
+DB --> Routes: Video Data
+deactivate DB
+
+Routes -> DB: UPDATE VideoShare\n(leido=true, fecha_leido=now)
+activate DB
+DB --> Routes: Success
+deactivate DB
+
+Routes --> Web: Video Stream
+deactivate Routes
+Web --> Usuario: Reproducir video
+deactivate Web
+
+@enduml

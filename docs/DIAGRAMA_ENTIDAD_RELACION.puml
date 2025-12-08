@@ -1,0 +1,576 @@
+@startuml Diagrama Entidad-Relación - Sistema RehabSystem
+
+title Diagrama Entidad-Relación - Base de Datos Sistema de Rehabilitación
+
+' ============================================================
+' ENTIDAD USER
+' ============================================================
+entity "USER" as user {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre_usuario : VARCHAR(80) <<UNIQUE>>
+  * correo_electronico : VARCHAR(120) <<UNIQUE>>
+  * contrasena_encriptada : VARCHAR(128)
+  * rol : VARCHAR(20) <<CHECK>>
+  * esta_activo : BOOLEAN
+  * fecha_creacion : TIMESTAMP
+  --
+  CHECK: rol IN ('admin', 'therapist', 'patient')
+}
+
+' ============================================================
+' ENTIDAD PATIENT
+' ============================================================
+entity "PATIENT" as patient {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_usuario : INTEGER <<FK>> <<UNIQUE>>
+  * nombre_completo : VARCHAR(200)
+  diagnostico : TEXT
+  progreso : FLOAT
+  sesiones_totales : INTEGER
+  sesiones_completadas : INTEGER
+  fecha_creacion : TIMESTAMP
+  --
+  CHECK: progreso >= 0 AND progreso <= 100
+  DEFAULT: progreso = 0.0
+  DEFAULT: sesiones_totales = 0
+  DEFAULT: sesiones_completadas = 0
+}
+
+' ============================================================
+' ENTIDAD THERAPIST
+' ============================================================
+entity "THERAPIST" as therapist {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_usuario : INTEGER <<FK>> <<UNIQUE>>
+  * nombre_completo : VARCHAR(200)
+  especialidad : VARCHAR(100)
+  total_pacientes : INTEGER
+  fecha_creacion : TIMESTAMP
+  --
+  DEFAULT: total_pacientes = 0
+}
+
+' ============================================================
+' ENTIDAD ROUTINE
+' ============================================================
+entity "ROUTINE" as routine {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre : VARCHAR(200)
+  descripcion : TEXT
+  * id_terapeuta : INTEGER <<FK>>
+  id_paciente : INTEGER <<FK>> <<NULLABLE>>
+  duracion_minutos : INTEGER
+  dificultad : VARCHAR(20) <<CHECK>>
+  esta_activa : BOOLEAN
+  fecha_creacion : TIMESTAMP
+  --
+  CHECK: dificultad IN ('facil', 'media', 'dificil')
+  DEFAULT: duracion_minutos = 30
+  DEFAULT: dificultad = 'media'
+  DEFAULT: esta_activa = TRUE
+  --
+  NOTA: id_paciente NULL = rutina template
+  NOTA: id_paciente NOT NULL = rutina asignada
+}
+
+' ============================================================
+' ENTIDAD ROUTINE_EXERCISE (Tabla Intermedia)
+' ============================================================
+entity "ROUTINE_EXERCISE" as routine_exercise {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_rutina : INTEGER <<FK>>
+  * id_ejercicio : INTEGER <<FK>>
+  orden : INTEGER
+  series : INTEGER
+  repeticiones : INTEGER
+  segundos_descanso : INTEGER
+  notas : TEXT
+  --
+  DEFAULT: orden = 0
+  DEFAULT: series = 3
+  DEFAULT: repeticiones = 10
+  DEFAULT: segundos_descanso = 30
+  --
+  ON DELETE CASCADE (id_rutina)
+}
+
+' ============================================================
+' ENTIDAD EXERCISE
+' ============================================================
+entity "EXERCISE" as exercise {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre : VARCHAR(200)
+  descripcion : TEXT
+  categoria : VARCHAR(50)
+  repeticiones : VARCHAR(50)
+  fecha_creacion : TIMESTAMP
+}
+
+' ============================================================
+' ENTIDAD SESSION_CAPTURE
+' ============================================================
+entity "SESSION_CAPTURE" as session_capture {
+  * **id** : INTEGER <<PK>>
+  --
+  id_terapeuta : INTEGER <<FK>> <<NULLABLE>>
+  id_paciente : INTEGER <<FK>> <<NULLABLE>>
+  * tipo_captura : VARCHAR(20) <<CHECK>>
+  * nombre_archivo : VARCHAR(255)
+  * ruta_archivo : VARCHAR(500)
+  tamano_archivo : INTEGER
+  duracion : INTEGER
+  notas : TEXT
+  fecha_sesion : TIMESTAMP
+  fecha_creacion : TIMESTAMP
+  es_permanente : BOOLEAN
+  contiene_audio : BOOLEAN
+  --
+  CHECK: tipo_captura IN ('photo', 'video')
+  DEFAULT: es_permanente = FALSE
+  DEFAULT: contiene_audio = FALSE
+  --
+  NOTA: Puede ser capturado por terapeuta O paciente
+}
+
+' ============================================================
+' ENTIDAD VIDEO_SHARE
+' ============================================================
+entity "VIDEO_SHARE" as video_share {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_captura : INTEGER <<FK>>
+  * id_terapeuta : INTEGER <<FK>>
+  * id_paciente : INTEGER <<FK>>
+  mensaje : TEXT
+  leido : BOOLEAN
+  fecha_compartido : TIMESTAMP
+  fecha_leido : TIMESTAMP <<NULLABLE>>
+  --
+  DEFAULT: leido = FALSE
+}
+
+' ============================================================
+' ENTIDAD APPOINTMENT
+' ============================================================
+entity "APPOINTMENT" as appointment {
+  * **id** : INTEGER <<PK>>
+  --
+  id_paciente : INTEGER <<FK>>
+  id_terapeuta : INTEGER <<FK>>
+  * fecha : TIMESTAMP
+  estado : VARCHAR(20) <<CHECK>>
+  fecha_creacion : TIMESTAMP
+  --
+  CHECK: estado IN ('programada', 'completada', 'cancelada')
+  DEFAULT: estado = 'programada'
+}
+
+' ============================================================
+' ENTIDAD SYSTEM_SETTINGS
+' ============================================================
+entity "SYSTEM_SETTINGS" as system_settings {
+  * **id** : INTEGER <<PK>>
+  --
+  * clave : VARCHAR(100) <<UNIQUE>>
+  valor : VARCHAR(500)
+  fecha_actualizacion : TIMESTAMP
+  --
+  ON UPDATE: fecha_actualizacion = NOW()
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+
+' User - Patient (1:1)
+user ||--o| patient : "tiene perfil"
+patient }o--|| user : "pertenece a"
+
+' User - Therapist (1:1)
+user ||--o| therapist : "tiene perfil"
+therapist }o--|| user : "pertenece a"
+
+' Therapist - Routine (1:N)
+therapist ||--o{ routine : "crea"
+routine }o--|| therapist : "creada por"
+
+' Patient - Routine (1:N)
+patient ||--o{ routine : "tiene asignadas"
+routine }o--o| patient : "asignada a"
+
+' Routine - RoutineExercise (1:N)
+routine ||--|{ routine_exercise : "contiene"
+routine_exercise }|--|| routine : "pertenece a"
+
+' Exercise - RoutineExercise (1:N)
+exercise ||--o{ routine_exercise : "usado en"
+routine_exercise }o--|| exercise : "referencia a"
+
+' Therapist - SessionCapture (1:N)
+therapist ||--o{ session_capture : "captura"
+session_capture }o--o| therapist : "capturado por"
+
+' Patient - SessionCapture (1:N)
+patient ||--o{ session_capture : "captura"
+session_capture }o--o| patient : "capturado por"
+
+' SessionCapture - VideoShare (1:N)
+session_capture ||--o{ video_share : "compartido en"
+video_share }o--|| session_capture : "referencia a"
+
+' Therapist - VideoShare (1:N)
+therapist ||--o{ video_share : "comparte"
+video_share }o--|| therapist : "compartido por"
+
+' Patient - VideoShare (1:N)
+patient ||--o{ video_share : "recibe"
+video_share }o--|| patient : "recibido por"
+
+' Patient - Appointment (N:M)
+patient ||--o{ appointment : "tiene citas"
+appointment }o--|| patient : "con paciente"
+
+' Therapist - Appointment (N:M)
+therapist ||--o{ appointment : "tiene citas"
+appointment }o--|| therapist : "con terapeuta"
+
+' ============================================================
+' NOTAS EXPLICATIVAS
+' ============================================================
+
+note right of user
+  **Entidad Central: USER**
+  
+  Tabla principal de autenticación
+  
+  Roles:
+  - admin: Administrador del sistema
+  - therapist: Terapeuta/Fisioterapeuta
+  - patient: Paciente
+  
+  Relaciones:
+  - 1:1 con Patient (si rol = 'patient')
+  - 1:1 con Therapist (si rol = 'therapist')
+  
+  Seguridad:
+  - Contraseñas hasheadas con Bcrypt
+  - Usuario y email únicos
+  - Control de estado activo/inactivo
+  
+  Índices:
+  - idx_user_username (nombre_usuario)
+  - idx_user_email (correo_electronico)
+  - idx_user_rol (rol)
+end note
+
+note right of patient
+  **Entidad: PATIENT**
+  
+  Perfil de paciente
+  
+  Relación 1:1 con User
+  (id_usuario UNIQUE)
+  
+  Seguimiento:
+  - Progreso: 0-100%
+  - Sesiones completadas/totales
+  - Diagnóstico médico
+  
+  Relaciones:
+  - 1:N con Routine (asignadas)
+  - 1:N con SessionCapture
+  - 1:N con VideoShare (recibe)
+  - N:M con Therapist (via Appointment)
+  
+  Índices:
+  - idx_patient_user (id_usuario)
+  - idx_patient_progreso (progreso)
+end note
+
+note right of therapist
+  **Entidad: THERAPIST**
+  
+  Perfil de terapeuta
+  
+  Relación 1:1 con User
+  (id_usuario UNIQUE)
+  
+  Información:
+  - Especialidad médica
+  - Total de pacientes asignados
+  
+  Relaciones:
+  - 1:N con Routine (crea)
+  - 1:N con SessionCapture
+  - 1:N con VideoShare (comparte)
+  - N:M con Patient (via Appointment)
+  
+  Índices:
+  - idx_therapist_user (id_usuario)
+  - idx_therapist_especialidad (especialidad)
+end note
+
+note right of routine
+  **Entidad: ROUTINE**
+  
+  Rutinas de ejercicios
+  
+  Tipos:
+  1. Template (id_paciente = NULL)
+     - Rutina base reutilizable
+     - Creada por terapeuta
+  
+  2. Asignada (id_paciente != NULL)
+     - Copia para paciente específico
+     - Personalizable
+  
+  Configuración:
+  - Duración en minutos
+  - Dificultad: facil/media/dificil
+  - Estado: activa/inactiva
+  
+  Relaciones:
+  - N:1 con Therapist (creador)
+  - N:1 con Patient (asignado)
+  - 1:N con RoutineExercise
+  
+  Índices:
+  - idx_routine_therapist (id_terapeuta)
+  - idx_routine_patient (id_paciente)
+  - idx_routine_active (esta_activa)
+end note
+
+note right of routine_exercise
+  **Entidad: ROUTINE_EXERCISE**
+  
+  Tabla intermedia N:M
+  entre Routine y Exercise
+  
+  Configuración por ejercicio:
+  - Orden de ejecución
+  - Series
+  - Repeticiones
+  - Tiempo de descanso (segundos)
+  - Notas específicas
+  
+  Cascade Delete:
+  Si se elimina la rutina,
+  se eliminan automáticamente
+  todos sus ejercicios asociados
+  
+  Índices:
+  - idx_routine_exercise_routine (id_rutina)
+  - idx_routine_exercise_exercise (id_ejercicio)
+  - idx_routine_exercise_orden (orden)
+end note
+
+note right of exercise
+  **Entidad: EXERCISE**
+  
+  Catálogo de ejercicios
+  
+  Información:
+  - Nombre del ejercicio
+  - Descripción detallada
+  - Categoría (movilidad, fuerza, etc.)
+  - Repeticiones sugeridas
+  
+  Reutilizable:
+  Un ejercicio puede estar en
+  múltiples rutinas
+  
+  Relaciones:
+  - 1:N con RoutineExercise
+  
+  Índices:
+  - idx_exercise_categoria (categoria)
+  - idx_exercise_nombre (nombre)
+end note
+
+note right of session_capture
+  **Entidad: SESSION_CAPTURE**
+  
+  Capturas multimedia de sesiones
+  
+  Tipos:
+  - photo: Fotografía
+  - video: Video con/sin audio
+  
+  Origen:
+  - Terapeuta (durante sesión)
+  - Paciente (ejercicios en casa)
+  
+  Almacenamiento:
+  - Temporal: es_permanente = FALSE
+  - Permanente: es_permanente = TRUE
+  
+  Metadata:
+  - Tamaño de archivo (bytes)
+  - Duración (segundos, solo video)
+  - Contiene audio (boolean)
+  - Notas de la sesión
+  
+  Relaciones:
+  - N:1 con Therapist (opcional)
+  - N:1 con Patient (opcional)
+  - 1:N con VideoShare
+  
+  Índices:
+  - idx_capture_therapist (id_terapeuta)
+  - idx_capture_patient (id_paciente)
+  - idx_capture_tipo (tipo_captura)
+  - idx_capture_fecha (fecha_sesion)
+end note
+
+note right of video_share
+  **Entidad: VIDEO_SHARE**
+  
+  Compartir videos entre usuarios
+  
+  Flujo:
+  1. Usuario captura video
+  2. Selecciona destinatario
+  3. Agrega mensaje opcional
+  4. Se crea registro VideoShare
+  5. Destinatario recibe notificación
+  6. Destinatario visualiza
+  7. Se marca como leído
+  
+  Direcciones:
+  - Terapeuta → Paciente
+  - Paciente → Terapeuta
+  
+  Tracking:
+  - Estado: leído/no leído
+  - Fecha de compartido
+  - Fecha de lectura
+  
+  Relaciones:
+  - N:1 con SessionCapture
+  - N:1 con Therapist
+  - N:1 con Patient
+  
+  Índices:
+  - idx_videoshare_capture (id_captura)
+  - idx_videoshare_therapist (id_terapeuta)
+  - idx_videoshare_patient (id_paciente)
+  - idx_videoshare_leido (leido)
+end note
+
+note right of appointment
+  **Entidad: APPOINTMENT**
+  
+  Citas médicas
+  
+  Relación N:M entre
+  Patient y Therapist
+  
+  Estados:
+  - programada: Cita agendada
+  - completada: Cita realizada
+  - cancelada: Cita cancelada
+  
+  Información:
+  - Fecha y hora de la cita
+  - Estado actual
+  - Fecha de creación
+  
+  Funcionalidades:
+  - Programar cita
+  - Modificar cita
+  - Cancelar cita
+  - Ver historial
+  
+  Índices:
+  - idx_appointment_patient (id_paciente)
+  - idx_appointment_therapist (id_terapeuta)
+  - idx_appointment_fecha (fecha)
+  - idx_appointment_estado (estado)
+end note
+
+note right of system_settings
+  **Entidad: SYSTEM_SETTINGS**
+  
+  Configuración del sistema
+  
+  Patrón: Key-Value Store
+  
+  Configuraciones almacenadas:
+  - session_duration
+  - sessions_per_week
+  - rest_time
+  - email_notifications
+  - appointment_reminder
+  - theme (light/dark)
+  - language (es/en)
+  - backup settings
+  - security settings
+  - AI vision settings
+  
+  Métodos estáticos:
+  - get_setting(clave, default)
+  - set_setting(clave, valor)
+  
+  Auto-actualización:
+  fecha_actualizacion se actualiza
+  automáticamente en cada UPDATE
+  
+  Índice:
+  - idx_settings_clave (clave)
+end note
+
+' ============================================================
+' LEYENDA
+' ============================================================
+
+legend right
+  **LEYENDA DE CARDINALIDADES**
+  
+  ||--|| : Uno a Uno (1:1)
+  ||--o{ : Uno a Muchos (1:N)
+  }o--|| : Muchos a Uno (N:1)
+  }o--o{ : Muchos a Muchos (N:M)
+  
+  **SÍMBOLOS**
+  
+  * : Campo obligatorio (NOT NULL)
+  <<PK>> : Primary Key
+  <<FK>> : Foreign Key
+  <<UNIQUE>> : Valor único
+  <<CHECK>> : Restricción de validación
+  <<NULLABLE>> : Permite valores NULL
+  
+  **RESTRICCIONES**
+  
+  CHECK: Validación de valores
+  DEFAULT: Valor por defecto
+  ON DELETE CASCADE: Eliminación en cascada
+  ON UPDATE: Actualización automática
+  
+  **ÍNDICES**
+  
+  Todos los campos marcados con
+  idx_* tienen índices para
+  optimizar consultas
+  
+  **TOTAL DE ENTIDADES: 10**
+  
+  - user
+  - patient
+  - therapist
+  - routine
+  - routine_exercise
+  - exercise
+  - session_capture
+  - video_share
+  - appointment
+  - system_settings
+end legend
+
+@enduml

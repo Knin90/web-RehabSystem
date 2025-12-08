@@ -1,0 +1,439 @@
+@startuml Diagrama de Navegación - Parte 4: Panel Paciente
+
+title Diagrama de Navegación - Parte 4: Panel Paciente
+
+' ============================================================
+' DASHBOARD PACIENTE
+' ============================================================
+
+state "Dashboard Paciente\n/patient/dashboard" as patient_dashboard {
+    patient_dashboard : Progreso general (%)
+    patient_dashboard : Sesiones completadas/totales
+    patient_dashboard : Diagnóstico
+    patient_dashboard : Próximas sesiones
+    patient_dashboard : Menú de navegación
+}
+
+state "Mis Rutinas\n/patient/routines" as patient_routines {
+    patient_routines : Rutinas asignadas por terapeuta
+    patient_routines : Ver detalles de rutina
+    patient_routines : Lista de ejercicios
+    patient_routines : Duración y dificultad
+    patient_routines : Estado: Activa/Completada
+}
+
+state "Modal Detalles Rutina" as routine_details {
+    routine_details : Nombre y descripción
+    routine_details : Lista completa de ejercicios
+    routine_details : Series y repeticiones
+    routine_details : Tiempo de descanso
+    routine_details : Duración total
+    routine_details : Dificultad
+    routine_details : Botón "Iniciar Rutina"
+    routine_details : Botón "Cerrar"
+}
+
+state "Iniciar Terapia\n/patient/start-therapy" as patient_therapy {
+    patient_therapy : Seleccionar rutina
+    patient_therapy : Seguir instrucciones
+    patient_therapy : Acceder a cámara
+    patient_therapy : Capturar foto
+    patient_therapy : Grabar video
+    patient_therapy : Completar sesión
+}
+
+state "Captura de Foto" as capture_photo_patient {
+    capture_photo_patient : Tomar foto con cámara
+    capture_photo_patient : Vista previa
+    capture_photo_patient : Agregar notas
+    capture_photo_patient : Guardar
+}
+
+state "Grabación de Video" as record_video_patient {
+    record_video_patient : Iniciar grabación
+    record_video_patient : Grabar con audio
+    record_video_patient : Detener grabación
+    record_video_patient : Vista previa
+    record_video_patient : Agregar notas
+    record_video_patient : Guardar
+}
+
+state "Galería Videos\n/patient/video-gallery" as patient_gallery {
+    patient_gallery : Ver mis capturas
+    patient_gallery : Ver videos del terapeuta
+    patient_gallery : Filtrar por fecha
+    patient_gallery : Filtrar por tipo
+    patient_gallery : Reproducir videos
+    patient_gallery : Botón "Compartir"
+}
+
+state "Modal Compartir Video" as share_video_patient {
+    share_video_patient : Seleccionar video
+    share_video_patient : Seleccionar terapeuta
+    share_video_patient : Agregar mensaje
+    share_video_patient : Vista previa
+    share_video_patient : Botones: Enviar/Cancelar
+}
+
+state "Historial\n/patient/history" as patient_history {
+    patient_history : Sesiones completadas
+    patient_history : Fechas de sesiones
+    patient_history : Progreso por sesión
+    patient_history : Rutinas realizadas
+    patient_history : Gráfico de progreso
+}
+
+state "Mis Terapeutas\n/patient/therapists" as patient_therapists {
+    patient_therapists : Lista de terapeutas asignados
+    patient_therapists : Nombre y especialidad
+    patient_therapists : Información de contacto
+    patient_therapists : Rutinas asignadas por terapeuta
+}
+
+state "Mensajes\n/patient/messages" as patient_messages {
+    patient_messages : Ver mensajes recibidos
+    patient_messages : Enviar mensajes
+    patient_messages : Notificaciones
+    patient_messages : Conversaciones con terapeuta
+}
+
+state "Perfil\n/patient/profile" as patient_profile {
+    patient_profile : Datos personales
+    patient_profile : Nombre completo
+    patient_profile : Diagnóstico
+    patient_profile : Progreso actual
+    patient_profile : Sesiones totales
+    patient_profile : Editar información
+}
+
+state "Configuración\n/patient/settings" as patient_settings {
+    patient_settings : Cambiar contraseña
+    patient_settings : Configurar notificaciones
+    patient_settings : Preferencias de privacidad
+    patient_settings : Idioma y tema
+}
+
+state "Cerrar Sesión\n/logout" as logout
+
+' ============================================================
+' NAVEGACIÓN
+' ============================================================
+
+[*] --> patient_dashboard : Acceso desde\nautenticación
+
+patient_dashboard --> patient_routines : Click "Mis Rutinas"
+patient_dashboard --> patient_therapy : Click "Iniciar Terapia"
+patient_dashboard --> patient_gallery : Click "Galería"
+patient_dashboard --> patient_history : Click "Historial"
+patient_dashboard --> patient_therapists : Click "Terapeutas"
+patient_dashboard --> patient_messages : Click "Mensajes"
+patient_dashboard --> patient_profile : Click "Perfil"
+patient_dashboard --> patient_settings : Click "Configuración"
+patient_dashboard --> logout : Click "Cerrar Sesión"
+
+patient_routines --> routine_details : Click en\nrutina
+routine_details --> patient_routines : Cerrar
+routine_details --> patient_therapy : Click "Iniciar\nRutina"
+
+patient_routines --> patient_dashboard : Volver
+
+patient_therapy --> capture_photo_patient : Click "Capturar\nFoto"
+capture_photo_patient --> patient_therapy : Foto guardada
+
+patient_therapy --> record_video_patient : Click "Grabar\nVideo"
+record_video_patient --> patient_therapy : Video guardado
+
+patient_therapy --> patient_dashboard : Completar\nSesión
+
+patient_gallery --> share_video_patient : Click "Compartir"
+share_video_patient --> patient_gallery : Video compartido\no Cancelar
+
+patient_gallery --> patient_dashboard : Volver
+
+patient_history --> patient_dashboard : Volver
+
+patient_therapists --> patient_dashboard : Volver
+
+patient_messages --> patient_dashboard : Volver
+
+patient_profile --> patient_dashboard : Volver
+
+patient_settings --> patient_dashboard : Volver
+
+logout --> [*] : Sesión cerrada\nRedirige a /
+
+note right of patient_dashboard
+  **Dashboard Paciente**
+  
+  Ruta: /patient/dashboard
+  Template: paciente/dashboard.html
+  Decorador: @role_required('patient')
+  
+  Muestra:
+  - Progreso general (0-100%)
+  - Sesiones completadas/totales
+  - Diagnóstico médico
+  - Próximas sesiones programadas
+  - Accesos rápidos
+  
+  Menú lateral:
+  - Mis Rutinas
+  - Iniciar Terapia
+  - Galería
+  - Historial
+  - Terapeutas
+  - Mensajes
+  - Perfil
+  - Configuración
+  
+  Función: obtener_datos_paciente()
+  - Crea perfil si no existe
+  - Retorna datos del paciente
+end note
+
+note right of patient_routines
+  **Mis Rutinas**
+  
+  Ruta: /patient/routines
+  Template: paciente/routines.html
+  
+  Muestra rutinas asignadas por
+  el terapeuta (id_paciente != NULL)
+  
+  Información por rutina:
+  - Nombre y descripción
+  - Terapeuta que la asignó
+  - Duración (minutos)
+  - Dificultad (fácil/media/difícil)
+  - Número de ejercicios
+  - Estado (activa/completada)
+  
+  Acciones:
+  - Ver detalles completos
+  - Iniciar rutina
+  - Ver progreso
+  
+  Query:
+  Routine.query.filter_by(
+    id_paciente=paciente.id
+  ).all()
+end note
+
+note right of routine_details
+  **Detalles de Rutina**
+  
+  Modal emergente
+  
+  Muestra información completa:
+  - Nombre de la rutina
+  - Descripción detallada
+  - Lista de ejercicios:
+    * Nombre del ejercicio
+    * Series
+    * Repeticiones
+    * Tiempo de descanso
+    * Orden de ejecución
+    * Notas específicas
+  - Duración total estimada
+  - Nivel de dificultad
+  
+  Botones:
+  - "Iniciar Rutina" → /patient/start-therapy
+  - "Cerrar" → Volver a lista
+end note
+
+note right of patient_therapy
+  **Iniciar Terapia**
+  
+  Ruta: /patient/start-therapy
+  Template: paciente/start_therapy.html
+  
+  Funcionalidades:
+  - Seleccionar rutina asignada
+  - Seguir instrucciones paso a paso
+  - Acceder a cámara (WebRTC)
+  - Capturar fotos de ejercicios
+  - Grabar videos de progreso
+  - Agregar notas personales
+  - Completar sesión
+  
+  Al completar sesión:
+  - Incrementa sesiones_completadas
+  - Actualiza progreso (%)
+  - Registra fecha de sesión
+  
+  Captura de Foto:
+  - Guarda en static/uploads/photos/
+  - Registra en SessionCapture
+  - id_paciente = paciente.id
+  
+  Grabación de Video:
+  - Guarda en static/uploads/videos/
+  - Registra en SessionCapture
+  - id_paciente = paciente.id
+  - contiene_audio = True
+end note
+
+note right of patient_gallery
+  **Galería de Videos**
+  
+  Ruta: /patient/video-gallery
+  Template: paciente/video_gallery.html
+  
+  Dos secciones:
+  
+  1. Mis Capturas
+     - Fotos y videos propios
+     - Capturados durante ejercicios
+     - Filtrar por fecha
+  
+  2. Videos del Terapeuta
+     - Videos compartidos por terapeuta
+     - Mensajes del terapeuta
+     - Marcar como leído
+     - Estado: leído/no leído
+  
+  Acciones:
+  - Reproducir video
+  - Ver foto
+  - Compartir con terapeuta
+  - Descargar
+  - Eliminar (solo propios)
+  
+  Al compartir video:
+  1. Seleccionar video propio
+  2. Seleccionar terapeuta
+  3. Agregar mensaje
+  4. Crear registro en VideoShare
+  5. Terapeuta recibe notificación
+end note
+
+note right of patient_history
+  **Historial de Sesiones**
+  
+  Ruta: /patient/history
+  Template: paciente/history.html
+  
+  Muestra:
+  - Sesiones completadas
+  - Fechas de cada sesión
+  - Rutinas realizadas
+  - Progreso por sesión
+  - Gráfico de evolución
+  - Tiempo total de terapia
+  
+  Información detallada:
+  - Fecha de sesión
+  - Rutina realizada
+  - Ejercicios completados
+  - Duración de sesión
+  - Notas de la sesión
+  
+  Visualización:
+  - Lista cronológica
+  - Gráfico de progreso
+  - Estadísticas generales
+end note
+
+note right of patient_therapists
+  **Mis Terapeutas**
+  
+  Ruta: /patient/therapists
+  Template: paciente/therapists.html
+  
+  Muestra terapeutas asignados
+  (a través de rutinas)
+  
+  Información por terapeuta:
+  - Nombre completo
+  - Especialidad
+  - Email de contacto
+  - Rutinas asignadas
+  - Total de sesiones
+  
+  Acciones:
+  - Ver perfil completo
+  - Ver rutinas asignadas
+  - Enviar mensaje
+  - Ver historial de sesiones
+end note
+
+note right of patient_messages
+  **Mensajes**
+  
+  Ruta: /patient/messages
+  Template: paciente/messages.html
+  
+  Funcionalidades:
+  - Ver mensajes recibidos
+  - Enviar mensajes a terapeuta
+  - Notificaciones de nuevos mensajes
+  - Conversaciones por terapeuta
+  - Marcar como leído
+  
+  Tipos de mensajes:
+  - Mensajes de texto
+  - Videos compartidos
+  - Notificaciones de sistema
+  
+  Interfaz:
+  - Lista de conversaciones
+  - Chat por terapeuta
+  - Indicador de no leídos
+end note
+
+note right of patient_profile
+  **Perfil del Paciente**
+  
+  Ruta: /patient/profile
+  Template: paciente/profile.html
+  
+  Muestra:
+  - Nombre completo
+  - Usuario
+  - Email
+  - Diagnóstico médico
+  - Progreso actual (%)
+  - Sesiones completadas/totales
+  - Fecha de registro
+  
+  Acciones:
+  - Editar información personal
+  - Actualizar email
+  - Ver estadísticas completas
+  
+  No puede editar:
+  - Usuario (único)
+  - Diagnóstico (solo terapeuta/admin)
+  - Progreso (calculado automáticamente)
+end note
+
+note right of patient_settings
+  **Configuración**
+  
+  Ruta: /patient/settings
+  Template: paciente/settings.html
+  
+  Opciones:
+  
+  1. Seguridad
+     - Cambiar contraseña
+     - Verificar contraseña actual
+     - Nueva contraseña (hash Bcrypt)
+  
+  2. Notificaciones
+     - Email notifications
+     - Recordatorios de sesiones
+     - Mensajes de terapeuta
+  
+  3. Privacidad
+     - Compartir progreso
+     - Visibilidad de videos
+  
+  4. Preferencias
+     - Idioma (es/en)
+     - Tema (light/dark)
+     - Zona horaria
+end note
+
+@enduml

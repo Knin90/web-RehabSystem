@@ -1,0 +1,294 @@
+@startuml Estructura de Datos - Parte 1: Usuarios y Perfiles
+
+title Diagrama de Estructura de Datos - Parte 1: Usuarios y Perfiles
+
+' ============================================================
+' MODELO DE DATOS: USER
+' ============================================================
+class User <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Attributes==
+    + nombre_usuario : VARCHAR(80) {NOT NULL, UNIQUE}
+    + correo_electronico : VARCHAR(120) {NOT NULL, UNIQUE}
+    + contrasena_encriptada : VARCHAR(128) {NOT NULL}
+    + rol : VARCHAR(20) {NOT NULL, CHECK}
+    + esta_activo : BOOLEAN {DEFAULT TRUE}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (rol IN ('admin', 'therapist', 'patient'))
+    
+    ==Indexes==
+    INDEX idx_user_username (nombre_usuario)
+    INDEX idx_user_email (correo_electronico)
+    INDEX idx_user_rol (rol)
+    
+    ==Relationships==
+    perfil_paciente : Patient [0..1]
+    perfil_terapeuta : Therapist [0..1]
+}
+
+' ============================================================
+' MODELO DE DATOS: PATIENT
+' ============================================================
+class Patient <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_usuario : INTEGER {FK → User.id, UNIQUE, NOT NULL}
+    
+    ==Attributes==
+    + nombre_completo : VARCHAR(200) {NOT NULL}
+    + diagnostico : TEXT {NULLABLE}
+    + progreso : FLOAT {DEFAULT 0.0}
+    + sesiones_totales : INTEGER {DEFAULT 0}
+    + sesiones_completadas : INTEGER {DEFAULT 0}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (progreso >= 0 AND progreso <= 100)
+    UNIQUE (id_usuario)
+    
+    ==Indexes==
+    INDEX idx_patient_user (id_usuario)
+    INDEX idx_patient_progreso (progreso)
+    
+    ==Relationships==
+    usuario : User [1]
+    rutinas_asignadas : Routine [0..*]
+    capturas : SessionCapture [0..*]
+    videos_recibidos : VideoShare [0..*]
+    citas : Appointment [0..*]
+}
+
+' ============================================================
+' MODELO DE DATOS: THERAPIST
+' ============================================================
+class Therapist <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_usuario : INTEGER {FK → User.id, UNIQUE, NOT NULL}
+    
+    ==Attributes==
+    + nombre_completo : VARCHAR(200) {NOT NULL}
+    + especialidad : VARCHAR(100) {NULLABLE}
+    + total_pacientes : INTEGER {DEFAULT 0}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    UNIQUE (id_usuario)
+    
+    ==Indexes==
+    INDEX idx_therapist_user (id_usuario)
+    INDEX idx_therapist_especialidad (especialidad)
+    
+    ==Relationships==
+    usuario : User [1]
+    rutinas_creadas : Routine [0..*]
+    capturas : SessionCapture [0..*]
+    videos_compartidos : VideoShare [0..*]
+    citas : Appointment [0..*]
+}
+
+' ============================================================
+' MODELO DE DATOS: APPOINTMENT
+' ============================================================
+class Appointment <<Table>> {
+    ==Primary Key==
+    + id : INTEGER {PK, AUTO_INCREMENT}
+    
+    ==Foreign Keys==
+    + id_paciente : INTEGER {FK → Patient.id}
+    + id_terapeuta : INTEGER {FK → Therapist.id}
+    
+    ==Attributes==
+    + fecha : TIMESTAMP {NOT NULL}
+    + estado : VARCHAR(20) {DEFAULT 'programada'}
+    + fecha_creacion : TIMESTAMP {DEFAULT CURRENT_TIMESTAMP}
+    
+    ==Constraints==
+    CHECK (estado IN ('programada', 'completada', 'cancelada'))
+    
+    ==Indexes==
+    INDEX idx_appointment_patient (id_paciente)
+    INDEX idx_appointment_therapist (id_terapeuta)
+    INDEX idx_appointment_fecha (fecha)
+    INDEX idx_appointment_estado (estado)
+    
+    ==Relationships==
+    paciente : Patient [1]
+    terapeuta : Therapist [1]
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+
+' User - Patient (1:1)
+User "1" -- "0..1" Patient : id_usuario >
+
+' User - Therapist (1:1)
+User "1" -- "0..1" Therapist : id_usuario >
+
+' Patient - Appointment (1:N)
+Patient "1" -- "0..*" Appointment : id_paciente >
+
+' Therapist - Appointment (1:N)
+Therapist "1" -- "0..*" Appointment : id_terapeuta >
+
+' ============================================================
+' NOTAS
+' ============================================================
+
+note top of User
+  **USER - Tabla Central de Autenticación**
+  
+  **Motor:** PostgreSQL 15
+  **Charset:** UTF8
+  **Collation:** es_ES.UTF-8
+  
+  **Tipos de datos:**
+  - INTEGER: 4 bytes, rango -2147483648 a 2147483647
+  - VARCHAR(n): Cadena variable hasta n caracteres
+  - BOOLEAN: 1 byte, TRUE/FALSE
+  - TIMESTAMP: 8 bytes, fecha y hora con zona horaria
+  
+  **Seguridad:**
+  - Contraseñas: Bcrypt hash (60 caracteres almacenados en 128)
+  - Índices únicos: Previenen duplicados
+  - Check constraints: Validan datos en BD
+  
+  **Roles del sistema:**
+  - admin: Acceso completo al sistema
+  - therapist: Gestión de pacientes y rutinas
+  - patient: Acceso a rutinas y progreso personal
+  
+  **Herencia ORM:**
+  - UserMixin (Flask-Login): Proporciona is_authenticated, is_active, get_id
+  - db.Model (SQLAlchemy): Proporciona funcionalidad ORM
+end note
+
+note right of Patient
+  **PATIENT - Perfil de Paciente**
+  
+  **Relación 1:1 con User**
+  - id_usuario UNIQUE garantiza un solo perfil por usuario
+  
+  **Cálculos derivados:**
+  - progreso = (sesiones_completadas / sesiones_totales) * 100
+  
+  **Validaciones:**
+  - progreso: 0.0 <= valor <= 100.0
+  - sesiones_completadas <= sesiones_totales
+  
+  **Almacenamiento:**
+  - FLOAT: 4 bytes, precisión de 6 decimales
+  - TEXT: Hasta 1GB de texto (diagnóstico)
+  
+  **Queries comunes:**
+  - Pacientes activos: WHERE usuario.esta_activo = TRUE
+  - Pacientes en terapia: WHERE sesiones_completadas < sesiones_totales
+  - Progreso alto: WHERE progreso >= 80
+end note
+
+note right of Therapist
+  **THERAPIST - Perfil de Terapeuta**
+  
+  **Relación 1:1 con User**
+  - id_usuario UNIQUE garantiza un solo perfil por usuario
+  
+  **Especialidades comunes:**
+  - Fisioterapia
+  - Rehabilitación deportiva
+  - Terapia ocupacional
+  - Rehabilitación neurológica
+  - Terapia manual
+  
+  **Propiedad calculada:**
+  ```python
+  @property
+  def pacientes_asignados(self):
+      # Obtiene pacientes únicos a través de rutinas
+      rutinas = Routine.query.filter_by(
+          id_terapeuta=self.id
+      ).filter(
+          Routine.id_paciente.isnot(None)
+      ).all()
+      
+      pacientes_ids = list(set([r.id_paciente for r in rutinas]))
+      return Patient.query.filter(
+          Patient.id.in_(pacientes_ids)
+      ).all()
+  ```
+  
+end note
+
+note right of Appointment
+  **APPOINTMENT - Citas Médicas**
+  
+  **Relación N:M entre Patient y Therapist**
+  
+  **Estados del ciclo de vida:**
+  1. programada: Cita agendada (inicial)
+  2. completada: Cita realizada
+  3. cancelada: Cita cancelada
+  
+  **Transiciones de estado:**
+  - programada → completada (al finalizar cita)
+  - programada → cancelada (al cancelar)
+  - No se permite: completada → programada
+  - No se permite: cancelada → programada
+  
+  **Queries comunes:**
+  - Citas del día: WHERE DATE(fecha) = CURRENT_DATE
+  - Citas pendientes: WHERE estado = 'programada' AND fecha > NOW()
+  - Historial: WHERE estado = 'completada' ORDER BY fecha DESC
+  
+  **Índices de optimización:**
+  - idx_appointment_fecha: Para búsquedas por rango de fechas
+  - idx_appointment_estado: Para filtrar por estado
+  - Composite index (id_terapeuta, fecha): Para calendario del terapeuta
+end note
+
+legend right
+  **TIPOS DE DATOS PostgreSQL 15**
+  
+  - INTEGER: Entero de 4 bytes (-2,147,483,648 a 2,147,483,647)
+  - VARCHAR(n): Cadena variable hasta n caracteres
+  - TEXT: Texto sin límite (hasta 1GB)
+  - FLOAT: Número decimal de 4 bytes
+  - BOOLEAN: Verdadero/Falso (1 byte)
+  - TIMESTAMP: Fecha y hora (8 bytes)
+  
+  **CARDINALIDADES**
+  
+  1 : Exactamente uno
+  0..1 : Cero o uno (opcional)
+  0..* : Cero o muchos
+  1..* : Uno o muchos
+  
+  **SÍMBOLOS**
+  
+  {PK} : Primary Key
+  {FK} : Foreign Key
+  {NOT NULL} : Obligatorio
+  {NULLABLE} : Opcional
+  {UNIQUE} : Valor único
+  {DEFAULT} : Valor por defecto
+  {CHECK} : Restricción de validación
+  {AUTO_INCREMENT} : Autoincremental
+  
+  **PARTE 1 de 3**
+  Tablas: 4
+  - USER
+  - PATIENT
+  - THERAPIST
+  - APPOINTMENT
+end legend
+
+@enduml

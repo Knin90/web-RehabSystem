@@ -1,0 +1,263 @@
+@startuml Diagrama ER - Parte 2: Rutinas y Ejercicios
+
+title Diagrama Entidad-Relación - Parte 2: Rutinas y Ejercicios
+
+' ============================================================
+' ENTIDADES DE REFERENCIA (simplificadas)
+' ============================================================
+entity "PATIENT" as patient {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre_completo : VARCHAR(200)
+}
+
+entity "THERAPIST" as therapist {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre_completo : VARCHAR(200)
+}
+
+' ============================================================
+' ENTIDAD ROUTINE
+' ============================================================
+entity "ROUTINE" as routine {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre : VARCHAR(200)
+  descripcion : TEXT
+  * id_terapeuta : INTEGER <<FK>>
+  id_paciente : INTEGER <<FK>> <<NULLABLE>>
+  duracion_minutos : INTEGER
+  dificultad : VARCHAR(20) <<CHECK>>
+  esta_activa : BOOLEAN
+  fecha_creacion : TIMESTAMP
+  --
+  CHECK: dificultad IN ('facil', 'media', 'dificil')
+  DEFAULT: duracion_minutos = 30
+  DEFAULT: dificultad = 'media'
+  DEFAULT: esta_activa = TRUE
+  --
+  NOTA: id_paciente NULL = rutina template
+  NOTA: id_paciente NOT NULL = rutina asignada
+}
+
+' ============================================================
+' ENTIDAD ROUTINE_EXERCISE (Tabla Intermedia)
+' ============================================================
+entity "ROUTINE_EXERCISE" as routine_exercise {
+  * **id** : INTEGER <<PK>>
+  --
+  * id_rutina : INTEGER <<FK>>
+  * id_ejercicio : INTEGER <<FK>>
+  orden : INTEGER
+  series : INTEGER
+  repeticiones : INTEGER
+  segundos_descanso : INTEGER
+  notas : TEXT
+  --
+  DEFAULT: orden = 0
+  DEFAULT: series = 3
+  DEFAULT: repeticiones = 10
+  DEFAULT: segundos_descanso = 30
+  --
+  ON DELETE CASCADE (id_rutina)
+}
+
+' ============================================================
+' ENTIDAD EXERCISE
+' ============================================================
+entity "EXERCISE" as exercise {
+  * **id** : INTEGER <<PK>>
+  --
+  * nombre : VARCHAR(200)
+  descripcion : TEXT
+  categoria : VARCHAR(50)
+  repeticiones : VARCHAR(50)
+  fecha_creacion : TIMESTAMP
+}
+
+' ============================================================
+' RELACIONES
+' ============================================================
+
+' Therapist - Routine (1:N)
+therapist ||--o{ routine : "crea"
+routine }o--|| therapist : "id_terapeuta"
+
+' Patient - Routine (1:N)
+patient ||--o{ routine : "tiene asignadas"
+routine }o--o| patient : "id_paciente"
+
+' Routine - RoutineExercise (1:N)
+routine ||--|{ routine_exercise : "contiene"
+routine_exercise }|--|| routine : "id_rutina"
+
+' Exercise - RoutineExercise (1:N)
+exercise ||--o{ routine_exercise : "usado en"
+routine_exercise }o--|| exercise : "id_ejercicio"
+
+' ============================================================
+' NOTAS
+' ============================================================
+
+note right of routine
+  **ROUTINE - Rutinas de Ejercicios**
+  
+  **Tipos:**
+  
+  1. Template (id_paciente = NULL)
+     - Rutina base reutilizable
+     - Creada por terapeuta
+     - Puede ser asignada a múltiples pacientes
+  
+  2. Asignada (id_paciente != NULL)
+     - Copia personalizada para paciente
+     - Modificable independientemente
+  
+  **Dificultad:**
+  - facil: Ejercicios básicos
+  - media: Ejercicios intermedios
+  - dificil: Ejercicios avanzados
+  
+  **Estado:**
+  - esta_activa = TRUE: Rutina disponible
+  - esta_activa = FALSE: Rutina archivada
+  
+  **Relaciones:**
+  - N:1 con Therapist (creador)
+  - N:1 con Patient (asignado, opcional)
+  - 1:N con RoutineExercise
+  
+  **Índices:**
+  - idx_routine_therapist (id_terapeuta)
+  - idx_routine_patient (id_paciente)
+  - idx_routine_active (esta_activa)
+  
+  **Proceso de asignación:**
+  1. Terapeuta crea rutina template
+  2. Terapeuta selecciona paciente
+  3. Sistema clona rutina para paciente
+  4. Copia todos los ejercicios asociados
+end note
+
+note right of routine_exercise
+  **ROUTINE_EXERCISE - Tabla Intermedia**
+  
+  Relación N:M entre Routine y Exercise
+  
+  **Configuración por ejercicio:**
+  - orden: Secuencia de ejecución (0, 1, 2...)
+  - series: Número de series (ej: 3)
+  - repeticiones: Reps por serie (ej: 10)
+  - segundos_descanso: Descanso entre series (ej: 30)
+  - notas: Instrucciones específicas
+  
+  **Cascade Delete:**
+  Si se elimina la rutina (Routine),
+  se eliminan automáticamente todos
+  sus ejercicios asociados (RoutineExercise)
+  
+  **Ejemplo:**
+  Rutina "Rehabilitación Rodilla"
+  1. Orden 0: Sentadillas (3 series x 10 reps, 30s descanso)
+  2. Orden 1: Extensiones (3 series x 12 reps, 45s descanso)
+  3. Orden 2: Flexiones (2 series x 15 reps, 30s descanso)
+  
+  **Índices:**
+  - idx_routine_exercise_routine (id_rutina)
+  - idx_routine_exercise_exercise (id_ejercicio)
+  - idx_routine_exercise_orden (orden)
+  
+  **Cálculo de duración:**
+  tiempo_total = SUM(
+    (series * repeticiones * tiempo_por_rep) +
+    (series * segundos_descanso)
+  )
+end note
+
+note right of exercise
+  **EXERCISE - Catálogo de Ejercicios**
+  
+  Biblioteca de ejercicios reutilizables
+  
+  **Categorías comunes:**
+  - Movilidad: Ejercicios de rango de movimiento
+  - Fuerza: Ejercicios de fortalecimiento
+  - Equilibrio: Ejercicios de estabilidad
+  - Flexibilidad: Ejercicios de estiramiento
+  - Cardio: Ejercicios cardiovasculares
+  - Coordinación: Ejercicios de coordinación
+  
+  **Información:**
+  - nombre: Nombre del ejercicio
+  - descripcion: Instrucciones detalladas
+  - categoria: Tipo de ejercicio
+  - repeticiones: Sugerencia de repeticiones
+  
+  **Reutilizable:**
+  Un ejercicio puede estar en
+  múltiples rutinas diferentes
+  
+  **Relaciones:**
+  - 1:N con RoutineExercise
+  
+  **Índices:**
+  - idx_exercise_categoria (categoria)
+  - idx_exercise_nombre (nombre)
+  
+  **Ejemplos:**
+  - "Sentadilla con apoyo"
+  - "Extensión de rodilla"
+  - "Flexión de cadera"
+  - "Marcha estática"
+end note
+
+note bottom of patient
+  **Referencia a PATIENT**
+  
+  Ver: DIAGRAMA_ER_1_USUARIOS.puml
+  
+  Relación con Routine:
+  - Un paciente puede tener
+    múltiples rutinas asignadas
+  - Las rutinas son copias
+    personalizadas (templates clonados)
+end note
+
+note bottom of therapist
+  **Referencia a THERAPIST**
+  
+  Ver: DIAGRAMA_ER_1_USUARIOS.puml
+  
+  Relación con Routine:
+  - Un terapeuta crea rutinas
+  - Puede crear templates reutilizables
+  - Asigna rutinas a pacientes
+end note
+
+legend right
+  **CARDINALIDADES**
+  
+  ||--|| : Uno a Uno (1:1)
+  ||--o{ : Uno a Muchos (1:N)
+  }o--|| : Muchos a Uno (N:1)
+  ||--|{ : Uno a Muchos (composición)
+  
+  **SÍMBOLOS**
+  
+  * : NOT NULL
+  <<PK>> : Primary Key
+  <<FK>> : Foreign Key
+  <<NULLABLE>> : Permite NULL
+  <<CHECK>> : Restricción
+  
+  **PARTE 2 de 3**
+  Entidades: 3 principales + 2 referencia
+  - ROUTINE
+  - ROUTINE_EXERCISE
+  - EXERCISE
+  - (Patient - referencia)
+  - (Therapist - referencia)
+end legend
+
+@enduml

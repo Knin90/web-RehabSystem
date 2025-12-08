@@ -1,0 +1,752 @@
+@startuml Diagrama_01_Actividad
+
+' ============================================================
+' DIAGRAMA 1: DIAGRAMA DE ACTIVIDAD
+' Flujos de autenticación, creación de rutinas y captura multimedia
+' ============================================================
+
+title Diagrama de Actividad - Sistema de Rehabilitación
+
+|Usuario|
+start
+:Acceder a /login;
+
+if (¿Usuario autenticado?) then (Sí)
+  :Redirigir a Dashboard;
+  stop
+else (No)
+  :Mostrar formulario login;
+  :Ingresar credenciales;
+  :Enviar POST /login;
+endif
+
+|Sistema|
+:Validar credenciales;
+
+if (¿Credenciales válidas?) then (No)
+  |Usuario|
+  :Mostrar error;
+  stop
+else (Sí)
+  :Verificar rol;
+  
+  if (Rol) then (Admin)
+    :Dashboard Admin;
+  elseif (Terapeuta)
+    |Terapeuta|
+    :Dashboard Terapeuta;
+    
+    partition "Crear Rutina" {
+      :Acceder a /therapist/routines;
+      :Cargar ejercicios disponibles;
+      :Cargar pacientes asignados;
+      :Seleccionar ejercicios;
+      :Configurar series/repeticiones;
+      :Establecer duración y dificultad;
+      :POST /therapist/create-routine;
+      |Sistema|
+      :Guardar rutina en BD;
+      |Terapeuta|
+      :Confirmar creación;
+    }
+    
+    partition "Captura Multimedia" {
+      :Iniciar sesión de terapia;
+      :Acceder a cámara;
+      
+      fork
+        :Capturar foto;
+        :Convertir a base64;
+        :POST /save-snapshot;
+        |Sistema|
+        :Guardar en servidor;
+        :Registrar en BD;
+      fork again
+        :Iniciar grabación video;
+        :Grabar con audio;
+        :Detener grabación;
+        :POST /save-video-permanent;
+        |Sistema|
+        :Guardar archivo video;
+        :Registrar en BD;
+      end fork
+      
+      |Terapeuta|
+      :Confirmar guardado;
+    }
+    
+  elseif (Paciente)
+    |Paciente|
+    :Dashboard Paciente;
+    
+    partition "Realizar Rutina" {
+      :Ver rutinas asignadas;
+      :Seleccionar rutina;
+      :Ver detalles de rutina;
+      :Iniciar rutina;
+      
+      repeat
+        :Realizar ejercicio;
+        :Capturar progreso;
+      repeat while (¿Más ejercicios?) is (Sí)
+      ->No;
+      
+      :Completar rutina;
+      |Sistema|
+      :Actualizar progreso;
+      |Paciente|
+      :Confirmar completado;
+    }
+  endif
+endif
+
+stop
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_02_Colaboracion
+
+' ============================================================
+' DIAGRAMA 2: DIAGRAMA DE COLABORACIÓN
+' Interacciones entre objetos en autenticación y creación de rutinas
+' ============================================================
+
+title Diagrama de Colaboración - Autenticación y Creación de Rutinas
+
+object Usuario
+object "Flask Route\nlogin()" as Route1
+object "User Model" as UserModel
+object "Bcrypt" as Bcrypt
+object "Flask-Login" as FlaskLogin
+object "Dashboard" as Dashboard
+
+object Terapeuta
+object "Flask Route\ncreate_routine()" as Route2
+object "Therapist Model" as TherapistModel
+object "Routine Model" as RoutineModel
+object "RoutineExercise Model" as RoutineExerciseModel
+object "Database" as DB
+
+' Flujo de Autenticación
+Usuario --> Route1 : 1: POST /login(usuario, password)
+Route1 --> UserModel : 2: query(username)
+UserModel --> Route1 : 3: User data
+Route1 --> Bcrypt : 4: check_password(password)
+Bcrypt --> Route1 : 5: verify_hash()
+Route1 --> FlaskLogin : 6: login_user(user)
+FlaskLogin --> Route1 : 7: create_session()
+Route1 --> Dashboard : 8: redirect(dashboard)
+Dashboard --> Usuario : 9: Mostrar dashboard
+
+' Flujo de Creación de Rutina
+Terapeuta --> Route2 : 1: POST /therapist/create-routine(datos)
+Route2 --> TherapistModel : 2: query(id_usuario)
+TherapistModel --> Route2 : 3: Therapist data
+Route2 --> RoutineModel : 4: create(Routine)
+RoutineModel --> DB : 5: INSERT Routine
+DB --> RoutineModel : 6: routine_id
+RoutineModel --> Route2 : 7: routine_id
+Route2 --> RoutineExerciseModel : 8: create(RoutineExercise) [loop]
+RoutineExerciseModel --> DB : 9: INSERT RoutineExercise
+DB --> RoutineExerciseModel : 10: Success
+RoutineExerciseModel --> Route2 : 11: Success
+Route2 --> DB : 12: commit()
+DB --> Route2 : 13: Success
+Route2 --> Terapeuta : 14: Confirmación
+
+note right of Usuario
+  El usuario inicia sesión
+  y el sistema valida
+  sus credenciales
+end note
+
+note right of Terapeuta
+  El terapeuta crea rutinas
+  con múltiples ejercicios
+  configurados
+end note
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_03_Componentes
+
+' ============================================================
+' DIAGRAMA 3: DIAGRAMA DE COMPONENTES
+' Arquitectura de módulos y capas del sistema
+' ============================================================
+
+title Diagrama de Componentes - Arquitectura del Sistema
+
+package "CAPA DE PRESENTACIÓN" {
+  [Templates\n(Jinja2)] as Templates
+  [Static Files\n(CSS/JS)] as Static
+  [Forms\n(WTForms)] as Forms
+}
+
+package "CAPA DE APLICACIÓN" {
+  [Routes\n(Flask)] as Routes
+  [Config] as Config
+  [__init__\n(Factory)] as Init
+  [Decoradores\n(@role_required)] as Decorators
+  [Validadores] as Validators
+}
+
+package "CAPA DE NEGOCIO" {
+  [Models\n(SQLAlchemy)] as Models
+  [Bcrypt\n(Hash)] as Bcrypt
+  [Flask-Login\n(Auth)] as FlaskLogin
+}
+
+package "CAPA DE DATOS" {
+  [PostgreSQL\n(Database)] as PostgreSQL
+  [SQLAlchemy\n(ORM)] as SQLAlchemy
+  [Alembic\n(Migrations)] as Alembic
+}
+
+package "COMPONENTES EXTERNOS" {
+  [Render\n(Deploy)] as Render
+  [Gunicorn\n(WSGI)] as Gunicorn
+  [Nginx\n(Proxy)] as Nginx
+}
+
+package "ALMACENAMIENTO" {
+  [File System\n(Uploads)] as FileSystem
+}
+
+' Relaciones entre componentes
+Templates --> Routes : usa
+Static --> Routes : usa
+Forms --> Routes : usa
+
+Routes --> Models : usa
+Routes --> Decorators : usa
+Routes --> Validators : usa
+Routes --> Config : usa
+
+Models --> SQLAlchemy : usa
+Models --> Bcrypt : usa
+Models --> FlaskLogin : usa
+
+SQLAlchemy --> PostgreSQL : conecta
+Alembic --> PostgreSQL : migra
+
+Init --> Routes : inicializa
+Init --> Models : inicializa
+Init --> Config : carga
+
+Nginx --> Gunicorn : proxy
+Gunicorn --> Routes : ejecuta
+Render --> Nginx : hospeda
+Render --> PostgreSQL : hospeda
+
+Routes --> FileSystem : guarda archivos
+
+note right of Templates
+  Vistas HTML con
+  Jinja2 templating
+end note
+
+note right of Routes
+  Controladores con
+  endpoints REST
+end note
+
+note right of Models
+  Modelos de datos
+  con ORM
+end note
+
+note right of PostgreSQL
+  Base de datos
+  relacional
+end note
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_04_Clases
+
+' ============================================================
+' DIAGRAMA 4: DIAGRAMA DE CLASES
+' Modelo completo con todas las clases y sus relaciones
+' ============================================================
+
+title Diagrama de Clases - Sistema de Rehabilitación
+
+class User {
+  - id: Integer {PK}
+  - nombre_usuario: String(80) {unique}
+  - correo_electronico: String(120) {unique}
+  - contrasena_encriptada: String(128)
+  - rol: String(20)
+  - esta_activo: Boolean
+  - fecha_creacion: DateTime
+  --
+  + set_password(password: String): void
+  + check_password(password: String): Boolean
+}
+
+class Patient {
+  - id: Integer {PK}
+  - id_usuario: Integer {FK}
+  - nombre_completo: String(200)
+  - diagnostico: Text
+  - progreso: Float
+  - sesiones_totales: Integer
+  - sesiones_completadas: Integer
+  - fecha_creacion: DateTime
+}
+
+class Therapist {
+  - id: Integer {PK}
+  - id_usuario: Integer {FK}
+  - nombre_completo: String(200)
+  - especialidad: String(100)
+  - total_pacientes: Integer
+  - fecha_creacion: DateTime
+  --
+  + pacientes_asignados: List<Patient>
+}
+
+class Exercise {
+  - id: Integer {PK}
+  - nombre: String(200)
+  - descripcion: Text
+  - categoria: String(50)
+  - repeticiones: String(50)
+  - fecha_creacion: DateTime
+}
+
+class Routine {
+  - id: Integer {PK}
+  - nombre: String(200)
+  - descripcion: Text
+  - id_terapeuta: Integer {FK}
+  - id_paciente: Integer {FK, nullable}
+  - duracion_minutos: Integer
+  - dificultad: String(20)
+  - esta_activa: Boolean
+  - fecha_creacion: DateTime
+}
+
+class RoutineExercise {
+  - id: Integer {PK}
+  - id_rutina: Integer {FK}
+  - id_ejercicio: Integer {FK}
+  - orden: Integer
+  - series: Integer
+  - repeticiones: Integer
+  - segundos_descanso: Integer
+  - notas: Text
+}
+
+class SessionCapture {
+  - id: Integer {PK}
+  - id_terapeuta: Integer {FK, nullable}
+  - id_paciente: Integer {FK, nullable}
+  - tipo_captura: String(20)
+  - nombre_archivo: String(255)
+  - ruta_archivo: String(500)
+  - tamano_archivo: Integer
+  - duracion: Integer
+  - notas: Text
+  - fecha_sesion: DateTime
+  - fecha_creacion: DateTime
+  - es_permanente: Boolean
+  - contiene_audio: Boolean
+}
+
+class VideoShare {
+  - id: Integer {PK}
+  - id_captura: Integer {FK}
+  - id_terapeuta: Integer {FK}
+  - id_paciente: Integer {FK}
+  - mensaje: Text
+  - leido: Boolean
+  - fecha_compartido: DateTime
+  - fecha_leido: DateTime
+}
+
+class Appointment {
+  - id: Integer {PK}
+  - id_paciente: Integer {FK}
+  - id_terapeuta: Integer {FK}
+  - fecha: DateTime
+  - estado: String(20)
+  - fecha_creacion: DateTime
+}
+
+class SystemSettings {
+  - id: Integer {PK}
+  - clave: String(100) {unique}
+  - valor: String(500)
+  - fecha_actualizacion: DateTime
+  --
+  + {static} get_setting(clave: String, default: String): String
+  + {static} set_setting(clave: String, valor: String): SystemSettings
+}
+
+' Relaciones
+User "1" -- "1" Patient : tiene >
+User "1" -- "1" Therapist : tiene >
+
+Therapist "1" -- "0..*" Routine : crea >
+Patient "1" -- "0..*" Routine : recibe >
+
+Routine "1" -- "0..*" RoutineExercise : contiene >
+Exercise "1" -- "0..*" RoutineExercise : usado en >
+
+Therapist "1" -- "0..*" SessionCapture : captura >
+Patient "1" -- "0..*" SessionCapture : captura >
+
+SessionCapture "1" -- "0..*" VideoShare : compartido en >
+Therapist "1" -- "0..*" VideoShare : comparte >
+Patient "1" -- "0..*" VideoShare : recibe >
+
+Patient "0..*" -- "0..*" Therapist : atendido por
+(Patient, Therapist) .. Appointment
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_05_Navegacion
+
+' ============================================================
+' DIAGRAMA 5: DIAGRAMA DE NAVEGACIÓN
+' Flujos de navegación por rol (Admin, Terapeuta, Paciente)
+' ============================================================
+
+title Diagrama de Navegación - Sistema de Rehabilitación
+
+state "Login" as Login
+state "Dashboard Admin" as AdminDash
+state "Dashboard Terapeuta" as TherapistDash
+state "Dashboard Paciente" as PatientDash
+
+[*] --> Login
+
+Login --> AdminDash : rol = admin
+Login --> TherapistDash : rol = therapist
+Login --> PatientDash : rol = patient
+
+' Navegación del Administrador
+state AdminDash {
+  [*] --> AdminHome
+  AdminHome --> AdminUsers : Gestionar Usuarios
+  AdminHome --> AdminTherapists : Gestionar Terapeutas
+  AdminHome --> AdminPatients : Gestionar Pacientes
+  AdminHome --> AdminSettings : Configuración
+  AdminHome --> AdminExport : Exportar Datos
+  
+  state AdminUsers {
+    [*] --> UsersList
+    UsersList --> AddUser : Agregar
+    UsersList --> EditUser : Editar
+    UsersList --> DeleteUser : Eliminar
+  }
+  
+  state AdminTherapists {
+    [*] --> TherapistsList
+    TherapistsList --> AddTherapist : Agregar
+    TherapistsList --> ViewTherapist : Ver Detalles
+  }
+  
+  state AdminPatients {
+    [*] --> PatientsList
+    PatientsList --> AddPatient : Agregar
+    PatientsList --> ViewPatient : Ver Detalles
+  }
+  
+  state AdminSettings {
+    [*] --> SettingsHome
+    SettingsHome --> SessionSettings : Duración Sesiones
+    SettingsHome --> NotificationSettings : Notificaciones
+    SettingsHome --> BackupSettings : Respaldos
+    SettingsHome --> SecuritySettings : Seguridad
+    SettingsHome --> AISettings : Visión Artificial
+    SettingsHome --> AppearanceSettings : Apariencia
+  }
+  
+  state AdminExport {
+    [*] --> ExportHome
+    ExportHome --> ExportUsers : Exportar Usuarios
+    ExportHome --> ExportPatients : Exportar Pacientes
+    ExportHome --> ExportTherapists : Exportar Terapeutas
+    ExportHome --> ExportExercises : Exportar Ejercicios
+    ExportHome --> ExportAll : Exportar Todo
+  }
+}
+
+' Navegación del Terapeuta
+state TherapistDash {
+  [*] --> TherapistHome
+  TherapistHome --> TherapistPatients : Mis Pacientes
+  TherapistHome --> TherapistRoutines : Rutinas
+  TherapistHome --> TherapistSession : Iniciar Sesión
+  TherapistHome --> TherapistGallery : Galería Videos
+  TherapistHome --> TherapistAppointments : Citas
+  
+  state TherapistPatients {
+    [*] --> PatientList
+    PatientList --> PatientDetails : Ver Detalles
+    PatientDetails --> PatientProgress : Ver Progreso
+  }
+  
+  state TherapistRoutines {
+    [*] --> RoutinesList
+    RoutinesList --> CreateRoutine : Crear Rutina
+    RoutinesList --> AssignRoutine : Asignar Rutina
+    RoutinesList --> EditRoutine : Editar Rutina
+    RoutinesList --> ViewRoutine : Ver Rutina
+  }
+  
+  state TherapistSession {
+    [*] --> SelectPatient
+    SelectPatient --> StartCamera : Iniciar Cámara
+    StartCamera --> CapturePhoto : Capturar Foto
+    StartCamera --> RecordVideo : Grabar Video
+    CapturePhoto --> SaveSession : Guardar
+    RecordVideo --> SaveSession : Guardar
+  }
+  
+  state TherapistGallery {
+    [*] --> ViewCaptures
+    ViewCaptures --> PlayVideo : Reproducir
+    ViewCaptures --> ShareVideo : Compartir con Paciente
+    ViewCaptures --> ViewShared : Ver Compartidos
+  }
+  
+  state TherapistAppointments {
+    [*] --> Calendar
+    Calendar --> ScheduleAppointment : Programar
+    Calendar --> ModifyAppointment : Modificar
+    Calendar --> CancelAppointment : Cancelar
+  }
+}
+
+' Navegación del Paciente
+state PatientDash {
+  [*] --> PatientHome
+  PatientHome --> PatientRoutines : Mis Rutinas
+  PatientHome --> PatientTherapy : Iniciar Terapia
+  PatientHome --> PatientGallery : Galería Videos
+  PatientHome --> PatientHistory : Historial
+  PatientHome --> PatientTherapists : Mis Terapeutas
+  PatientHome --> PatientMessages : Mensajes
+  PatientHome --> PatientProfile : Perfil
+  PatientHome --> PatientSettings : Configuración
+  
+  state PatientRoutines {
+    [*] --> RoutinesAssigned
+    RoutinesAssigned --> ViewRoutineDetails : Ver Detalles
+    ViewRoutineDetails --> StartRoutine : Iniciar
+  }
+  
+  state PatientTherapy {
+    [*] --> SelectRoutineTherapy
+    SelectRoutineTherapy --> PerformExercises : Realizar Ejercicios
+    PerformExercises --> CapturePhotoPatient : Capturar Foto
+    PerformExercises --> RecordVideoPatient : Grabar Video
+    CapturePhotoPatient --> CompleteSession : Completar
+    RecordVideoPatient --> CompleteSession : Completar
+  }
+  
+  state PatientGallery {
+    [*] --> ViewMyCaptures
+    ViewMyCaptures --> PlayMyVideo : Reproducir
+    ViewMyCaptures --> ShareWithTherapist : Compartir con Terapeuta
+    ViewMyCaptures --> ViewTherapistVideos : Ver Videos del Terapeuta
+  }
+  
+  state PatientHistory {
+    [*] --> ViewSessions
+    ViewSessions --> ViewSessionDetails : Ver Detalles
+  }
+  
+  state PatientProfile {
+    [*] --> ViewProfileInfo
+    ViewProfileInfo --> EditProfile : Editar
+  }
+  
+  state PatientSettings {
+    [*] --> SettingsMenu
+    SettingsMenu --> ChangePassword : Cambiar Contraseña
+    SettingsMenu --> NotificationPrefs : Notificaciones
+    SettingsMenu --> PrivacySettings : Privacidad
+  }
+}
+
+AdminDash --> Login : Logout
+TherapistDash --> Login : Logout
+PatientDash --> Login : Logout
+
+@enduml
+
+' ============================================================
+
+@startuml Diagrama_06_Entidad_Relacion
+
+' ============================================================
+' DIAGRAMA 6: DIAGRAMA DE ENTIDAD RELACIÓN
+' Modelo ER con cardinalidades y claves foráneas
+' ============================================================
+
+title Diagrama de Entidad Relación - Sistema de Rehabilitación
+
+entity "USER" as user {
+  * id : INTEGER <<PK>>
+  --
+  * nombre_usuario : VARCHAR(80) <<UNIQUE>>
+  * correo_electronico : VARCHAR(120) <<UNIQUE>>
+  * contrasena_encriptada : VARCHAR(128)
+  * rol : VARCHAR(20)
+  * esta_activo : BOOLEAN
+  * fecha_creacion : TIMESTAMP
+}
+
+entity "PATIENT" as patient {
+  * id : INTEGER <<PK>>
+  --
+  * id_usuario : INTEGER <<FK>> <<UNIQUE>>
+  * nombre_completo : VARCHAR(200)
+  diagnostico : TEXT
+  progreso : FLOAT
+  sesiones_totales : INTEGER
+  sesiones_completadas : INTEGER
+  fecha_creacion : TIMESTAMP
+}
+
+entity "THERAPIST" as therapist {
+  * id : INTEGER <<PK>>
+  --
+  * id_usuario : INTEGER <<FK>> <<UNIQUE>>
+  * nombre_completo : VARCHAR(200)
+  especialidad : VARCHAR(100)
+  total_pacientes : INTEGER
+  fecha_creacion : TIMESTAMP
+}
+
+entity "EXERCISE" as exercise {
+  * id : INTEGER <<PK>>
+  --
+  * nombre : VARCHAR(200)
+  descripcion : TEXT
+  categoria : VARCHAR(50)
+  repeticiones : VARCHAR(50)
+  fecha_creacion : TIMESTAMP
+}
+
+entity "ROUTINE" as routine {
+  * id : INTEGER <<PK>>
+  --
+  * nombre : VARCHAR(200)
+  descripcion : TEXT
+  * id_terapeuta : INTEGER <<FK>>
+  id_paciente : INTEGER <<FK>>
+  duracion_minutos : INTEGER
+  dificultad : VARCHAR(20)
+  esta_activa : BOOLEAN
+  fecha_creacion : TIMESTAMP
+}
+
+entity "ROUTINE_EXERCISE" as routine_exercise {
+  * id : INTEGER <<PK>>
+  --
+  * id_rutina : INTEGER <<FK>>
+  * id_ejercicio : INTEGER <<FK>>
+  orden : INTEGER
+  series : INTEGER
+  repeticiones : INTEGER
+  segundos_descanso : INTEGER
+  notas : TEXT
+}
+
+entity "SESSION_CAPTURE" as session_capture {
+  * id : INTEGER <<PK>>
+  --
+  id_terapeuta : INTEGER <<FK>>
+  id_paciente : INTEGER <<FK>>
+  * tipo_captura : VARCHAR(20)
+  * nombre_archivo : VARCHAR(255)
+  * ruta_archivo : VARCHAR(500)
+  tamano_archivo : INTEGER
+  duracion : INTEGER
+  notas : TEXT
+  fecha_sesion : TIMESTAMP
+  fecha_creacion : TIMESTAMP
+  es_permanente : BOOLEAN
+  contiene_audio : BOOLEAN
+}
+
+entity "VIDEO_SHARE" as video_share {
+  * id : INTEGER <<PK>>
+  --
+  * id_captura : INTEGER <<FK>>
+  * id_terapeuta : INTEGER <<FK>>
+  * id_paciente : INTEGER <<FK>>
+  mensaje : TEXT
+  leido : BOOLEAN
+  fecha_compartido : TIMESTAMP
+  fecha_leido : TIMESTAMP
+}
+
+entity "APPOINTMENT" as appointment {
+  * id : INTEGER <<PK>>
+  --
+  id_paciente : INTEGER <<FK>>
+  id_terapeuta : INTEGER <<FK>>
+  * fecha : TIMESTAMP
+  estado : VARCHAR(20)
+  fecha_creacion : TIMESTAMP
+}
+
+entity "SYSTEM_SETTINGS" as system_settings {
+  * id : INTEGER <<PK>>
+  --
+  * clave : VARCHAR(100) <<UNIQUE>>
+  valor : VARCHAR(500)
+  fecha_actualizacion : TIMESTAMP
+}
+
+' Relaciones con cardinalidades
+user ||--|| patient : "1:1"
+user ||--|| therapist : "1:1"
+
+therapist ||--o{ routine : "1:N (crea)"
+patient ||--o{ routine : "1:N (recibe)"
+
+routine ||--o{ routine_exercise : "1:N"
+exercise ||--o{ routine_exercise : "1:N"
+
+therapist ||--o{ session_capture : "1:N (captura)"
+patient ||--o{ session_capture : "1:N (captura)"
+
+session_capture ||--o{ video_share : "1:N"
+therapist ||--o{ video_share : "1:N (comparte)"
+patient ||--o{ video_share : "1:N (recibe)"
+
+patient }o--o{ therapist : "N:M"
+(patient, therapist) .. appointment
+
+note right of user
+  Usuario base del sistema
+  con autenticación
+end note
+
+note right of routine
+  id_paciente NULL = rutina template
+  id_paciente NOT NULL = rutina asignada
+end note
+
+note right of session_capture
+  Almacena fotos y videos
+  de sesiones de terapia
+end note
+
+@enduml
