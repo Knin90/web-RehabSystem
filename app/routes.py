@@ -1347,15 +1347,14 @@ exercise.id, exercise.nombre, exercise.descripcion or 'N/A',
             if capture.id_terapeuta != therapist.id:
                 return jsonify({'success': False, 'message': 'No tienes permisos para compartir este video'}), 403
             
-            # Verificar que el paciente existe y está asignado al terapeuta
+            # Verificar que el paciente existe
             patient = Patient.query.get(patient_id)
             if not patient:
                 return jsonify({'success': False, 'message': 'Paciente no encontrado'}), 404
             
-            # Verificar que el paciente está asignado al terapeuta (a través de rutinas)
-            assigned_patients = [p.id for p in therapist.pacientes_asignados] if hasattr(therapist, 'pacientes_asignados') else []
-            if patient.id not in assigned_patients:
-                return jsonify({'success': False, 'message': 'El paciente no está asignado a este terapeuta'}), 403
+            # Verificar que el paciente está activo
+            if not patient.usuario.esta_activo:
+                return jsonify({'success': False, 'message': 'El paciente no está activo'}), 403
             
             # Verificar si el video ya fue compartido con este paciente
             existing_share = VideoShare.query.filter_by(
