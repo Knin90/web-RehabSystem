@@ -267,19 +267,20 @@
     </div>
 </div>
 
-<!-- Modal para compartir video con terapeuta -->
+<!-- Modal para compartir video/imagen con terapeuta -->
 <div class="modal fade" id="shareVideoModal" tabindex="-1" aria-labelledby="shareVideoModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="shareVideoModalLabel">
-                    <i class="fas fa-share"></i> Compartir Video con Terapeuta
+                    <i class="fas fa-share"></i> <span id="shareModalTitle">Compartir con Terapeuta</span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="shareVideoForm">
                     <input type="hidden" id="shareCaptureId">
+                    <input type="hidden" id="shareCaptureType">
                     
                     <div class="mb-3">
                         <label for="shareTherapistSelect" class="form-label">Seleccionar Terapeuta</label>
@@ -296,14 +297,14 @@
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        Tu terapeuta recibirá una notificación y podrá ver este video.
+                        <span id="shareInfoText">Tu terapeuta recibirá una notificación y podrá ver este contenido.</span>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="confirmShareVideo()">
-                    <i class="fas fa-paper-plane"></i> Compartir Video
+                <button type="button" class="btn btn-primary" onclick="confirmShare()">
+                    <i class="fas fa-paper-plane"></i> <span id="shareButtonText">Compartir</span>
                 </button>
             </div>
         </div>
@@ -418,8 +419,8 @@ function renderGallery(captures) {
                             <i class="fas fa-download"></i> Descargar
                         </button>
                     </div>
-                    ${capture.type === 'video' && capture.patient_id ? `
-                        <button class="btn btn-warning btn-sm w-100 mt-2" onclick="shareVideoWithTherapist(${capture.id})">
+                    ${capture.patient_id ? `
+                        <button class="btn btn-warning btn-sm w-100 mt-2" onclick="shareWithTherapist(${capture.id}, '${capture.type}')">
                             <i class="fas fa-share"></i> Compartir con Terapeuta
                         </button>
                     ` : ''}
@@ -775,14 +776,36 @@ function updateUnreadBadge(videos) {
 }
 
 // ============================================================
-// FUNCIONES PARA COMPARTIR VIDEOS CON TERAPEUTA
+// FUNCIONES PARA COMPARTIR VIDEOS E IMÁGENES CON TERAPEUTA
 // ============================================================
 
-function shareVideoWithTherapist(captureId) {
+function shareWithTherapist(captureId, captureType) {
     document.getElementById('shareCaptureId').value = captureId;
+    document.getElementById('shareCaptureType').value = captureType;
+    
+    // Actualizar textos del modal según el tipo
+    const modalTitle = document.getElementById('shareModalTitle');
+    const shareButtonText = document.getElementById('shareButtonText');
+    const shareInfoText = document.getElementById('shareInfoText');
+    
+    if (captureType === 'video') {
+        modalTitle.textContent = 'Compartir Video con Terapeuta';
+        shareButtonText.textContent = 'Compartir Video';
+        shareInfoText.textContent = 'Tu terapeuta recibirá una notificación y podrá ver este video.';
+    } else {
+        modalTitle.textContent = 'Compartir Imagen con Terapeuta';
+        shareButtonText.textContent = 'Compartir Imagen';
+        shareInfoText.textContent = 'Tu terapeuta recibirá una notificación y podrá ver esta imagen.';
+    }
+    
     loadTherapistsForSharing();
     const modal = new bootstrap.Modal(document.getElementById('shareVideoModal'));
     modal.show();
+}
+
+// Mantener compatibilidad con código antiguo
+function shareVideoWithTherapist(captureId) {
+    shareWithTherapist(captureId, 'video');
 }
 
 function loadTherapistsForSharing() {
@@ -794,12 +817,13 @@ function loadTherapistsForSharing() {
         .then(data => {
             if (data.success) {
                 if (data.therapists.length === 0) {
-                    select.innerHTML = '<option value="">No tienes terapeutas asignados</option>';
+                    select.innerHTML = '<option value="">No hay terapeutas disponibles</option>';
                 } else {
-                    select.innerHTML = '<option value="">Selecciona un terapeuta...</option>' +
-                        data.therapists.map(therapist => 
-                            `<option value="${therapist.id}">${therapist.name} - ${therapist.specialty}</option>`
-                        ).join('');
+                    const options = data.therapists.map(therapist => {
+                        const tag = therapist.assigned ? ' (Asignado)' : '';
+                        return `<option value="${therapist.id}">${therapist.name}${tag} - ${therapist.specialty}</option>`;
+                    });
+                    select.innerHTML = '<option value="">Selecciona un terapeuta...</option>' + options.join('');
                 }
             } else {
                 select.innerHTML = '<option value="">Error al cargar terapeutas</option>';
@@ -813,8 +837,9 @@ function loadTherapistsForSharing() {
         });
 }
 
-function confirmShareVideo() {
+function confirmShare() {
     const captureId = document.getElementById('shareCaptureId').value;
+    const captureType = document.getElementById('shareCaptureType').value;
     const therapistId = document.getElementById('shareTherapistSelect').value;
     const message = document.getElementById('shareMessage').value;
     
@@ -827,6 +852,8 @@ function confirmShareVideo() {
     const btn = event.target;
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Compartiendo...';
+    
+    const contentType = captureType === 'video' ? 'video' : 'imagen';
     
     fetch('/api/patient-share-video', {
         method: 'POST',
@@ -842,21 +869,27 @@ function confirmShareVideo() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showSuccess('Video compartido exitosamente con tu terapeuta');
+            showSuccess(`${contentType.charAt(0).toUpperCase() + contentType.slice(1)} compartido exitosamente con tu terapeuta`);
             bootstrap.Modal.getInstance(document.getElementById('shareVideoModal')).hide();
             document.getElementById('shareVideoForm').reset();
         } else {
-            showError('Error al compartir video: ' + data.message);
+            showError(`Error al compartir ${contentType}: ` + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showError('Error de conexión al compartir video');
+        showError(`Error de conexión al compartir ${contentType}`);
     })
     .finally(() => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Compartir Video';
+        const shareButtonText = document.getElementById('shareButtonText');
+        btn.innerHTML = `<i class="fas fa-paper-plane"></i> ${shareButtonText.textContent}`;
     });
+}
+
+// Mantener compatibilidad con código antiguo
+function confirmShareVideo() {
+    confirmShare();
 }
 
 function showSuccess(message) {
